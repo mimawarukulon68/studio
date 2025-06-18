@@ -1,11 +1,11 @@
 
 "use client";
 
-import React, { useState } from 'react';
-import { useForm, type FieldPath } from 'react-hook-form';
+import React, { useState, useEffect } from 'react';
+import { useForm, type FieldPath, type FieldErrors, type FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
-import { CalendarIcon, ArrowLeft, ArrowRight } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, ArrowRight, Check, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -37,7 +37,7 @@ import {
   agamaOptionsList,
   tempatTinggalOptionsList,
   modaTransportasiOptions,
-  pendidikanOptionsParentList, // Updated for parents
+  pendidikanOptionsList, // Updated for parents and "Lainnya"
   pekerjaanOptionsList,
   penghasilanOptionsList,
 } from '@/lib/schemas';
@@ -46,12 +46,29 @@ import { Separator } from '../ui/separator';
 
 const TOTAL_STEPS = 5;
 
+// Helper function to get nested field errors
+function getFieldError(path: string, errors: FieldErrors<RegistrationFormData>): FieldError | undefined {
+  const pathArray = path.split('.');
+  let current: any = errors;
+  for (const part of pathArray) {
+    if (current && typeof current === 'object' && part in current) {
+      current = current[part];
+    } else {
+      return undefined;
+    }
+  }
+  return current as FieldError;
+}
+
+
 export function RegistrationForm() {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
+  const [stepCompletionStatus, setStepCompletionStatus] = useState<Record<number, boolean>>({});
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
+    mode: 'onChange', // Validate on change to update field states for better UX if needed
     defaultValues: {
       namaLengkap: '',
       namaPanggilan: '',
@@ -78,6 +95,7 @@ export function RegistrationForm() {
         nik: '',
         tahunLahir: undefined,
         pendidikan: undefined,
+        pendidikanLainnya: '',
         pekerjaan: undefined,
         pekerjaanLainnya: '',
         penghasilan: undefined,
@@ -87,6 +105,7 @@ export function RegistrationForm() {
         nik: '',
         tahunLahir: undefined,
         pendidikan: undefined,
+        pendidikanLainnya: '',
         pekerjaan: undefined,
         pekerjaanLainnya: '',
         penghasilan: undefined,
@@ -96,6 +115,7 @@ export function RegistrationForm() {
         nik: '',
         tahunLahir: undefined,
         pendidikan: undefined,
+        pendidikanLainnya: '',
         pekerjaan: undefined,
         pekerjaanLainnya: '',
         penghasilan: undefined,
@@ -106,56 +126,175 @@ export function RegistrationForm() {
     },
   });
 
-  const processStep = async (direction: 'next' | 'prev') => {
-    if (direction === 'next') {
-      let fieldsToValidate: FieldPath<RegistrationFormData>[] = [];
-      if (currentStep === 1) {
-        fieldsToValidate = [
+  const getFieldsForStep = (step: number): FieldPath<RegistrationFormData>[] => {
+    switch (step) {
+      case 1:
+        const step1Fields: FieldPath<RegistrationFormData>[] = [
           "namaLengkap", "namaPanggilan", "jenisKelamin", "nisn", "nikSiswa",
           "tempatLahir", "tanggalLahir", "agama", "anakKe", "jumlahSaudaraKandung",
           "alamatJalan", "rtRw", "dusun", "desaKelurahan", "kecamatan", "kodePos",
           "tempatTinggal", "modaTransportasi"
         ];
-        if (form.getValues("agama") === "Lainnya") fieldsToValidate.push("agamaLainnya");
-        if (form.getValues("tempatTinggal") === "Lainnya") fieldsToValidate.push("tempatTinggalLainnya");
-        if (form.getValues("modaTransportasi").includes("lainnya")) fieldsToValidate.push("modaTransportasiLainnya");
-      } else if (currentStep === 2) {
-        fieldsToValidate = [
+        if (form.getValues("agama") === "Lainnya") step1Fields.push("agamaLainnya");
+        if (form.getValues("tempatTinggal") === "Lainnya") step1Fields.push("tempatTinggalLainnya");
+        if (form.getValues("modaTransportasi").includes("lainnya")) step1Fields.push("modaTransportasiLainnya");
+        return step1Fields;
+      case 2:
+        const step2Fields: FieldPath<RegistrationFormData>[] = [
           "ayah.nama", "ayah.nik", "ayah.tahunLahir", "ayah.pendidikan", "ayah.pekerjaan", "ayah.penghasilan"
         ];
-        if (form.getValues("ayah.pekerjaan") === "Lainnya") fieldsToValidate.push("ayah.pekerjaanLainnya");
-      } else if (currentStep === 3) {
-        fieldsToValidate = [
+        if (form.getValues("ayah.pekerjaan") === "Lainnya") step2Fields.push("ayah.pekerjaanLainnya");
+        if (form.getValues("ayah.pendidikan") === "Lainnya") step2Fields.push("ayah.pendidikanLainnya");
+        return step2Fields;
+      case 3:
+        const step3Fields: FieldPath<RegistrationFormData>[] = [
           "ibu.nama", "ibu.nik", "ibu.tahunLahir", "ibu.pendidikan", "ibu.pekerjaan", "ibu.penghasilan"
         ];
-        if (form.getValues("ibu.pekerjaan") === "Lainnya") fieldsToValidate.push("ibu.pekerjaanLainnya");
-      } else if (currentStep === 4) {
-         fieldsToValidate = [
-            "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan", "wali.pekerjaan", "wali.penghasilan"
-         ];
-         if (form.getValues("wali.pekerjaan") === "Lainnya") fieldsToValidate.push("wali.pekerjaanLainnya");
-      }
-      // No specific validation for step 5 before submit, full form validation will occur
-
-      if (fieldsToValidate.length > 0) {
-        const isValid = await form.trigger(fieldsToValidate);
-        if (!isValid) return;
-      }
-      if (currentStep < TOTAL_STEPS) setCurrentStep(prev => prev + 1);
-    } else {
-      if (currentStep > 1) setCurrentStep(prev => prev - 1);
+        if (form.getValues("ibu.pekerjaan") === "Lainnya") step3Fields.push("ibu.pekerjaanLainnya");
+        if (form.getValues("ibu.pendidikan") === "Lainnya") step3Fields.push("ibu.pendidikanLainnya");
+        return step3Fields;
+      case 4:
+        const step4Fields: FieldPath<RegistrationFormData>[] = [
+           "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan", "wali.pekerjaan", "wali.penghasilan"
+        ];
+        if (form.getValues("wali.pekerjaan") === "Lainnya") step4Fields.push("wali.pekerjaanLainnya");
+        if (form.getValues("wali.pendidikan") === "Lainnya") step4Fields.push("wali.pendidikanLainnya");
+        return step4Fields;
+      case 5:
+        // For step 5, the main validation is the Zod superRefine for at least one phone number.
+        // Individual fields also have format validation.
+        return ["nomorTeleponAyah", "nomorTeleponIbu", "nomorTeleponWali"];
+      default:
+        return [];
     }
   };
 
+  const processStep = async (direction: 'next' | 'prev') => {
+    if (direction === 'next') {
+      const fieldsToValidate = getFieldsForStep(currentStep);
+      let isCurrentStepValid = true;
+      if (fieldsToValidate.length > 0) {
+        isCurrentStepValid = await form.trigger(fieldsToValidate);
+        if (currentStep === 5) { // Special check for step 5 "at least one phone"
+            const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
+            if (!nomorTeleponAyah && !nomorTeleponIbu && !nomorTeleponWali) {
+                isCurrentStepValid = false;
+                 // We can't easily trigger the Zod superRefine error here for display,
+                 // but we mark the step as invalid for the indicator.
+                 // The actual error message will show on submit.
+            }
+        }
+      }
+      setStepCompletionStatus(prev => ({ ...prev, [currentStep]: isCurrentStepValid }));
 
-  function onSubmit(data: RegistrationFormData) {
-    console.log(data);
+      if (currentStep < TOTAL_STEPS) {
+        setCurrentStep(prev => prev + 1);
+      }
+    } else {
+      if (currentStep > 1) {
+        setCurrentStep(prev => prev - 1);
+      }
+    }
+  };
+
+  const onFormSubmit = async (data: RegistrationFormData) => {
+    console.log("Form submitted successfully:", data);
     toast({
       title: "Pendaftaran Terkirim!",
-      description: "Data Anda telah berhasil direkam (cek console).",
+      description: "Data Anda telah berhasil direkam.",
     });
-    // form.reset(); // Optionally reset form after submission
-  }
+    // Mark all steps as complete
+    const allComplete: Record<number, boolean> = {};
+    for (let i = 1; i <= TOTAL_STEPS; i++) allComplete[i] = true;
+    setStepCompletionStatus(allComplete);
+    // form.reset(); // Optionally reset
+  };
+
+  const onFormError = (errors: FieldErrors<RegistrationFormData>) => {
+    toast({
+      title: "Formulir Belum Lengkap",
+      description: "Mohon periksa kembali isian Anda pada langkah yang ditandai.",
+      variant: "destructive",
+    });
+
+    const newCompletionStatus = { ...stepCompletionStatus };
+    let firstErrorStep = TOTAL_STEPS + 1;
+
+    for (let i = 1; i <= TOTAL_STEPS; i++) {
+      const stepFields = getFieldsForStep(i);
+      let stepHasError = false;
+      for (const field of stepFields) {
+        if (getFieldError(field, errors)) {
+          stepHasError = true;
+          break;
+        }
+      }
+      // Check specific Zod superRefine error for step 5
+      if (i === 5 && errors.nomorTeleponAyah?.message?.includes("Minimal satu nomor telepon")) {
+        stepHasError = true;
+      }
+
+
+      if (stepHasError) {
+        newCompletionStatus[i] = false;
+        if (i < firstErrorStep) {
+          firstErrorStep = i;
+        }
+      } else {
+        // If no errors for this step after full validation, mark as true
+        // Only override if it wasn't already false from a previous "next" click partial validation
+         if (newCompletionStatus[i] !== false) {
+           newCompletionStatus[i] = true;
+         }
+      }
+    }
+    setStepCompletionStatus(newCompletionStatus);
+    if (firstErrorStep <= TOTAL_STEPS) {
+      setCurrentStep(firstErrorStep);
+    }
+  };
+
+  const renderStepIndicators = () => {
+    return (
+      <div className="flex justify-center space-x-1 sm:space-x-2 mb-6">
+        {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((stepNum) => {
+          const isCurrent = currentStep === stepNum;
+          const attemptedAndInvalid = stepCompletionStatus[stepNum] === false;
+          const successfullyValidated = stepCompletionStatus[stepNum] === true;
+
+          let indicatorContent: React.ReactNode = stepNum;
+          if (successfullyValidated && !isCurrent && !attemptedAndInvalid) {
+             indicatorContent = <Check className="w-4 h-4" />;
+          }
+          if (attemptedAndInvalid) {
+             indicatorContent = <X className="w-4 h-4" />;
+          }
+
+          return (
+            <div
+              key={stepNum}
+              className={cn(
+                "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 text-xs sm:text-sm font-medium cursor-pointer transition-all",
+                isCurrent
+                  ? "bg-primary text-primary-foreground border-primary shadow-md scale-110"
+                  : "bg-card text-card-foreground hover:border-primary/50",
+                attemptedAndInvalid
+                  ? "border-destructive text-destructive animate-pulse"
+                  : successfullyValidated && !isCurrent
+                  ? "border-green-500 text-green-600"
+                  : "border-border"
+              )}
+              onClick={() => setCurrentStep(stepNum)} // Allow direct navigation by clicking indicators
+              title={`Langkah ${stepNum}`}
+            >
+              {indicatorContent}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
 
   const renderParentFields = (parentType: 'ayah' | 'ibu' | 'wali') => {
     const title = parentType === 'ayah' ? 'Ayah Kandung' : parentType === 'ibu' ? 'Ibu Kandung' : 'Wali';
@@ -182,7 +321,7 @@ export function RegistrationForm() {
           )}
           <FormField
             control={form.control}
-            name={`${namePrefix}.nama` as any}
+            name={`${namePrefix}.nama` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{`Nama ${title}`}</FormLabel>
@@ -195,7 +334,7 @@ export function RegistrationForm() {
           />
           <FormField
             control={form.control}
-            name={`${namePrefix}.nik` as any}
+            name={`${namePrefix}.nik` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{`NIK ${title}`}</FormLabel>
@@ -208,7 +347,7 @@ export function RegistrationForm() {
           />
           <FormField
             control={form.control}
-            name={`${namePrefix}.tahunLahir` as any}
+            name={`${namePrefix}.tahunLahir` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tahun Lahir</FormLabel>
@@ -221,7 +360,7 @@ export function RegistrationForm() {
           />
           <FormField
             control={form.control}
-            name={`${namePrefix}.pendidikan` as any}
+            name={`${namePrefix}.pendidikan` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Pendidikan Terakhir</FormLabel>
@@ -230,16 +369,31 @@ export function RegistrationForm() {
                     <SelectTrigger><SelectValue placeholder="Pilih pendidikan" /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {pendidikanOptionsParentList.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                    {pendidikanOptionsList.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
+          {form.watch(`${namePrefix}.pendidikan` as FieldPath<RegistrationFormData>) === 'Lainnya' && (
+            <FormField
+              control={form.control}
+              name={`${namePrefix}.pendidikanLainnya` as FieldPath<RegistrationFormData>}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Detail Pendidikan Lainnya</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Sebutkan pendidikan lainnya" {...field} value={field.value ?? ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
           <FormField
             control={form.control}
-            name={`${namePrefix}.pekerjaan` as any}
+            name={`${namePrefix}.pekerjaan` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Pekerjaan Utama</FormLabel>
@@ -255,10 +409,10 @@ export function RegistrationForm() {
               </FormItem>
             )}
           />
-          {form.watch(`${namePrefix}.pekerjaan` as any) === 'Lainnya' && (
+          {form.watch(`${namePrefix}.pekerjaan` as FieldPath<RegistrationFormData>) === 'Lainnya' && (
             <FormField
               control={form.control}
-              name={`${namePrefix}.pekerjaanLainnya` as any}
+              name={`${namePrefix}.pekerjaanLainnya` as FieldPath<RegistrationFormData>}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Detail Pekerjaan Lainnya</FormLabel>
@@ -272,7 +426,7 @@ export function RegistrationForm() {
           )}
           <FormField
             control={form.control}
-            name={`${namePrefix}.penghasilan` as any}
+            name={`${namePrefix}.penghasilan` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Penghasilan Bulanan</FormLabel>
@@ -300,18 +454,24 @@ export function RegistrationForm() {
       form.setValue('wali.nik', sourceData.nik || '');
       form.setValue('wali.tahunLahir', sourceData.tahunLahir);
       form.setValue('wali.pendidikan', sourceData.pendidikan || undefined);
+      form.setValue('wali.pendidikanLainnya', sourceData.pendidikanLainnya || '');
       form.setValue('wali.pekerjaan', sourceData.pekerjaan || undefined);
       form.setValue('wali.pekerjaanLainnya', sourceData.pekerjaanLainnya || '');
       form.setValue('wali.penghasilan', sourceData.penghasilan || undefined);
+      // Trigger validation for wali fields after copying
+      form.trigger([
+        "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan",
+        "wali.pendidikanLainnya", "wali.pekerjaan", "wali.pekerjaanLainnya", "wali.penghasilan"
+      ]);
     }
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-2xl space-y-8 p-4 md:p-0">
+      <form onSubmit={form.handleSubmit(onFormSubmit, onFormError)} className="w-full max-w-2xl space-y-8 p-4 md:p-0">
+        {renderStepIndicators()}
         <div className="my-4">
           <p className="text-center text-sm text-muted-foreground">Langkah {currentStep} dari {TOTAL_STEPS}</p>
-          {/* Optional: Progress bar */}
         </div>
 
         {currentStep === 1 && (
@@ -463,3 +623,4 @@ export function RegistrationForm() {
     </Form>
   );
 }
+
