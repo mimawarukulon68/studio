@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -133,7 +134,7 @@ export function RegistrationForm() {
               <FormItem>
                 <FormLabel>Tahun Lahir</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="Contoh: 1980" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
+                  <Input type="number" placeholder="Contoh: 1980" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -240,10 +241,10 @@ export function RegistrationForm() {
               <FormItem><FormLabel>Agama</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Pilih agama" /></SelectTrigger></FormControl><SelectContent>{agamaOptionsList.map(ag => <SelectItem key={ag} value={ag}>{ag}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="anakKe" render={({ field }) => (
-              <FormItem><FormLabel>Anak Keberapa</FormLabel><FormControl><Input type="number" placeholder="Contoh: 1" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Anak Keberapa</FormLabel><FormControl><Input type="number" placeholder="Contoh: 1" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="jumlahSaudaraKandung" render={({ field }) => (
-              <FormItem><FormLabel>Jumlah Saudara Kandung</FormLabel><FormControl><Input type="number" placeholder="Contoh: 2" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Jumlah Saudara Kandung</FormLabel><FormControl><Input type="number" placeholder="Contoh: 2" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField control={form.control} name="alamatJalan" render={({ field }) => (
               <FormItem><FormLabel>Alamat Jalan</FormLabel><FormControl><Input placeholder="Nama jalan dan nomor rumah" {...field} /></FormControl><FormMessage /></FormItem>
@@ -298,3 +299,5 @@ export function RegistrationForm() {
     </Form>
   );
 }
+
+    
