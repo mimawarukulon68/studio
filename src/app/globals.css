@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  font-family: var(--font-inter), Arial, Helvetica, sans-serif; /* Changed to use Inter variable */
+  font-family: var(--font-poppins), Arial, Helvetica, sans-serif; /* Changed to use Poppins variable */
 }
 
 @layer base {
