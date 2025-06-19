@@ -60,26 +60,6 @@ export const requiredParentSchema = z.object({
   ...parentSharedFields
 }).superRefine(parentSharedRefinement);
 
-export const optionalParentSchema = z.object({
-  nama: z.string().optional(),
-  ...parentSharedFields
-}).superRefine(parentSharedRefinement)
- .refine(data => {
-    if (data.nik && (!data.nama || data.nama.trim() === "")) {
-        return false;
-    }
-    // If any of wali fields are filled, nama becomes required.
-    const { nik, tahunLahir, pendidikan, pekerjaan, penghasilan } = data;
-    const isAnyWaliDetailFilled = nik || tahunLahir || pendidikan || pekerjaan || penghasilan || data.pendidikanLainnya || data.pekerjaanLainnya;
-    if (isAnyWaliDetailFilled && (!data.nama || data.nama.trim() === "")) {
-      return false;
-    }
-    return true;
- }, {
-    message: "Nama Wali wajib diisi jika detail wali lainnya diisi.",
-    path: ["nama"],
- });
-
 
 export const registrationSchema = z.object({
   namaLengkap: z.string().min(1, "Nama lengkap wajib diisi"),
@@ -106,7 +86,7 @@ export const registrationSchema = z.object({
 
   ayah: requiredParentSchema,
   ibu: requiredParentSchema,
-  wali: optionalParentSchema.optional(),
+  wali: requiredParentSchema, // Changed from optionalParentSchema.optional()
 
   nomorTeleponAyah: z.string().optional()
     .refine(val => !val || (val.startsWith("+62") && val.length >= 11 && val.length <= 15 && /^\+62\d+$/.test(val)), { message: "Format nomor Ayah salah (contoh: +6281234567890)" }),
@@ -159,5 +139,7 @@ export const modaTransportasiOptions = [
   { id: "lainnya", label: "Lainnya" },
 ] as const;
 
+
+    
 
     
