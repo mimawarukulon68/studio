@@ -4,11 +4,9 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, type FieldPath, type FieldErrors, type FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { format } from 'date-fns';
-import { CalendarIcon, ArrowLeft, ArrowRight, Check, UserRound, User as UserIcon, ShieldCheck, Phone, XIcon, ChevronsUpDown, CheckIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, UserRound, User as UserIcon, ShieldCheck, Phone, XIcon, ChevronsUpDown, CheckIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -37,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { CustomDatePicker } from '@/components/ui/custom-date-picker';
 import { cn } from '@/lib/utils';
 import {
   registrationSchema,
@@ -202,7 +201,7 @@ export function RegistrationForm() {
         const response = await fetch('/api/wilayah/provinces');
         if (!response.ok) throw new Error('Gagal memuat provinsi dari proxy. Status: ' + response.status);
         const responseData = await response.json();
-        const data: Wilayah[] = responseData.data; // Access data from the 'data' property
+        const data: Wilayah[] = responseData.data; 
         setProvinces(data.map(p => ({ value: p.code, label: p.name })));
       } catch (error) {
         console.error("Error fetching provinces via proxy:", error);
@@ -223,11 +222,16 @@ export function RegistrationForm() {
         setRegencies([]);
         setDistricts([]);
         setVillages([]);
+        form.setValue("kabupaten", "");
+        form.setValue("kecamatan", "");
+        form.setValue("desaKelurahan", "");
+        form.setValue("kodePos", "");
+        setIsKodePosReadOnly(false);
         try {
           const response = await fetch(`/api/wilayah/regencies/${selectedProvinceCode}`);
           if (!response.ok) throw new Error('Gagal memuat kabupaten/kota dari proxy. Status: ' + response.status);
           const responseData = await response.json();
-          const data: Wilayah[] = responseData.data; // Access data from the 'data' property
+          const data: Wilayah[] = responseData.data; 
           setRegencies(data.map(r => ({ value: r.code, label: r.name })));
         } catch (error) {
           console.error("Error fetching regencies via proxy:", error);
@@ -243,7 +247,7 @@ export function RegistrationForm() {
       setDistricts([]);
       setVillages([]);
     }
-  }, [selectedProvinceCode, toast]);
+  }, [selectedProvinceCode, toast, form]);
 
   // Fetch districts when regency changes
   useEffect(() => {
@@ -252,11 +256,15 @@ export function RegistrationForm() {
         setDistrictsLoading(true);
         setDistricts([]);
         setVillages([]);
+        form.setValue("kecamatan", "");
+        form.setValue("desaKelurahan", "");
+        form.setValue("kodePos", "");
+        setIsKodePosReadOnly(false);
         try {
           const response = await fetch(`/api/wilayah/districts/${selectedRegencyCode}`);
           if (!response.ok) throw new Error('Gagal memuat kecamatan dari proxy. Status: ' + response.status);
           const responseData = await response.json();
-          const data: Wilayah[] = responseData.data; // Access data from the 'data' property
+          const data: Wilayah[] = responseData.data; 
           setDistricts(data.map(d => ({ value: d.code, label: d.name })));
         } catch (error) {
           console.error("Error fetching districts via proxy:", error);
@@ -271,7 +279,7 @@ export function RegistrationForm() {
       setDistricts([]);
       setVillages([]);
     }
-  }, [selectedRegencyCode, toast]);
+  }, [selectedRegencyCode, toast, form]);
 
   // Fetch villages when district changes
   useEffect(() => {
@@ -279,11 +287,14 @@ export function RegistrationForm() {
       const fetchVillages = async () => {
         setVillagesLoading(true);
         setVillages([]);
+        form.setValue("desaKelurahan", "");
+        form.setValue("kodePos", "");
+        setIsKodePosReadOnly(false);
         try {
           const response = await fetch(`/api/wilayah/villages/${selectedDistrictCode}`);
            if (!response.ok) throw new Error('Gagal memuat desa/kelurahan dari proxy. Status: ' + response.status);
           const responseData = await response.json();
-          const data: VillageWilayah[] = responseData.data; // Access data from the 'data' property
+          const data: VillageWilayah[] = responseData.data; 
           setVillages(data.map(v => ({ value: v.code, label: v.name, postalCode: v.postal_code })));
         } catch (error) {
           console.error("Error fetching villages via proxy:", error);
@@ -297,7 +308,7 @@ export function RegistrationForm() {
     } else {
       setVillages([]);
     }
-  }, [selectedDistrictCode, toast]);
+  }, [selectedDistrictCode, toast, form]);
 
 
   const getFieldsForStep = (step: number): FieldPath<RegistrationFormData>[] => {
@@ -403,10 +414,26 @@ export function RegistrationForm() {
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isCurrentStepValid }));
 
     if (action === 'next') {
-      if (currentStep < TOTAL_STEPS) setCurrentStep(prev => prev + 1);
+      if (isCurrentStepValid && currentStep < TOTAL_STEPS) {
+        setCurrentStep(prev => prev + 1);
+      } else if (!isCurrentStepValid) {
+        toast({
+          title: "Formulir Belum Lengkap",
+          description: "Mohon periksa kembali isian Anda pada langkah ini sebelum melanjutkan.",
+          variant: "destructive",
+        });
+      }
     } else if (action === 'prev') {
       if (currentStep > 1) setCurrentStep(prev => prev - 1);
     } else if (action === 'jumpTo' && targetStep !== undefined) {
+        if (targetStep > stepBeingLeft && !isCurrentStepValid) {
+           toast({
+             title: "Langkah Belum Selesai",
+             description: `Mohon lengkapi dahulu Langkah ${stepBeingLeft} sebelum ke Langkah ${targetStep}.`,
+             variant: "destructive",
+           });
+           return;
+        }
         setCurrentStep(targetStep);
     }
   };
@@ -442,13 +469,14 @@ export function RegistrationForm() {
       title: "Pendaftaran Terkirim!",
       description: "Data Anda telah berhasil direkam.",
     });
-    const allComplete: Record<number, boolean> = {};
-    for (let i = 1; i <= TOTAL_STEPS; i++) allComplete[i] = true;
-    setStepCompletionStatus(allComplete);
+    // Potentially reset form or redirect user
+    // form.reset(); // Optional: reset form fields
+    // setCurrentStep(1); // Optional: go back to first step
+    // setStepCompletionStatus({}); // Optional: clear completion status
   };
 
   const onFormError = async (errors: FieldErrors<RegistrationFormData>) => {
-    console.log("Form errors:", errors); // This line logs the errors
+    console.log("Form errors:", errors); 
     toast({
       title: "Formulir Belum Lengkap",
       description: "Mohon periksa kembali isian Anda pada langkah yang ditandai.",
@@ -753,17 +781,24 @@ export function RegistrationForm() {
                   onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                 /></FormControl><FormMessage /></FormItem>
               )} />
-              <FormField control={form.control} name="tanggalLahir" render={({ field }) => (
-                  <FormItem className="flex flex-col"><FormLabel>Tanggal Lahir</FormLabel>
-                    <Popover><PopoverTrigger asChild><FormControl>
-                          <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, "PPP") : <span>Pilih tanggal</span>}
-                          </Button></FormControl></PopoverTrigger>
-                      <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("2000-01-01")} initialFocus /></PopoverContent>
-                    </Popover><FormMessage />
+              <FormField
+                control={form.control}
+                name="tanggalLahir"
+                render={({ field, fieldState }) => (
+                  <FormItem className="flex flex-col">
+                    <FormControl>
+                       <CustomDatePicker
+                          id="tanggalLahir"
+                          label="Tanggal Lahir"
+                          initialDate={field.value}
+                          onDateChange={(date) => field.onChange(date)}
+                          ariaInvalid={!!fieldState.error}
+                       />
+                    </FormControl>
+                    <FormMessage />
                   </FormItem>
-                )} />
+                )}
+              />
               <FormField control={form.control} name="agama" render={({ field }) => (
                 <FormItem><FormLabel>Agama</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih agama" /></SelectTrigger></FormControl><SelectContent>{agamaOptionsList.map(ag => <SelectItem key={ag} value={ag}>{ag}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
               )} />
@@ -822,9 +857,8 @@ export function RegistrationForm() {
                                   value={province.label}
                                   key={province.value}
                                   onSelect={() => {
-                                    console.log("PROVINSI ONSELECT: Selected value:", province.label, "Actual value from option:", province.value);
-                                    form.setValue("provinsi", province.label);
-                                    setSelectedProvinceCode(province.value);
+                                    form.setValue("provinsi", province.label === field.value ? "" : province.label);
+                                    setSelectedProvinceCode(province.label === field.value ? null : province.value);
                                     form.setValue("kabupaten", "");
                                     setSelectedRegencyCode(null);
                                     form.setValue("kecamatan", "");
@@ -837,7 +871,6 @@ export function RegistrationForm() {
                                     setVillages([]);
                                     setProvincePopoverOpen(false);
                                     form.trigger("provinsi");
-                                    form.trigger("kabupaten");
                                   }}
                                 >
                                   <CheckIcon className={cn("mr-2 h-4 w-4", province.label === field.value ? "opacity-100" : "opacity-0")} />
@@ -885,9 +918,8 @@ export function RegistrationForm() {
                                   value={regency.label}
                                   key={regency.value}
                                   onSelect={() => {
-                                    console.log("KABUPATEN ONSELECT: Selected value:", regency.label, "Actual value from option:", regency.value);
-                                    form.setValue("kabupaten", regency.label);
-                                    setSelectedRegencyCode(regency.value);
+                                    form.setValue("kabupaten", regency.label === field.value ? "" : regency.label);
+                                    setSelectedRegencyCode(regency.label === field.value ? null : regency.value);
                                     form.setValue("kecamatan", "");
                                     setSelectedDistrictCode(null);
                                     form.setValue("desaKelurahan", "");
@@ -897,7 +929,6 @@ export function RegistrationForm() {
                                     setVillages([]);
                                     setRegencyPopoverOpen(false);
                                     form.trigger("kabupaten");
-                                    form.trigger("kecamatan");
                                   }}
                                 >
                                   <CheckIcon className={cn("mr-2 h-4 w-4", regency.label === field.value ? "opacity-100" : "opacity-0")} />
@@ -945,16 +976,14 @@ export function RegistrationForm() {
                                   value={district.label}
                                   key={district.value}
                                   onSelect={() => {
-                                     console.log("KECAMATAN ONSELECT: Selected value:", district.label, "Actual value from option:", district.value);
-                                    form.setValue("kecamatan", district.label);
-                                    setSelectedDistrictCode(district.value);
+                                    form.setValue("kecamatan", district.label === field.value ? "" : district.label);
+                                    setSelectedDistrictCode(district.label === field.value ? null : district.value);
                                     form.setValue("desaKelurahan", "");
                                     form.setValue("kodePos", "");
                                     setIsKodePosReadOnly(false);
                                     setVillages([]);
                                     setDistrictPopoverOpen(false);
                                     form.trigger("kecamatan");
-                                    form.trigger("desaKelurahan");
                                   }}
                                 >
                                   <CheckIcon className={cn("mr-2 h-4 w-4", district.label === field.value ? "opacity-100" : "opacity-0")} />
@@ -1002,9 +1031,12 @@ export function RegistrationForm() {
                                   value={village.label}
                                   key={village.value}
                                   onSelect={() => {
-                                    console.log("DESA/KELURAHAN ONSELECT: Selected value:", village.label, "Actual value from option:", village.value, "Postal Code:", village.postalCode);
-                                    form.setValue("desaKelurahan", village.label);
-                                    if (village.postalCode) {
+                                    const currentLabel = field.value;
+                                    form.setValue("desaKelurahan", village.label === currentLabel ? "" : village.label);
+                                    if (village.label === currentLabel) {
+                                       form.setValue("kodePos", "");
+                                       setIsKodePosReadOnly(false);
+                                    } else if (village.postalCode) {
                                       form.setValue("kodePos", village.postalCode);
                                       setIsKodePosReadOnly(true);
                                     } else {
