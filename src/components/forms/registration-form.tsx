@@ -170,12 +170,37 @@ export function RegistrationForm() {
     if (direction === 'next') {
       const fieldsToValidate = getFieldsForStep(currentStep);
       let isCurrentStepValid = true;
+
       if (fieldsToValidate.length > 0) {
-        isCurrentStepValid = await form.trigger(fieldsToValidate);
-        if (currentStep === 5) {
+        // Always trigger validation to update RHF's internal state and show field errors
+        const triggeredValidity = await form.trigger(fieldsToValidate);
+        isCurrentStepValid = triggeredValidity; // Start with RHF's assessment
+
+        // Explicit validation for step 4 (Wali) if RHF says it's valid
+        if (currentStep === 4) {
+          let manualStep4Valid = true;
+          const waliData = form.getValues("wali");
+          if (waliData) {
+            const { nama, nik, tahunLahir, pendidikan, pekerjaan, penghasilan, pendidikanLainnya, pekerjaanLainnya } = waliData;
+            if (pendidikan === "Lainnya" && (!pendidikanLainnya || pendidikanLainnya.trim() === "")) {
+              manualStep4Valid = false;
+            }
+            if (pekerjaan === "Lainnya" && (!pekerjaanLainnya || pekerjaanLainnya.trim() === "")) {
+              manualStep4Valid = false;
+            }
+            const isAnyWaliDetailFilled = nik || tahunLahir || pendidikan || pekerjaan || penghasilan || pendidikanLainnya || pekerjaanLainnya;
+            if (isAnyWaliDetailFilled && (!nama || nama.trim() === "")) {
+              manualStep4Valid = false;
+            }
+          }
+          // Combine RHF's trigger result with manual checks
+          isCurrentStepValid = triggeredValidity && manualStep4Valid;
+        }
+        // Explicit validation for step 5 (Phone numbers)
+        else if (currentStep === 5) {
             const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
             if (!nomorTeleponAyah && !nomorTeleponIbu && !nomorTeleponWali) {
-                isCurrentStepValid = false;
+                isCurrentStepValid = false; // Override if all phones are empty
             }
         }
       }
@@ -223,12 +248,9 @@ export function RegistrationForm() {
       }
       
       if (i === 5) {
-        // Explicitly check the phone rule for step 5 if not already caught by field path errors
         if (errors.nomorTeleponAyah?.message?.includes("Minimal satu nomor telepon")) {
           currentStepHasError = true;
         }
-        // If form submission failed (errors object is not empty) AND phones are actually empty,
-        // step 5 is definitely a problem, even if Zod error wasn't pathed to nomorTeleponAyah perfectly.
         else if (Object.keys(errors).length > 0) {
             const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
             if (!nomorTeleponAyah && !nomorTeleponIbu && !nomorTeleponWali) {
@@ -614,7 +636,7 @@ export function RegistrationForm() {
               Berikutnya <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           ) : (
-            <Button type="submit" className="w-full md:w-auto text-lg py-6 ml-auto" disabled={form.formState.isSubmitting}>
+            <Button type="submit" className="w-full md:w-auto text-lg py-6 ml-auto" disabled={form.formState.isSubmitting || form.formState.isSubmitSuccessful}>
               {form.formState.isSubmitting ? 'Mengirim...' : 'Kirim Pendaftaran'}
             </Button>
           )}
