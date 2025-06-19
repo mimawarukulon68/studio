@@ -318,25 +318,31 @@ export function RegistrationForm() {
     await form.trigger(fieldsToValidate);
 
     let isStepValid = true;
+    // Custom logic for step 1 if needed, otherwise general check
     if (stepNumber === 1) {
       isStepValid = !fieldsToValidate.some(field => {
           const error = getFieldError(field, form.formState.errors);
+          // Special conditions for conditional fields
           if (field === "agamaLainnya" && form.getValues("agama") !== "Lainnya") return false;
           if (field === "tempatTinggalLainnya" && form.getValues("tempatTinggal") !== "Lainnya") return false;
           if (field === "modaTransportasiLainnya" && !form.getValues("modaTransportasi").includes("lainnya")) return false;
-          if (field === "alamatJalan") return false; 
+          if (field === "alamatJalan") return false; // alamatJalan is optional
           return !!error;
       });
     } else if (stepNumber === 2) { // Ayah
         const ayahData = form.getValues().ayah;
+        // Only validate if 'nama' is filled, otherwise considered optional step (unless submitting)
         const validationResult = requiredParentSchema.safeParse(ayahData);
         isStepValid = validationResult.success;
+
         if(!isStepValid && validationResult.error) {
+            // Set errors manually for RHF to pick up
             validationResult.error.errors.forEach(err => {
                 const path = `ayah.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
                  form.setError(path, { type: 'manual', message: err.message });
             });
         } else if (isStepValid ) {
+            // Clear errors if step becomes valid
             const ayahFields = getFieldsForStep(stepNumber);
             ayahFields.forEach(field => form.clearErrors(field));
         }
@@ -355,6 +361,7 @@ export function RegistrationForm() {
         }
     } else if (stepNumber === 4) { // Wali
         const waliData = form.getValues().wali;
+        // Wali is also validated using requiredParentSchema (nama is mandatory)
         const validationResult = requiredParentSchema.safeParse(waliData);
         isStepValid = validationResult.success;
          if(!isStepValid && validationResult.error) {
@@ -366,17 +373,22 @@ export function RegistrationForm() {
             const waliFields = getFieldsForStep(stepNumber);
             waliFields.forEach(field => form.clearErrors(field));
         }
-    } else if (stepNumber === 5) {
+    } else if (stepNumber === 5) { // Kontak
+        // This step's validation depends on at least one phone number being present and valid if present
         const contactData = form.getValues();
         const atLeastOnePhone = !!contactData.nomorTeleponAyah || !!contactData.nomorTeleponIbu || !!contactData.nomorTeleponWali;
 
         if (!atLeastOnePhone) {
+            // This error is primarily for submission. For step navigation, don't block.
+            // But for visual feedback, it's invalid if no phone.
             form.setError("nomorTeleponAyah", { type: "manual", message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi." });
             isStepValid = false;
         } else {
-            if (form.formState.errors.nomorTeleponAyah?.type === 'manual' && form.formState.errors.nomorTeleponAyah?.message?.startsWith("Minimal satu nomor")) {
+            // Clear the general "at least one phone" error if one is now provided
+             if (form.formState.errors.nomorTeleponAyah?.type === 'manual' && form.formState.errors.nomorTeleponAyah?.message?.startsWith("Minimal satu nomor")) {
                 form.clearErrors("nomorTeleponAyah");
             }
+            // Validate individual phone numbers if they are filled
             const phoneFieldsToValidate: FieldPath<RegistrationFormData>[] = [];
             if (contactData.nomorTeleponAyah) phoneFieldsToValidate.push("nomorTeleponAyah");
             if (contactData.nomorTeleponIbu) phoneFieldsToValidate.push("nomorTeleponIbu");
@@ -384,9 +396,13 @@ export function RegistrationForm() {
             
             if (phoneFieldsToValidate.length > 0) {
               await form.trigger(phoneFieldsToValidate);
+              // Check for errors on the triggered fields
               isStepValid = !phoneFieldsToValidate.some(field => !!getFieldError(field, form.formState.errors));
             } else {
-              isStepValid = true; 
+              isStepValid = true; // No phones filled, but at least one was required (this path implies one IS filled but maybe got cleared)
+                                   // This logic path (else part) might need refinement based on exact desired behavior for step 5 when navigating away vs submitting.
+                                   // For submission, the `superRefine` in Zod handles the "at least one phone" globally.
+                                   // For step navigation, if all are empty, it's invalid. If one is filled and valid, it's valid.
             }
         }
     }
@@ -395,7 +411,7 @@ export function RegistrationForm() {
 
 
   const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
-    setIsAttemptingSubmit(false); // Ensure this is false during any step navigation
+    setIsAttemptingSubmit(false); 
 
     const stepBeingLeft = currentStep;
     const isStepBeingLeftValid = await validateStep(stepBeingLeft);
@@ -417,16 +433,14 @@ export function RegistrationForm() {
 
   const onFormSubmit = async (data: RegistrationFormData) => {
     if (!isAttemptingSubmit) {
-      // RHF might call this if schema is valid due to onBlur, but not a direct submit.
-      // Update step completion for UI feedback.
-      const tempCompletionStatus: Record<number, boolean | undefined> = {};
-      for (let i = 1; i <= TOTAL_STEPS; i++) {
-          tempCompletionStatus[i] = await validateStep(i);
-      }
-      setStepCompletionStatus(tempCompletionStatus);
-      return; // Do not proceed with full submission logic
+      // This function might be called by RHF after a form.trigger() if the triggered fields
+      // make the form (or a part of it that RHF is tracking) valid.
+      // We don't want to perform a full submission or re-validate all steps here.
+      // The stepCompletionStatus for the step being left is handled by processStep.
+      return;
     }
 
+    // This is an actual submission attempt
     let allStepsValid = true;
     const newCompletionStatus: Record<number, boolean | undefined> = {};
     for (let i = 1; i <= TOTAL_STEPS; i++) {
@@ -450,27 +464,27 @@ export function RegistrationForm() {
       });
     } else {
       console.log("Form submitted successfully:", data);
+      // Here you would typically send the data to your backend
       toast({
         title: "Pendaftaran Terkirim!",
         description: "Data Anda telah berhasil direkam.",
       });
-      // Optionally: form.reset(); setCurrentStep(1);
+      // form.reset(); // Optionally reset form
+      // setCurrentStep(1); // Optionally go back to first step
     }
     setIsAttemptingSubmit(false); // Reset the flag
   };
 
   const onFormError = async (errors: FieldErrors<RegistrationFormData>) => {
     if (!isAttemptingSubmit) {
-      // RHF called this due to background validation, not a direct submit.
-      // Update step completion for UI feedback.
-      const tempCompletionStatus: Record<number, boolean | undefined> = {};
-       for (let i = 1; i <= TOTAL_STEPS; i++) {
-          tempCompletionStatus[i] = await validateStep(i);
-      }
-      setStepCompletionStatus(tempCompletionStatus);
-      return; // Do not proceed with full error handling logic
+      // This function might be called by RHF after a form.trigger() if the triggered fields
+      // cause validation errors according to RHF.
+      // We don't want to show global error toasts or re-validate all steps here.
+      // The stepCompletionStatus for the step being left is handled by processStep.
+      return;
     }
     
+    // This is an actual submission attempt that failed RHF validation
     console.log("Form errors on submit (from RHF):", errors);
     toast({
       title: "Formulir Belum Lengkap",
@@ -478,17 +492,20 @@ export function RegistrationForm() {
       variant: "destructive",
     });
 
+    // Update completion status for all steps based on current form state
     const newCompletionStatus: Record<number, boolean | undefined> = {};
-    let firstErrorStep = TOTAL_STEPS + 1;
+    let firstErrorStep = TOTAL_STEPS + 1; // Initialize to a value greater than total steps
 
     for (let i = 1; i <= TOTAL_STEPS; i++) {
-      const isStepCurrentlyValid = await validateStep(i);
+      const isStepCurrentlyValid = await validateStep(i); // Re-validate to ensure UI consistency
       newCompletionStatus[i] = isStepCurrentlyValid;
       if (!isStepCurrentlyValid && i < firstErrorStep) {
         firstErrorStep = i;
       }
     }
     setStepCompletionStatus(newCompletionStatus);
+
+    // Navigate to the first step with an error
     if (firstErrorStep <= TOTAL_STEPS) {
       setCurrentStep(firstErrorStep);
     }
@@ -502,7 +519,7 @@ export function RegistrationForm() {
           const isCurrent = currentStep === step.num;
           const validationState = stepCompletionStatus[step.num];
           const successfullyValidated = validationState === true;
-          const attemptedAndInvalid = validationState === false;
+          const attemptedAndInvalid = validationState === false; // Step was attempted and found invalid
           const StepIcon = step.Icon;
 
           return (
@@ -511,32 +528,34 @@ export function RegistrationForm() {
               className={cn(
                 "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-colors text-center relative shadow-sm hover:border-primary/70",
                 isCurrent
-                  ? (attemptedAndInvalid
+                  ? (attemptedAndInvalid // If current and known to be invalid
                       ? "bg-primary text-primary-foreground border-destructive ring-2 ring-destructive ring-offset-background"
-                      : "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-primary ring-offset-background")
-                  : successfullyValidated
+                      : "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-primary ring-offset-background") // Current and valid or not yet attempted
+                  : successfullyValidated // Not current, but successfully validated
                   ? "border-green-500 bg-card"
-                  : attemptedAndInvalid
+                  : attemptedAndInvalid // Not current, but attempted and invalid
                   ? "border-destructive bg-card"
-                  : "border-border bg-card",
+                  : "border-border bg-card", // Not current, not yet attempted or status unknown
               )}
               onClick={() => processStep('jumpTo', step.num)}
               title={step.title}
               aria-current={isCurrent ? "step" : undefined}
             >
-              {(successfullyValidated || (isCurrent && successfullyValidated)) && (
+              {/* Show Check if successfully validated (current or not) */}
+              {(successfullyValidated) && (
                 <Check className="w-4 h-4 absolute top-0.5 right-0.5 text-green-600" strokeWidth={3} />
               )}
-              {(attemptedAndInvalid || (isCurrent && attemptedAndInvalid)) && (
+              {/* Show X if attempted and invalid (current or not) */}
+              {(attemptedAndInvalid) && (
                 <XIcon className="w-4 h-4 absolute top-0.5 right-0.5 text-destructive" strokeWidth={3} />
               )}
 
               <StepIcon className={cn(
                   "w-5 h-5 mb-0.5",
-                  isCurrent ? "text-primary-foreground" :
-                  attemptedAndInvalid ? "text-destructive" :
-                  successfullyValidated ? "text-green-600" :
-                  "text-primary"
+                  isCurrent ? "text-primary-foreground" : // Icon color for current step
+                  attemptedAndInvalid ? "text-destructive" : // Icon color for invalid non-current step
+                  successfullyValidated ? "text-green-600" : // Icon color for valid non-current step
+                  "text-primary" // Default icon color for non-current, non-validated steps
               )} />
               <span className={cn(
                   "text-xs leading-tight font-medium",
@@ -1159,3 +1178,4 @@ export function RegistrationForm() {
 }
 
     
+
