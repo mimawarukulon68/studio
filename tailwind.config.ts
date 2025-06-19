@@ -97,8 +97,8 @@ export default {
   },
   plugins: [
     require('tailwindcss-animate'),
-    function ({ addVariant }) {
+    function ({ addVariant }: { addVariant: any }) {
       addVariant('aria-invalid', '&[aria-invalid="true"]');
-    }
+    },
   ],
 } satisfies Config;

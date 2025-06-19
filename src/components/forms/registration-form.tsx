@@ -107,7 +107,6 @@ export function RegistrationForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [stepCompletionStatus, setStepCompletionStatus] = useState<Record<number, boolean | undefined>>({});
 
-  // State for wilayah data and loading states
   const [provinces, setProvinces] = useState<WilayahOption[]>([]);
   const [regencies, setRegencies] = useState<WilayahOption[]>([]);
   const [districts, setDistricts] = useState<WilayahOption[]>([]);
@@ -124,7 +123,6 @@ export function RegistrationForm() {
 
   const [isKodePosReadOnly, setIsKodePosReadOnly] = useState(false);
   
-  // Popover open states
   const [provincePopoverOpen, setProvincePopoverOpen] = useState(false);
   const [regencyPopoverOpen, setRegencyPopoverOpen] = useState(false);
   const [districtPopoverOpen, setDistrictPopoverOpen] = useState(false);
@@ -193,7 +191,6 @@ export function RegistrationForm() {
     },
   });
 
-  // Fetch provinces
   useEffect(() => {
     const fetchProvinces = async () => {
       setProvincesLoading(true);
@@ -214,7 +211,6 @@ export function RegistrationForm() {
     fetchProvinces();
   }, [toast]);
 
-  // Fetch regencies when province changes
   useEffect(() => {
     if (selectedProvinceCode) {
       const fetchRegencies = async () => {
@@ -249,7 +245,6 @@ export function RegistrationForm() {
     }
   }, [selectedProvinceCode, toast, form]);
 
-  // Fetch districts when regency changes
   useEffect(() => {
     if (selectedRegencyCode) {
       const fetchDistricts = async () => {
@@ -281,7 +276,6 @@ export function RegistrationForm() {
     }
   }, [selectedRegencyCode, toast, form]);
 
-  // Fetch villages when district changes
   useEffect(() => {
     if (selectedDistrictCode) {
       const fetchVillages = async () => {
@@ -408,9 +402,8 @@ export function RegistrationForm() {
   };
 
 
- const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
+  const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     const stepBeingLeft = currentStep;
-    // Validate the step being left to update its visual status, but don't block navigation
     const isStepBeingLeftValid = await validateStep(stepBeingLeft);
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
 
@@ -458,10 +451,6 @@ export function RegistrationForm() {
       title: "Pendaftaran Terkirim!",
       description: "Data Anda telah berhasil direkam.",
     });
-    // Potentially reset form or redirect user
-    // form.reset(); // Optional: reset form fields
-    // setCurrentStep(1); // Optional: go back to first step
-    // setStepCompletionStatus({}); // Optional: clear completion status
   };
 
   const onFormError = async (errors: FieldErrors<RegistrationFormData>) => {
@@ -830,12 +819,12 @@ export function RegistrationForm() {
                             className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
                             disabled={provincesLoading || provinces.length === 0}
                           >
-                            {field.value ? field.value : (provincesLoading ? "Memuat..." : "Pilih Provinsi")}
+                            {field.value ? provinces.find(p => p.label === field.value)?.label : (provincesLoading ? "Memuat..." : "Pilih Provinsi")}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5}>
                         <Command>
                           <CommandInput placeholder="Cari provinsi..." />
                           <CommandList>
@@ -845,9 +834,10 @@ export function RegistrationForm() {
                                 <CommandItem
                                   value={province.label}
                                   key={province.value}
-                                  onSelect={() => {
-                                    form.setValue("provinsi", province.label === field.value ? "" : province.label);
-                                    setSelectedProvinceCode(province.label === field.value ? null : province.value);
+                                  onSelect={(currentValue) => {
+                                    const selectedOption = provinces.find(p => p.label.toLowerCase() === currentValue.toLowerCase());
+                                    form.setValue("provinsi", selectedOption ? selectedOption.label : "");
+                                    setSelectedProvinceCode(selectedOption ? selectedOption.value : null);
                                     form.setValue("kabupaten", "");
                                     setSelectedRegencyCode(null);
                                     form.setValue("kecamatan", "");
@@ -891,12 +881,12 @@ export function RegistrationForm() {
                             disabled={!selectedProvinceCode || regenciesLoading || regencies.length === 0}
                             className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
                           >
-                            {field.value ? field.value : (regenciesLoading ? "Memuat..." : "Pilih Kabupaten/Kota")}
+                            {field.value ? regencies.find(r => r.label === field.value)?.label : (regenciesLoading ? "Memuat..." : "Pilih Kabupaten/Kota")}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5}>
                         <Command>
                           <CommandInput placeholder="Cari kabupaten/kota..." />
                           <CommandList>
@@ -906,9 +896,10 @@ export function RegistrationForm() {
                                 <CommandItem
                                   value={regency.label}
                                   key={regency.value}
-                                  onSelect={() => {
-                                    form.setValue("kabupaten", regency.label === field.value ? "" : regency.label);
-                                    setSelectedRegencyCode(regency.label === field.value ? null : regency.value);
+                                  onSelect={(currentValue) => {
+                                    const selectedOption = regencies.find(r => r.label.toLowerCase() === currentValue.toLowerCase());
+                                    form.setValue("kabupaten", selectedOption ? selectedOption.label : "");
+                                    setSelectedRegencyCode(selectedOption ? selectedOption.value : null);
                                     form.setValue("kecamatan", "");
                                     setSelectedDistrictCode(null);
                                     form.setValue("desaKelurahan", "");
@@ -949,12 +940,12 @@ export function RegistrationForm() {
                             disabled={!selectedRegencyCode || districtsLoading || districts.length === 0}
                             className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
                           >
-                            {field.value ? field.value : (districtsLoading ? "Memuat..." : "Pilih Kecamatan")}
+                            {field.value ? districts.find(d => d.label === field.value)?.label : (districtsLoading ? "Memuat..." : "Pilih Kecamatan")}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5}>
                         <Command>
                           <CommandInput placeholder="Cari kecamatan..." />
                           <CommandList>
@@ -964,9 +955,10 @@ export function RegistrationForm() {
                                 <CommandItem
                                   value={district.label}
                                   key={district.value}
-                                  onSelect={() => {
-                                    form.setValue("kecamatan", district.label === field.value ? "" : district.label);
-                                    setSelectedDistrictCode(district.label === field.value ? null : district.value);
+                                  onSelect={(currentValue) => {
+                                    const selectedOption = districts.find(d => d.label.toLowerCase() === currentValue.toLowerCase());
+                                    form.setValue("kecamatan", selectedOption ? selectedOption.label : "");
+                                    setSelectedDistrictCode(selectedOption ? selectedOption.value : null);
                                     form.setValue("desaKelurahan", "");
                                     form.setValue("kodePos", "");
                                     setIsKodePosReadOnly(false);
@@ -1004,12 +996,12 @@ export function RegistrationForm() {
                             disabled={!selectedDistrictCode || villagesLoading || villages.length === 0}
                             className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
                           >
-                            {field.value ? field.value : (villagesLoading ? "Memuat..." : "Pilih Desa/Kelurahan")}
+                            {field.value ? villages.find(v => v.label === field.value)?.label : (villagesLoading ? "Memuat..." : "Pilih Desa/Kelurahan")}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5}>
                         <Command>
                           <CommandInput placeholder="Cari desa/kelurahan..." />
                           <CommandList>
@@ -1019,14 +1011,11 @@ export function RegistrationForm() {
                                 <CommandItem
                                   value={village.label}
                                   key={village.value}
-                                  onSelect={() => {
-                                    const currentLabel = field.value;
-                                    form.setValue("desaKelurahan", village.label === currentLabel ? "" : village.label);
-                                    if (village.label === currentLabel) {
-                                       form.setValue("kodePos", "");
-                                       setIsKodePosReadOnly(false);
-                                    } else if (village.postalCode) {
-                                      form.setValue("kodePos", village.postalCode);
+                                  onSelect={(currentValue) => {
+                                    const selectedOption = villages.find(v => v.label.toLowerCase() === currentValue.toLowerCase());
+                                    form.setValue("desaKelurahan", selectedOption ? selectedOption.label : "");
+                                    if (selectedOption && selectedOption.postalCode) {
+                                      form.setValue("kodePos", selectedOption.postalCode);
                                       setIsKodePosReadOnly(true);
                                     } else {
                                       form.setValue("kodePos", "");
