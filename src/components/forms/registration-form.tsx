@@ -4,7 +4,12 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, type FieldPath, type FieldErrors, type FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, ArrowRight, Check, UserRound, User as UserIcon, ShieldCheck, Phone, XIcon, ChevronsUpDown, CheckIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, UserRound, User as UserIcon, ShieldCheck, Phone, XIcon, ChevronsUpDown, CheckIcon, CalendarIcon } from 'lucide-react';
+import { IMaskInput } from 'react-imask';
+import IMask from 'imask';
+import { format, parse, isValid as isDateValid, getYear, setYear, startOfDay } from 'date-fns';
+import { id as localeID } from 'date-fns/locale/id';
+
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -26,8 +31,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui/input'; // Still needed for general Input styling reference
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Select,
   SelectContent,
@@ -431,16 +437,11 @@ export function RegistrationForm() {
   };
 
 
-  const onFormSubmit = async (data: RegistrationFormData) => {
+ const onFormSubmit = async (data: RegistrationFormData) => {
     if (!isAttemptingSubmit) {
-      // This function might be called by RHF after a form.trigger() if the triggered fields
-      // make the form (or a part of it that RHF is tracking) valid.
-      // We don't want to perform a full submission or re-validate all steps here.
-      // The stepCompletionStatus for the step being left is handled by processStep.
-      return;
+      return; // Not a true submit attempt, likely RHF background validation
     }
 
-    // This is an actual submission attempt
     let allStepsValid = true;
     const newCompletionStatus: Record<number, boolean | undefined> = {};
     for (let i = 1; i <= TOTAL_STEPS; i++) {
@@ -464,27 +465,19 @@ export function RegistrationForm() {
       });
     } else {
       console.log("Form submitted successfully:", data);
-      // Here you would typically send the data to your backend
       toast({
         title: "Pendaftaran Terkirim!",
         description: "Data Anda telah berhasil direkam.",
       });
-      // form.reset(); // Optionally reset form
-      // setCurrentStep(1); // Optionally go back to first step
     }
-    setIsAttemptingSubmit(false); // Reset the flag
+    setIsAttemptingSubmit(false); 
   };
 
   const onFormError = async (errors: FieldErrors<RegistrationFormData>) => {
     if (!isAttemptingSubmit) {
-      // This function might be called by RHF after a form.trigger() if the triggered fields
-      // cause validation errors according to RHF.
-      // We don't want to show global error toasts or re-validate all steps here.
-      // The stepCompletionStatus for the step being left is handled by processStep.
-      return;
+       return; // Not a true submit attempt
     }
     
-    // This is an actual submission attempt that failed RHF validation
     console.log("Form errors on submit (from RHF):", errors);
     toast({
       title: "Formulir Belum Lengkap",
@@ -492,12 +485,11 @@ export function RegistrationForm() {
       variant: "destructive",
     });
 
-    // Update completion status for all steps based on current form state
     const newCompletionStatus: Record<number, boolean | undefined> = {};
-    let firstErrorStep = TOTAL_STEPS + 1; // Initialize to a value greater than total steps
+    let firstErrorStep = TOTAL_STEPS + 1; 
 
     for (let i = 1; i <= TOTAL_STEPS; i++) {
-      const isStepCurrentlyValid = await validateStep(i); // Re-validate to ensure UI consistency
+      const isStepCurrentlyValid = await validateStep(i); 
       newCompletionStatus[i] = isStepCurrentlyValid;
       if (!isStepCurrentlyValid && i < firstErrorStep) {
         firstErrorStep = i;
@@ -505,21 +497,20 @@ export function RegistrationForm() {
     }
     setStepCompletionStatus(newCompletionStatus);
 
-    // Navigate to the first step with an error
     if (firstErrorStep <= TOTAL_STEPS) {
       setCurrentStep(firstErrorStep);
     }
-    setIsAttemptingSubmit(false); // Reset the flag
+    setIsAttemptingSubmit(false); 
   };
   
   const renderStepIndicators = () => {
     return (
-      <div className="grid grid-cols-5 gap-1 mb-8 rounded-md border shadow-sm p-0.5">
+      <div className="grid grid-cols-5 gap-1 rounded-md border shadow-sm p-0.5">
         {stepsData.map((step) => {
           const isCurrent = currentStep === step.num;
           const validationState = stepCompletionStatus[step.num];
           const successfullyValidated = validationState === true;
-          const attemptedAndInvalid = validationState === false; // Step was attempted and found invalid
+          const attemptedAndInvalid = validationState === false; 
           const StepIcon = step.Icon;
 
           return (
@@ -528,34 +519,32 @@ export function RegistrationForm() {
               className={cn(
                 "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-colors text-center relative shadow-sm hover:border-primary/70",
                 isCurrent
-                  ? (attemptedAndInvalid // If current and known to be invalid
+                  ? (attemptedAndInvalid 
                       ? "bg-primary text-primary-foreground border-destructive ring-2 ring-destructive ring-offset-background"
-                      : "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-primary ring-offset-background") // Current and valid or not yet attempted
-                  : successfullyValidated // Not current, but successfully validated
+                      : "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-primary ring-offset-background") 
+                  : successfullyValidated 
                   ? "border-green-500 bg-card"
-                  : attemptedAndInvalid // Not current, but attempted and invalid
+                  : attemptedAndInvalid 
                   ? "border-destructive bg-card"
-                  : "border-border bg-card", // Not current, not yet attempted or status unknown
+                  : "border-border bg-card", 
               )}
               onClick={() => processStep('jumpTo', step.num)}
               title={step.title}
               aria-current={isCurrent ? "step" : undefined}
             >
-              {/* Show Check if successfully validated (current or not) */}
               {(successfullyValidated) && (
                 <Check className="w-4 h-4 absolute top-0.5 right-0.5 text-green-600" strokeWidth={3} />
               )}
-              {/* Show X if attempted and invalid (current or not) */}
               {(attemptedAndInvalid) && (
                 <XIcon className="w-4 h-4 absolute top-0.5 right-0.5 text-destructive" strokeWidth={3} />
               )}
 
               <StepIcon className={cn(
                   "w-5 h-5 mb-0.5",
-                  isCurrent ? "text-primary-foreground" : // Icon color for current step
-                  attemptedAndInvalid ? "text-destructive" : // Icon color for invalid non-current step
-                  successfullyValidated ? "text-green-600" : // Icon color for valid non-current step
-                  "text-primary" // Default icon color for non-current, non-validated steps
+                  isCurrent ? "text-primary-foreground" : 
+                  attemptedAndInvalid ? "text-destructive" : 
+                  successfullyValidated ? "text-green-600" : 
+                  "text-primary" 
               )} />
               <span className={cn(
                   "text-xs leading-tight font-medium",
@@ -754,400 +743,404 @@ export function RegistrationForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onFormSubmit, onFormError)} className="w-full max-w-3xl space-y-8 p-4 md:p-0">
-        {renderStepIndicators()}
+      <form onSubmit={form.handleSubmit(onFormSubmit, onFormError)} className="w-full max-w-3xl p-4 md:p-0">
+        <div className="sticky top-0 z-30 bg-background py-4 shadow-md mb-8">
+           {renderStepIndicators()}
+        </div>
 
-        {currentStep === 1 && (
-          <Card className="w-full shadow-lg">
-            <CardHeader>
-              <CardTitle className="font-headline text-xl text-center">Identitas Peserta Didik</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <FormField control={form.control} name="namaLengkap" render={({ field }) => (
-                <FormItem><FormLabel>Nama Lengkap</FormLabel><FormControl><Input
-                  placeholder="Sesuai Akta Kelahiran"
-                  {...field}
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="namaPanggilan" render={({ field }) => (
-                <FormItem><FormLabel>Nama Panggilan</FormLabel><FormControl><Input
-                  placeholder="Nama panggilan anda"
-                  {...field}
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="jenisKelamin" render={({ field }) => (
-                <FormItem><FormLabel>Jenis Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih jenis kelamin" /></SelectTrigger></FormControl><SelectContent>{jenisKelaminOptions.map(jk => <SelectItem key={jk} value={jk}>{jk}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="nisn" render={({ field }) => (
-                <FormItem><FormLabel>NISN (Nomor Induk Siswa Nasional)</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={10} placeholder="10 digit NISN" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="nikSiswa" render={({ field }) => (
-                <FormItem><FormLabel>NIK (Nomor Induk Kependudukan)</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={16} placeholder="16 digit NIK (sesuai Kartu Keluarga)" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="tempatLahir" render={({ field }) => (
-                <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input
-                  placeholder="Kota/Kabupaten kelahiran"
-                  {...field}
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField
-                control={form.control}
-                name="tanggalLahir"
-                render={({ field, fieldState }) => (
-                  <FormItem className="flex flex-col">
-                    <FormControl>
-                       <CustomDatePicker
-                          id="tanggalLahir"
-                          label="Tanggal Lahir"
-                          initialDate={field.value}
-                          onDateChange={(date) => field.onChange(date)}
-                          ariaInvalid={!!fieldState.error}
-                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField control={form.control} name="agama" render={({ field }) => (
-                <FormItem><FormLabel>Agama</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih agama" /></SelectTrigger></FormControl><SelectContent>{agamaOptionsList.map(ag => <SelectItem key={ag} value={ag}>{ag}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-              )} />
-              {form.watch('agama') === 'Lainnya' && (
-                <FormField control={form.control} name="agamaLainnya" render={({ field }) => (
-                    <FormItem><FormLabel>Detail Agama Lainnya</FormLabel><FormControl><Input placeholder="Sebutkan agama lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-                  )} />
-              )}
-              <FormField control={form.control} name="anakKe" render={({ field }) => (
-                <FormItem><FormLabel>Anak Keberapa</FormLabel><FormControl><Input type="number" min="1" placeholder="Contoh: 1" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="jumlahSaudaraKandung" render={({ field }) => (
-                <FormItem><FormLabel>Jumlah Saudara Kandung</FormLabel><FormControl><Input type="number" min="0" placeholder="Isi 0 jika tidak punya" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
-              )} />
-              
-              <Separator className="my-4" />
-              <p className="font-medium text-center">Alamat Tempat Tinggal</p>
-
-              <FormField control={form.control} name="tempatTinggal" render={({ field }) => (
-                <FormItem><FormLabel>Tempat Tinggal Saat Ini</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih tempat tinggal" /></SelectTrigger></FormControl><SelectContent>{tempatTinggalOptionsList.map(tt => <SelectItem key={tt} value={tt}>{tt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-              )} />
-              {form.watch('tempatTinggal') === 'Lainnya' && (
-                <FormField control={form.control} name="tempatTinggalLainnya" render={({ field }) => (
-                    <FormItem><FormLabel>Detail Tempat Tinggal Lainnya</FormLabel><FormControl><Input placeholder="Sebutkan tempat tinggal lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-                  )} />
-              )}
-              
-              <FormField
-                control={form.control}
-                name="provinsi"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Provinsi</FormLabel>
-                    <Popover open={provincePopoverOpen} onOpenChange={setProvincePopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
-                            disabled={provincesLoading || provinces.length === 0}
-                          >
-                            {field.value ? provinces.find(p => p.label === field.value)?.label : (provincesLoading ? "Memuat..." : "Pilih Provinsi")}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command>
-                          <CommandInput placeholder="Cari provinsi..." />
-                          <CommandList>
-                            <CommandEmpty>Provinsi tidak ditemukan.</CommandEmpty>
-                            <CommandGroup>
-                              {provinces.map((province) => (
-                                <CommandItem
-                                  value={province.label}
-                                  key={province.value}
-                                  onSelect={(currentValue) => {
-                                    const selectedOption = provinces.find(p => p.label.toLowerCase() === currentValue.toLowerCase());
-                                    form.setValue("provinsi", selectedOption ? selectedOption.label : "");
-                                    setSelectedProvinceCode(selectedOption ? selectedOption.value : null);
-                                    form.setValue("kabupaten", "");
-                                    setSelectedRegencyCode(null);
-                                    form.setValue("kecamatan", "");
-                                    setSelectedDistrictCode(null);
-                                    form.setValue("desaKelurahan", "");
-                                    form.setValue("kodePos", "");
-                                    setIsKodePosReadOnly(false);
-                                    setRegencies([]);
-                                    setDistricts([]);
-                                    setVillages([]);
-                                    setProvincePopoverOpen(false);
-                                    form.trigger("provinsi");
-                                  }}
-                                >
-                                  <CheckIcon className={cn("mr-2 h-4 w-4", province.label === field.value ? "opacity-100" : "opacity-0")} />
-                                  {province.label}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="kabupaten"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Kabupaten/Kota</FormLabel>
-                    <Popover open={regencyPopoverOpen} onOpenChange={setRegencyPopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            disabled={!selectedProvinceCode || regenciesLoading || regencies.length === 0}
-                            className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
-                          >
-                            {field.value ? regencies.find(r => r.label === field.value)?.label : (regenciesLoading ? "Memuat..." : "Pilih Kabupaten/Kota")}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command>
-                          <CommandInput placeholder="Cari kabupaten/kota..." />
-                          <CommandList>
-                            <CommandEmpty>Kabupaten/Kota tidak ditemukan.</CommandEmpty>
-                            <CommandGroup>
-                              {regencies.map((regency) => (
-                                <CommandItem
-                                  value={regency.label}
-                                  key={regency.value}
-                                  onSelect={(currentValue) => {
-                                    const selectedOption = regencies.find(r => r.label.toLowerCase() === currentValue.toLowerCase());
-                                    form.setValue("kabupaten", selectedOption ? selectedOption.label : "");
-                                    setSelectedRegencyCode(selectedOption ? selectedOption.value : null);
-                                    form.setValue("kecamatan", "");
-                                    setSelectedDistrictCode(null);
-                                    form.setValue("desaKelurahan", "");
-                                    form.setValue("kodePos", "");
-                                    setIsKodePosReadOnly(false);
-                                    setDistricts([]);
-                                    setVillages([]);
-                                    setRegencyPopoverOpen(false);
-                                    form.trigger("kabupaten");
-                                  }}
-                                >
-                                  <CheckIcon className={cn("mr-2 h-4 w-4", regency.label === field.value ? "opacity-100" : "opacity-0")} />
-                                  {regency.label}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="kecamatan"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Kecamatan</FormLabel>
-                    <Popover open={districtPopoverOpen} onOpenChange={setDistrictPopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            disabled={!selectedRegencyCode || districtsLoading || districts.length === 0}
-                            className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
-                          >
-                            {field.value ? districts.find(d => d.label === field.value)?.label : (districtsLoading ? "Memuat..." : "Pilih Kecamatan")}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command>
-                          <CommandInput placeholder="Cari kecamatan..." />
-                          <CommandList>
-                            <CommandEmpty>Kecamatan tidak ditemukan.</CommandEmpty>
-                            <CommandGroup>
-                              {districts.map((district) => (
-                                <CommandItem
-                                  value={district.label}
-                                  key={district.value}
-                                  onSelect={(currentValue) => {
-                                    const selectedOption = districts.find(d => d.label.toLowerCase() === currentValue.toLowerCase());
-                                    form.setValue("kecamatan", selectedOption ? selectedOption.label : "");
-                                    setSelectedDistrictCode(selectedOption ? selectedOption.value : null);
-                                    form.setValue("desaKelurahan", "");
-                                    form.setValue("kodePos", "");
-                                    setIsKodePosReadOnly(false);
-                                    setVillages([]);
-                                    setDistrictPopoverOpen(false);
-                                    form.trigger("kecamatan");
-                                  }}
-                                >
-                                  <CheckIcon className={cn("mr-2 h-4 w-4", district.label === field.value ? "opacity-100" : "opacity-0")} />
-                                  {district.label}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="desaKelurahan"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Desa/Kelurahan</FormLabel>
-                    <Popover open={villagePopoverOpen} onOpenChange={setVillagePopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            disabled={!selectedDistrictCode || villagesLoading || villages.length === 0}
-                            className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
-                          >
-                            {field.value ? villages.find(v => v.label === field.value)?.label : (villagesLoading ? "Memuat..." : "Pilih Desa/Kelurahan")}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command>
-                          <CommandInput placeholder="Cari desa/kelurahan..." />
-                          <CommandList>
-                            <CommandEmpty>Desa/Kelurahan tidak ditemukan.</CommandEmpty>
-                            <CommandGroup>
-                              {villages.map((village) => (
-                                <CommandItem
-                                  value={village.label}
-                                  key={village.value}
-                                  onSelect={(currentValue) => {
-                                    const selectedOption = villages.find(v => v.label.toLowerCase() === currentValue.toLowerCase());
-                                    form.setValue("desaKelurahan", selectedOption ? selectedOption.label : "");
-                                    if (selectedOption && selectedOption.postalCode) {
-                                      form.setValue("kodePos", selectedOption.postalCode);
-                                      setIsKodePosReadOnly(true);
-                                    } else {
-                                      form.setValue("kodePos", "");
-                                      setIsKodePosReadOnly(false);
-                                    }
-                                    setVillagePopoverOpen(false);
-                                    form.trigger("desaKelurahan");
-                                    form.trigger("kodePos");
-                                  }}
-                                >
-                                  <CheckIcon className={cn("mr-2 h-4 w-4", village.label === field.value ? "opacity-100" : "opacity-0")} />
-                                  {village.label}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField control={form.control} name="dusun" render={({ field }) => (
-                <FormItem><FormLabel>Dusun</FormLabel><FormControl><Input
-                  placeholder="Nama dusun/dukuh"
-                  {...field}
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="rtRw" render={({ field }) => (
-                <FormItem><FormLabel>RT/RW</FormLabel><FormControl><Input placeholder="Contoh: 001/002" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="alamatJalan" render={({ field }) => (
-                <FormItem><FormLabel>Alamat Jalan</FormLabel><FormControl><Input placeholder="Contoh: Jl. Kenanga No. 27 (Bisa nama jalan saja)" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Kosongkan jika tidak tahu nama jalan.</FormDescription><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="kodePos" render={({ field }) => (
-                <FormItem><FormLabel>Kode Pos</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={5} placeholder="5 digit kode pos" {...field} value={field.value ?? ''} readOnly={isKodePosReadOnly} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <Separator className="my-4" />
-              <FormField control={form.control} name="modaTransportasi" render={() => (
-                <FormItem><FormLabel>Moda Transportasi ke Sekolah</FormLabel>
-                  <div className="space-y-2">
-                  {modaTransportasiOptions.map((option) => (
-                    <FormField key={option.id} control={form.control} name="modaTransportasi"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl><Checkbox checked={field.value?.includes(option.id)}
-                              onCheckedChange={(checked) => {
-                                return checked
-                                  ? field.onChange([...(field.value || []), option.id])
-                                  : field.onChange((field.value || []).filter((value: string) => value !== option.id));
-                              }} /></FormControl>
-                          <FormLabel className="font-normal">{option.label}</FormLabel>
-                        </FormItem>
-                      )} /> ))}
-                  </div><FormMessage /></FormItem>
-              )} />
-              {form.watch('modaTransportasi', []).includes('lainnya') && (
-                <FormField control={form.control} name="modaTransportasiLainnya" render={({ field }) => (
-                  <FormItem><FormLabel>Detail Moda Transportasi Lainnya</FormLabel><FormControl><Input placeholder="Sebutkan moda transportasi lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+        <div className="space-y-8">
+            {currentStep === 1 && (
+            <Card className="w-full shadow-lg">
+                <CardHeader>
+                <CardTitle className="font-headline text-xl text-center">Identitas Peserta Didik</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                <FormField control={form.control} name="namaLengkap" render={({ field }) => (
+                    <FormItem><FormLabel>Nama Lengkap</FormLabel><FormControl><Input
+                    placeholder="Sesuai Akta Kelahiran"
+                    {...field}
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                    /></FormControl><FormMessage /></FormItem>
                 )} />
-              )}
-            </CardContent>
-          </Card>
-        )}
+                <FormField control={form.control} name="namaPanggilan" render={({ field }) => (
+                    <FormItem><FormLabel>Nama Panggilan</FormLabel><FormControl><Input
+                    placeholder="Nama panggilan anda"
+                    {...field}
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                    /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="jenisKelamin" render={({ field }) => (
+                    <FormItem><FormLabel>Jenis Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih jenis kelamin" /></SelectTrigger></FormControl><SelectContent>{jenisKelaminOptions.map(jk => <SelectItem key={jk} value={jk}>{jk}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="nisn" render={({ field }) => (
+                    <FormItem><FormLabel>NISN (Nomor Induk Siswa Nasional)</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={10} placeholder="10 digit NISN" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="nikSiswa" render={({ field }) => (
+                    <FormItem><FormLabel>NIK (Nomor Induk Kependudukan)</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={16} placeholder="16 digit NIK (sesuai Kartu Keluarga)" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="tempatLahir" render={({ field }) => (
+                    <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input
+                    placeholder="Kota/Kabupaten kelahiran"
+                    {...field}
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                    /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField
+                    control={form.control}
+                    name="tanggalLahir"
+                    render={({ field, fieldState }) => (
+                    <FormItem className="flex flex-col">
+                        <CustomDatePicker
+                            id="tanggalLahir"
+                            label="Tanggal Lahir"
+                            initialValue={field.value}
+                            onDateChange={(dateStr) => field.onChange(dateStr)}
+                            ariaInvalid={!!fieldState.error}
+                            disabled={field.disabled}
+                        />
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField control={form.control} name="agama" render={({ field }) => (
+                    <FormItem><FormLabel>Agama</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih agama" /></SelectTrigger></FormControl><SelectContent>{agamaOptionsList.map(ag => <SelectItem key={ag} value={ag}>{ag}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                )} />
+                {form.watch('agama') === 'Lainnya' && (
+                    <FormField control={form.control} name="agamaLainnya" render={({ field }) => (
+                        <FormItem><FormLabel>Detail Agama Lainnya</FormLabel><FormControl><Input placeholder="Sebutkan agama lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                )}
+                <FormField control={form.control} name="anakKe" render={({ field }) => (
+                    <FormItem><FormLabel>Anak Keberapa</FormLabel><FormControl><Input type="number" min="1" placeholder="Contoh: 1" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="jumlahSaudaraKandung" render={({ field }) => (
+                    <FormItem><FormLabel>Jumlah Saudara Kandung</FormLabel><FormControl><Input type="number" min="0" placeholder="Isi 0 jika tidak punya" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+                )} />
+                
+                <Separator className="my-4" />
+                <p className="font-medium text-center">Alamat Tempat Tinggal</p>
 
-        {currentStep === 2 && renderParentFields('ayah')}
-        {currentStep === 3 && renderParentFields('ibu')}
-        {currentStep === 4 && renderParentFields('wali')}
+                <FormField control={form.control} name="tempatTinggal" render={({ field }) => (
+                    <FormItem><FormLabel>Tempat Tinggal Saat Ini</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih tempat tinggal" /></SelectTrigger></FormControl><SelectContent>{tempatTinggalOptionsList.map(tt => <SelectItem key={tt} value={tt}>{tt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                )} />
+                {form.watch('tempatTinggal') === 'Lainnya' && (
+                    <FormField control={form.control} name="tempatTinggalLainnya" render={({ field }) => (
+                        <FormItem><FormLabel>Detail Tempat Tinggal Lainnya</FormLabel><FormControl><Input placeholder="Sebutkan tempat tinggal lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                )}
+                
+                <FormField
+                    control={form.control}
+                    name="provinsi"
+                    render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                        <FormLabel>Provinsi</FormLabel>
+                        <Popover open={provincePopoverOpen} onOpenChange={setProvincePopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                                disabled={provincesLoading || provinces.length === 0}
+                            >
+                                {field.value ? provinces.find(p => p.label === field.value)?.label : (provincesLoading ? "Memuat..." : "Pilih Provinsi")}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                            <CommandInput placeholder="Cari provinsi..." />
+                            <CommandList>
+                                <CommandEmpty>Provinsi tidak ditemukan.</CommandEmpty>
+                                <CommandGroup>
+                                {provinces.map((province) => (
+                                    <CommandItem
+                                    value={province.label}
+                                    key={province.value}
+                                    onSelect={(currentValue) => {
+                                        const selectedOption = provinces.find(p => p.label.toLowerCase() === currentValue.toLowerCase());
+                                        form.setValue("provinsi", selectedOption ? selectedOption.label : "");
+                                        setSelectedProvinceCode(selectedOption ? selectedOption.value : null);
+                                        form.setValue("kabupaten", "");
+                                        setSelectedRegencyCode(null);
+                                        form.setValue("kecamatan", "");
+                                        setSelectedDistrictCode(null);
+                                        form.setValue("desaKelurahan", "");
+                                        form.setValue("kodePos", "");
+                                        setIsKodePosReadOnly(false);
+                                        setRegencies([]);
+                                        setDistricts([]);
+                                        setVillages([]);
+                                        setProvincePopoverOpen(false);
+                                        form.trigger("provinsi");
+                                    }}
+                                    >
+                                    <CheckIcon className={cn("mr-2 h-4 w-4", province.label === field.value ? "opacity-100" : "opacity-0")} />
+                                    {province.label}
+                                    </CommandItem>
+                                ))}
+                                </CommandGroup>
+                            </CommandList>
+                            </Command>
+                        </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
 
-        {currentStep === 5 && (
-          <Card className="w-full shadow-lg">
-            <CardHeader>
-              <CardTitle className="font-headline text-xl text-center">Kontak yang Bisa Dihubungi</CardTitle>
-              <CardDescription className="text-center pt-1">Minimal isi salah satu nomor telepon. Awali nomor dengan +62 (contoh: +6281234567890).</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <FormField control={form.control} name="nomorTeleponAyah" render={({ field }) => (
-                <FormItem><FormLabel>Nomor Telepon Ayah</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="nomorTeleponIbu" render={({ field }) => (
-                <FormItem><FormLabel>Nomor Telepon Ibu</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="nomorTeleponWali" render={({ field }) => (
-                <FormItem><FormLabel>Nomor Telepon Wali</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
-            </CardContent>
-             <CardFooter>
-                <FormMessage>{form.formState.errors.nomorTeleponAyah?.message && form.formState.errors.nomorTeleponAyah.type === 'manual' ? form.formState.errors.nomorTeleponAyah.message : ""}</FormMessage>
-             </CardFooter>
-          </Card>
-        )}
+                <FormField
+                    control={form.control}
+                    name="kabupaten"
+                    render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                        <FormLabel>Kabupaten/Kota</FormLabel>
+                        <Popover open={regencyPopoverOpen} onOpenChange={setRegencyPopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                disabled={!selectedProvinceCode || regenciesLoading || regencies.length === 0}
+                                className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                            >
+                                {field.value ? regencies.find(r => r.label === field.value)?.label : (regenciesLoading ? "Memuat..." : "Pilih Kabupaten/Kota")}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                            <CommandInput placeholder="Cari kabupaten/kota..." />
+                            <CommandList>
+                                <CommandEmpty>Kabupaten/Kota tidak ditemukan.</CommandEmpty>
+                                <CommandGroup>
+                                {regencies.map((regency) => (
+                                    <CommandItem
+                                    value={regency.label}
+                                    key={regency.value}
+                                    onSelect={(currentValue) => {
+                                        const selectedOption = regencies.find(r => r.label.toLowerCase() === currentValue.toLowerCase());
+                                        form.setValue("kabupaten", selectedOption ? selectedOption.label : "");
+                                        setSelectedRegencyCode(selectedOption ? selectedOption.value : null);
+                                        form.setValue("kecamatan", "");
+                                        setSelectedDistrictCode(null);
+                                        form.setValue("desaKelurahan", "");
+                                        form.setValue("kodePos", "");
+                                        setIsKodePosReadOnly(false);
+                                        setDistricts([]);
+                                        setVillages([]);
+                                        setRegencyPopoverOpen(false);
+                                        form.trigger("kabupaten");
+                                    }}
+                                    >
+                                    <CheckIcon className={cn("mr-2 h-4 w-4", regency.label === field.value ? "opacity-100" : "opacity-0")} />
+                                    {regency.label}
+                                    </CommandItem>
+                                ))}
+                                </CommandGroup>
+                            </CommandList>
+                            </Command>
+                        </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={form.control}
+                    name="kecamatan"
+                    render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                        <FormLabel>Kecamatan</FormLabel>
+                        <Popover open={districtPopoverOpen} onOpenChange={setDistrictPopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                disabled={!selectedRegencyCode || districtsLoading || districts.length === 0}
+                                className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                            >
+                                {field.value ? districts.find(d => d.label === field.value)?.label : (districtsLoading ? "Memuat..." : "Pilih Kecamatan")}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                            <CommandInput placeholder="Cari kecamatan..." />
+                            <CommandList>
+                                <CommandEmpty>Kecamatan tidak ditemukan.</CommandEmpty>
+                                <CommandGroup>
+                                {districts.map((district) => (
+                                    <CommandItem
+                                    value={district.label}
+                                    key={district.value}
+                                    onSelect={(currentValue) => {
+                                        const selectedOption = districts.find(d => d.label.toLowerCase() === currentValue.toLowerCase());
+                                        form.setValue("kecamatan", selectedOption ? selectedOption.label : "");
+                                        setSelectedDistrictCode(selectedOption ? selectedOption.value : null);
+                                        form.setValue("desaKelurahan", "");
+                                        form.setValue("kodePos", "");
+                                        setIsKodePosReadOnly(false);
+                                        setVillages([]);
+                                        setDistrictPopoverOpen(false);
+                                        form.trigger("kecamatan");
+                                    }}
+                                    >
+                                    <CheckIcon className={cn("mr-2 h-4 w-4", district.label === field.value ? "opacity-100" : "opacity-0")} />
+                                    {district.label}
+                                    </CommandItem>
+                                ))}
+                                </CommandGroup>
+                            </CommandList>
+                            </Command>
+                        </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={form.control}
+                    name="desaKelurahan"
+                    render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                        <FormLabel>Desa/Kelurahan</FormLabel>
+                        <Popover open={villagePopoverOpen} onOpenChange={setVillagePopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                disabled={!selectedDistrictCode || villagesLoading || villages.length === 0}
+                                className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                            >
+                                {field.value ? villages.find(v => v.label === field.value)?.label : (villagesLoading ? "Memuat..." : "Pilih Desa/Kelurahan")}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                            <CommandInput placeholder="Cari desa/kelurahan..." />
+                            <CommandList>
+                                <CommandEmpty>Desa/Kelurahan tidak ditemukan.</CommandEmpty>
+                                <CommandGroup>
+                                {villages.map((village) => (
+                                    <CommandItem
+                                    value={village.label}
+                                    key={village.value}
+                                    onSelect={(currentValue) => {
+                                        const selectedOption = villages.find(v => v.label.toLowerCase() === currentValue.toLowerCase());
+                                        form.setValue("desaKelurahan", selectedOption ? selectedOption.label : "");
+                                        if (selectedOption && selectedOption.postalCode) {
+                                        form.setValue("kodePos", selectedOption.postalCode);
+                                        setIsKodePosReadOnly(true);
+                                        } else {
+                                        form.setValue("kodePos", "");
+                                        setIsKodePosReadOnly(false);
+                                        }
+                                        setVillagePopoverOpen(false);
+                                        form.trigger("desaKelurahan");
+                                        form.trigger("kodePos");
+                                    }}
+                                    >
+                                    <CheckIcon className={cn("mr-2 h-4 w-4", village.label === field.value ? "opacity-100" : "opacity-0")} />
+                                    {village.label}
+                                    </CommandItem>
+                                ))}
+                                </CommandGroup>
+                            </CommandList>
+                            </Command>
+                        </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+
+                <FormField control={form.control} name="dusun" render={({ field }) => (
+                    <FormItem><FormLabel>Dusun</FormLabel><FormControl><Input
+                    placeholder="Nama dusun/dukuh"
+                    {...field}
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                    /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="rtRw" render={({ field }) => (
+                    <FormItem><FormLabel>RT/RW</FormLabel><FormControl><Input placeholder="Contoh: 001/002" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="alamatJalan" render={({ field }) => (
+                    <FormItem><FormLabel>Alamat Jalan</FormLabel><FormControl><Input placeholder="Contoh: Jl. Kenanga No. 27 (Bisa nama jalan saja)" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Kosongkan jika tidak tahu nama jalan.</FormDescription><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="kodePos" render={({ field }) => (
+                    <FormItem><FormLabel>Kode Pos</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={5} placeholder="5 digit kode pos" {...field} value={field.value ?? ''} readOnly={isKodePosReadOnly} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <Separator className="my-4" />
+                <FormField control={form.control} name="modaTransportasi" render={() => (
+                    <FormItem><FormLabel>Moda Transportasi ke Sekolah</FormLabel>
+                    <div className="space-y-2">
+                    {modaTransportasiOptions.map((option) => (
+                        <FormField key={option.id} control={form.control} name="modaTransportasi"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl><Checkbox checked={field.value?.includes(option.id)}
+                                onCheckedChange={(checked) => {
+                                    return checked
+                                    ? field.onChange([...(field.value || []), option.id])
+                                    : field.onChange((field.value || []).filter((value: string) => value !== option.id));
+                                }} /></FormControl>
+                            <FormLabel className="font-normal">{option.label}</FormLabel>
+                            </FormItem>
+                        )} /> ))}
+                    </div><FormMessage /></FormItem>
+                )} />
+                {form.watch('modaTransportasi', []).includes('lainnya') && (
+                    <FormField control={form.control} name="modaTransportasiLainnya" render={({ field }) => (
+                    <FormItem><FormLabel>Detail Moda Transportasi Lainnya</FormLabel><FormControl><Input placeholder="Sebutkan moda transportasi lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                )}
+                </CardContent>
+            </Card>
+            )}
+
+            {currentStep === 2 && renderParentFields('ayah')}
+            {currentStep === 3 && renderParentFields('ibu')}
+            {currentStep === 4 && renderParentFields('wali')}
+
+            {currentStep === 5 && (
+            <Card className="w-full shadow-lg">
+                <CardHeader>
+                <CardTitle className="font-headline text-xl text-center">Kontak yang Bisa Dihubungi</CardTitle>
+                <CardDescription className="text-center pt-1">Minimal isi salah satu nomor telepon. Awali nomor dengan +62 (contoh: +6281234567890).</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                <FormField control={form.control} name="nomorTeleponAyah" render={({ field }) => (
+                    <FormItem><FormLabel>Nomor Telepon Ayah</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="nomorTeleponIbu" render={({ field }) => (
+                    <FormItem><FormLabel>Nomor Telepon Ibu</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="nomorTeleponWali" render={({ field }) => (
+                    <FormItem><FormLabel>Nomor Telepon Wali</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                )} />
+                </CardContent>
+                <CardFooter>
+                    <FormMessage>{form.formState.errors.nomorTeleponAyah?.message && form.formState.errors.nomorTeleponAyah.type === 'manual' ? form.formState.errors.nomorTeleponAyah.message : ""}</FormMessage>
+                </CardFooter>
+            </Card>
+            )}
+        </div> {/* End of space-y-8 wrapper */}
+
 
         <CardFooter className="flex justify-between mt-8">
           {currentStep > 1 ? (
@@ -1178,4 +1171,3 @@ export function RegistrationForm() {
 }
 
     
-
