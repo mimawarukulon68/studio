@@ -60,7 +60,7 @@ const requiredParentSchema = z.object({
   ...parentSharedFields
 }).superRefine(parentSharedRefinement);
 
-const optionalParentSchema = z.object({
+export const optionalParentSchema = z.object({
   nama: z.string().optional(),
   ...parentSharedFields
 }).superRefine(parentSharedRefinement)
@@ -141,7 +141,7 @@ export const registrationSchema = z.object({
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi.",
-      path: ["nomorTeleponAyah"], 
+      path: ["nomorTeleponAyah"],
     });
   }
 });

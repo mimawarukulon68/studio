@@ -40,6 +40,7 @@ import {
   pendidikanOptionsList,
   pekerjaanOptionsList,
   penghasilanOptionsList,
+  optionalParentSchema, // Import for direct parsing if needed
 } from '@/lib/schemas';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
@@ -67,7 +68,7 @@ export function RegistrationForm() {
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
-    mode: 'onChange', // onChange needed for immediate feedback on fields for Zod validation
+    mode: 'onChange',
     defaultValues: {
       namaLengkap: '',
       namaPanggilan: '',
@@ -168,52 +169,44 @@ export function RegistrationForm() {
 
   const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     const stepBeingLeft = currentStep;
+    let isCurrentStepValid = true;
 
-    // Validate the step being left if navigating forward
     if (action === 'next' || (action === 'jumpTo' && targetStep && targetStep > stepBeingLeft)) {
       const fieldsToValidate = getFieldsForStep(stepBeingLeft);
-      let isLeftStepValid = true;
-
+      
       if (fieldsToValidate.length > 0) {
-        const triggeredValidity = await form.trigger(fieldsToValidate);
-        isLeftStepValid = triggeredValidity;
+          isCurrentStepValid = await form.trigger(fieldsToValidate);
+      }
 
-        if (stepBeingLeft === 4) { // Wali data validation
+      if (stepBeingLeft === 4) { // Additional check for Wali data (Step 4)
           const waliData = form.getValues().wali;
           const isWaliEffectivelyEmpty = !Object.values(waliData || {}).some(v => v !== undefined && v !== '' && (Array.isArray(v) ? v.length > 0 : true));
 
-          if (!isWaliEffectivelyEmpty) {
-            // If not empty, apply Zod schema validation directly for object-level rules
-            const waliSchema = registrationSchema.shape.wali.unwrap(); // Gets the optionalParentSchema
-            const parseResult = waliSchema.safeParse(waliData);
-            if (!parseResult.success) {
-              isLeftStepValid = false;
-            }
-            // triggeredValidity should ideally reflect this, but this is a stronger check.
-            // We combine: if trigger says invalid, it's invalid. If trigger says valid, but our deeper check says invalid, it's invalid.
-            isLeftStepValid = triggeredValidity && isLeftStepValid;
-
+          if (isWaliEffectivelyEmpty) {
+              // Wali is empty, which is allowed. `isCurrentStepValid` from trigger should be true.
           } else {
-            // Wali is empty, which is allowed by Zod schema (optional field).
-            // isLeftStepValid will be true if form.trigger passed (which it should for empty optional fields).
+              // Wali has some data, parse it against its own schema
+              const parseResult = optionalParentSchema.safeParse(waliData);
+              if (!parseResult.success) {
+                  isCurrentStepValid = false;
+              }
           }
-        } else if (stepBeingLeft === 5) { // Phone numbers validation
+      } else if (stepBeingLeft === 5) { // Additional check for Phone numbers (Step 5)
           const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
           if (!nomorTeleponAyah && !nomorTeleponIbu && !nomorTeleponWali) {
-            isLeftStepValid = false;
+              isCurrentStepValid = false; 
           }
-        }
       }
-      setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isLeftStepValid }));
+      setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isCurrentStepValid }));
     }
 
-    // Perform navigation
+
     if (action === 'next') {
       if (currentStep < TOTAL_STEPS) setCurrentStep(prev => prev + 1);
     } else if (action === 'prev') {
       if (currentStep > 1) setCurrentStep(prev => prev - 1);
     } else if (action === 'jumpTo' && targetStep !== undefined) {
-      if (targetStep !== currentStep) { // Only navigate if it's a different step
+      if (targetStep !== currentStep) {
           setCurrentStep(targetStep);
       }
     }
@@ -226,7 +219,7 @@ export function RegistrationForm() {
       description: "Data Anda telah berhasil direkam.",
     });
     const allComplete: Record<number, boolean> = {};
-    for (let i = 1; i <= TOTAL_STEPS; i++) allComplete[i] = true; // Mark all as complete on successful submit
+    for (let i = 1; i <= TOTAL_STEPS; i++) allComplete[i] = true;
     setStepCompletionStatus(allComplete);
   };
 
@@ -244,7 +237,6 @@ export function RegistrationForm() {
       const stepFields = getFieldsForStep(i);
       let currentStepHasError = false;
 
-      // Check field-level errors reported by Zod/RHF
       for (const field of stepFields) {
         if (getFieldError(field, errors)) {
           currentStepHasError = true;
@@ -252,30 +244,26 @@ export function RegistrationForm() {
         }
       }
       
-      // Specific object-level checks for steps 4 and 5 using Zod's main schema
-      if (i === 4 && !currentStepHasError) { // Wali data
+      if (i === 4 && !currentStepHasError) {
         const waliData = form.getValues().wali;
-        // The `wali` field itself in `registrationSchema` is optional.
-        // So we parse `waliData` against `optionalParentSchema` which is `registrationSchema.shape.wali.unwrap()`.
-        const waliSchema = registrationSchema.shape.wali.unwrap(); 
-        const parseResult = waliSchema.safeParse(waliData);
-        if (!parseResult.success) {
-            // If waliData is not empty and fails its own schema, it's an error for step 4.
-             const isWaliEffectivelyEmpty = !Object.values(waliData || {}).some(v => v !== undefined && v !== '' && (Array.isArray(v) ? v.length > 0 : true));
-             if (!isWaliEffectivelyEmpty) {
-                currentStepHasError = true;
-             }
+        const isWaliEffectivelyEmpty = !Object.values(waliData || {}).some(v => v !== undefined && v !== '' && (Array.isArray(v) ? v.length > 0 : true));
+        if (!isWaliEffectivelyEmpty) {
+           // registrationSchema is ZodEffects, access underlying object via ._def.schema
+           // then access .shape.wali which is ZodOptional, then .unwrap() to get the actual schema for wali
+          const waliSchema = registrationSchema._def.schema.shape.wali.unwrap();
+          const parseResult = waliSchema.safeParse(waliData);
+          if (!parseResult.success) {
+            currentStepHasError = true;
+          }
         }
-      } else if (i === 5 && !currentStepHasError) { // Phone numbers (overall form rule)
-        // Check the specific Zod error message from superRefine for the "at least one phone" rule
+      } else if (i === 5 && !currentStepHasError) {
+        const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
+        if (!nomorTeleponAyah && !nomorTeleponIbu && !nomorTeleponWali) {
+            currentStepHasError = true;
+        }
+        // Also check for a specific error message from superRefine, if present
         if (errors.nomorTeleponAyah?.message?.includes("Minimal satu nomor telepon")) {
-          currentStepHasError = true;
-        } else { 
-          // Fallback if the error wasn't on nomorTeleponAyah path or message changed
-          const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
-            if (!nomorTeleponAyah && !nomorTeleponIbu && !nomorTeleponWali) {
-                currentStepHasError = true;
-            }
+             currentStepHasError = true;
         }
       }
 
@@ -285,7 +273,6 @@ export function RegistrationForm() {
           firstErrorStep = i;
         }
       } else {
-        // If Zod finds no errors for this step during submit, mark it as complete.
         newCompletionStatus[i] = true;
       }
     }
@@ -300,17 +287,15 @@ export function RegistrationForm() {
       <div className="flex justify-center space-x-1 sm:space-x-2 mb-6">
         {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((stepNum) => {
           const isCurrent = currentStep === stepNum;
-          // Status determined by stepCompletionStatus map
           const successfullyValidated = stepCompletionStatus[stepNum] === true;
           const attemptedAndInvalid = stepCompletionStatus[stepNum] === false;
 
           let indicatorContent: React.ReactNode = stepNum;
           if (successfullyValidated && !isCurrent) {
              indicatorContent = <Check className="w-4 h-4" />;
-          } else if (attemptedAndInvalid) { // Show X if explicitly marked as invalid
+          } else if (attemptedAndInvalid) {
              indicatorContent = <X className="w-4 h-4" />;
           }
-          // If neither successfullyValidated nor attemptedAndInvalid, it's neutral (just number)
 
           return (
             <div
@@ -324,7 +309,7 @@ export function RegistrationForm() {
                   ? "border-destructive text-destructive animate-pulse"
                   : successfullyValidated && !isCurrent
                   ? "border-green-500 text-green-600"
-                  : "border-border" // Neutral state
+                  : "border-border"
               )}
               onClick={() => processStep('jumpTo', stepNum)}
               title={`Langkah ${stepNum}`}
@@ -664,5 +649,3 @@ export function RegistrationForm() {
     </Form>
   );
 }
-
-      
