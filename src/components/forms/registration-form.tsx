@@ -164,11 +164,41 @@ export function RegistrationForm() {
           return !!error;
       });
     } else if (stepNumber === 2) {
-      isStepValid = requiredParentSchema.safeParse(form.getValues().ayah).success;
+        const ayahData = form.getValues().ayah;
+        const validationResult = requiredParentSchema.safeParse(ayahData);
+        isStepValid = validationResult.success;
+        if(!isStepValid && validationResult.error) {
+            validationResult.error.errors.forEach(err => {
+                const path = `ayah.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
+                if (!form.formState.errors.ayah?.[err.path[0] as keyof typeof form.formState.errors.ayah]) {
+                     form.setError(path, { type: 'manual', message: err.message });
+                }
+            });
+        }
     } else if (stepNumber === 3) {
-      isStepValid = requiredParentSchema.safeParse(form.getValues().ibu).success;
+        const ibuData = form.getValues().ibu;
+        const validationResult = requiredParentSchema.safeParse(ibuData);
+        isStepValid = validationResult.success;
+         if(!isStepValid && validationResult.error) {
+            validationResult.error.errors.forEach(err => {
+                const path = `ibu.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
+                if (!form.formState.errors.ibu?.[err.path[0] as keyof typeof form.formState.errors.ibu]) {
+                     form.setError(path, { type: 'manual', message: err.message });
+                }
+            });
+        }
     } else if (stepNumber === 4) {
-      isStepValid = requiredParentSchema.safeParse(form.getValues().wali).success;
+        const waliData = form.getValues().wali;
+        const validationResult = requiredParentSchema.safeParse(waliData);
+        isStepValid = validationResult.success;
+         if(!isStepValid && validationResult.error) {
+            validationResult.error.errors.forEach(err => {
+                const path = `wali.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
+                 if (!form.formState.errors.wali?.[err.path[0] as keyof typeof form.formState.errors.wali]) {
+                     form.setError(path, { type: 'manual', message: err.message });
+                }
+            });
+        }
     } else if (stepNumber === 5) {
         const contactData = form.getValues();
         const atLeastOnePhone = !!contactData.nomorTeleponAyah || !!contactData.nomorTeleponIbu || !!contactData.nomorTeleponWali;
@@ -190,7 +220,7 @@ export function RegistrationForm() {
                 await form.trigger(phoneFields);
                 isStepValid = !phoneFields.some(field => !!getFieldError(field, form.formState.errors));
             } else {
-                isStepValid = true; // No specific phone fields were filled, so no validation errors on them
+                isStepValid = true;
             }
         }
     }
@@ -200,7 +230,6 @@ export function RegistrationForm() {
 
  const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     const stepBeingLeft = currentStep;
-
     const isStepLeftValid = await validateStep(stepBeingLeft);
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepLeftValid }));
 
@@ -526,10 +555,10 @@ export function RegistrationForm() {
                 <FormItem><FormLabel>Jenis Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih jenis kelamin" /></SelectTrigger></FormControl><SelectContent>{jenisKelaminOptions.map(jk => <SelectItem key={jk} value={jk}>{jk}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="nisn" render={({ field }) => (
-                <FormItem><FormLabel>NISN (Nomor Induk Siswa Nasional)</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={10} placeholder="Jika ada" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>NISN (Nomor Induk Siswa Nasional)</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={10} placeholder="10 digit NISN" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="nikSiswa" render={({ field }) => (
-                <FormItem><FormLabel>NIK (Nomor Induk Kependudukan)</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={16} placeholder="Sesuai Kartu Keluarga" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>NIK (Nomor Induk Kependudukan)</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={16} placeholder="16 digit NIK (sesuai Kartu Keluarga)" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="tempatLahir" render={({ field }) => (
                 <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input placeholder="Kota/Kabupaten kelahiran" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
@@ -664,5 +693,3 @@ export function RegistrationForm() {
     </Form>
   );
 }
-
-    

@@ -65,8 +65,8 @@ export const registrationSchema = z.object({
   namaLengkap: z.string().min(1, "Nama lengkap wajib diisi"),
   namaPanggilan: z.string().min(1, "Nama panggilan wajib diisi"),
   jenisKelamin: z.enum(["Laki-laki", "Perempuan"], { required_error: "Jenis kelamin wajib dipilih" }),
-  nisn: z.string().optional().refine(val => !val || val.length === 10, { message: "NISN harus 10 digit angka" }).refine(val => !val || /^\d+$/.test(val), { message: "NISN harus berupa angka" }),
-  nikSiswa: z.string().optional().refine(val => !val || val.length === 16, { message: "NIK harus 16 digit angka" }).refine(val => !val || /^\d+$/.test(val), { message: "NIK harus berupa angka" }),
+  nisn: z.string().min(1, "NISN wajib diisi").length(10, { message: "NISN harus 10 digit angka" }).regex(/^\d+$/, { message: "NISN harus berupa angka" }),
+  nikSiswa: z.string().min(1, "NIK wajib diisi").length(16, { message: "NIK harus 16 digit angka" }).regex(/^\d+$/, { message: "NIK harus berupa angka" }),
   tempatLahir: z.string().min(1, "Tempat lahir wajib diisi"),
   tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi", invalid_type_error: "Format tanggal lahir tidak valid" }),
   agama: z.enum(["Islam", "Kristen/Protestan", "Katolik", "Hindu", "Budha", "Khonghucu", "Lainnya"], { required_error: "Agama wajib dipilih" }),
@@ -86,7 +86,7 @@ export const registrationSchema = z.object({
 
   ayah: requiredParentSchema,
   ibu: requiredParentSchema,
-  wali: requiredParentSchema, // Changed from optionalParentSchema.optional()
+  wali: requiredParentSchema,
 
   nomorTeleponAyah: z.string().optional()
     .refine(val => !val || (val.startsWith("+62") && val.length >= 11 && val.length <= 15 && /^\+62\d+$/.test(val)), { message: "Format nomor Ayah salah (contoh: +6281234567890)" }),
@@ -121,7 +121,7 @@ export const registrationSchema = z.object({
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi.",
-      path: ["nomorTeleponAyah"], // This error will be associated with the first phone field for simplicity
+      path: ["nomorTeleponAyah"], 
     });
   }
 });
@@ -138,8 +138,3 @@ export const modaTransportasiOptions = [
   { id: "jemputan_sekolah", label: "Jemputan sekolah" },
   { id: "lainnya", label: "Lainnya" },
 ] as const;
-
-
-    
-
-    
