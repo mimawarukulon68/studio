@@ -131,7 +131,7 @@ export function RegistrationForm() {
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
-    mode: 'onChange',
+    mode: 'onChange', // Validate on change to update step indicators
     defaultValues: {
       namaLengkap: '',
       namaPanggilan: '',
@@ -196,12 +196,12 @@ export function RegistrationForm() {
       setProvincesLoading(true);
       try {
         const response = await fetch('/api/wilayah/provinces');
-        if (!response.ok) throw new Error('Gagal memuat provinsi dari proxy. Status: ' + response.status);
+        if (!response.ok) throw new Error('Gagal memuat provinsi. Status: ' + response.status);
         const responseData = await response.json();
         const data: Wilayah[] = responseData.data; 
         setProvinces(data.map(p => ({ value: p.code, label: p.name })));
       } catch (error) {
-        console.error("Error fetching provinces via proxy:", error);
+        console.error("Error fetching provinces:", error);
         toast({ title: "Error", description: `Gagal memuat data provinsi: ${(error as Error).message}`, variant: "destructive" });
         setProvinces([]);
       } finally {
@@ -225,12 +225,12 @@ export function RegistrationForm() {
         setIsKodePosReadOnly(false);
         try {
           const response = await fetch(`/api/wilayah/regencies/${selectedProvinceCode}`);
-          if (!response.ok) throw new Error('Gagal memuat kabupaten/kota dari proxy. Status: ' + response.status);
+          if (!response.ok) throw new Error('Gagal memuat kabupaten/kota. Status: ' + response.status);
           const responseData = await response.json();
           const data: Wilayah[] = responseData.data; 
           setRegencies(data.map(r => ({ value: r.code, label: r.name })));
         } catch (error) {
-          console.error("Error fetching regencies via proxy:", error);
+          console.error("Error fetching regencies:", error);
           toast({ title: "Error", description: `Gagal memuat data kabupaten/kota: ${(error as Error).message}`, variant: "destructive" });
            setRegencies([]);
         } finally {
@@ -257,12 +257,12 @@ export function RegistrationForm() {
         setIsKodePosReadOnly(false);
         try {
           const response = await fetch(`/api/wilayah/districts/${selectedRegencyCode}`);
-          if (!response.ok) throw new Error('Gagal memuat kecamatan dari proxy. Status: ' + response.status);
+          if (!response.ok) throw new Error('Gagal memuat kecamatan. Status: ' + response.status);
           const responseData = await response.json();
           const data: Wilayah[] = responseData.data; 
           setDistricts(data.map(d => ({ value: d.code, label: d.name })));
         } catch (error) {
-          console.error("Error fetching districts via proxy:", error);
+          console.error("Error fetching districts:", error);
           toast({ title: "Error", description: `Gagal memuat data kecamatan: ${(error as Error).message}`, variant: "destructive" });
           setDistricts([]);
         } finally {
@@ -286,12 +286,12 @@ export function RegistrationForm() {
         setIsKodePosReadOnly(false);
         try {
           const response = await fetch(`/api/wilayah/villages/${selectedDistrictCode}`);
-           if (!response.ok) throw new Error('Gagal memuat desa/kelurahan dari proxy. Status: ' + response.status);
+           if (!response.ok) throw new Error('Gagal memuat desa/kelurahan. Status: ' + response.status);
           const responseData = await response.json();
           const data: VillageWilayah[] = responseData.data; 
           setVillages(data.map(v => ({ value: v.code, label: v.name, postalCode: v.postal_code })));
         } catch (error) {
-          console.error("Error fetching villages via proxy:", error);
+          console.error("Error fetching villages:", error);
           toast({ title: "Error", description: `Gagal memuat data desa/kelurahan: ${(error as Error).message}`, variant: "destructive" });
           setVillages([]);
         } finally {
@@ -404,9 +404,11 @@ export function RegistrationForm() {
 
   const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     const stepBeingLeft = currentStep;
+    // Always validate the step being left to update its visual status
     const isStepBeingLeftValid = await validateStep(stepBeingLeft);
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
 
+    // Allow navigation regardless of step validity
     if (action === 'next') {
       if (currentStep < TOTAL_STEPS) {
         setCurrentStep(prev => prev + 1);
@@ -454,7 +456,7 @@ export function RegistrationForm() {
   };
 
   const onFormError = async (errors: FieldErrors<RegistrationFormData>) => {
-    console.log("Form errors:", errors); 
+    console.log("Form errors on submit:", errors); 
     toast({
       title: "Formulir Belum Lengkap",
       description: "Mohon periksa kembali isian Anda pada langkah yang ditandai.",
@@ -769,7 +771,7 @@ export function RegistrationForm() {
                           id="tanggalLahir"
                           label="Tanggal Lahir"
                           initialDate={field.value}
-                          onDateChange={(date) => field.onChange(date)}
+                          onDateChange={(date) => field.onChange(date)} // onChange now directly receives Date | undefined
                           ariaInvalid={!!fieldState.error}
                        />
                     </FormControl>
@@ -824,7 +826,7 @@ export function RegistrationForm() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5}>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5} sticky="partial">
                         <Command>
                           <CommandInput placeholder="Cari provinsi..." />
                           <CommandList>
@@ -886,7 +888,7 @@ export function RegistrationForm() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5}>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5} sticky="partial">
                         <Command>
                           <CommandInput placeholder="Cari kabupaten/kota..." />
                           <CommandList>
@@ -945,7 +947,7 @@ export function RegistrationForm() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5}>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5} sticky="partial">
                         <Command>
                           <CommandInput placeholder="Cari kecamatan..." />
                           <CommandList>
@@ -1001,7 +1003,7 @@ export function RegistrationForm() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5}>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5} sticky="partial">
                         <Command>
                           <CommandInput placeholder="Cari desa/kelurahan..." />
                           <CommandList>
