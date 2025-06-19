@@ -200,12 +200,12 @@ export function RegistrationForm() {
       setProvincesLoading(true);
       try {
         const response = await fetch('/api/wilayah/provinces');
-        if (!response.ok) throw new Error('Failed to fetch provinces. Status: ' + response.status);
+        if (!response.ok) throw new Error('Gagal memuat provinsi dari proxy. Status: ' + response.status);
         const responseData = await response.json();
-        const data: Wilayah[] = responseData.data;
+        const data: Wilayah[] = responseData.data; // Access data from the 'data' property
         setProvinces(data.map(p => ({ value: p.code, label: p.name })));
       } catch (error) {
-        console.error("Error fetching provinces:", error);
+        console.error("Error fetching provinces via proxy:", error);
         toast({ title: "Error", description: `Gagal memuat data provinsi: ${(error as Error).message}`, variant: "destructive" });
         setProvinces([]);
       } finally {
@@ -225,12 +225,12 @@ export function RegistrationForm() {
         setVillages([]);
         try {
           const response = await fetch(`/api/wilayah/regencies/${selectedProvinceCode}`);
-          if (!response.ok) throw new Error('Failed to fetch regencies. Status: ' + response.status);
+          if (!response.ok) throw new Error('Gagal memuat kabupaten/kota dari proxy. Status: ' + response.status);
           const responseData = await response.json();
-          const data: Wilayah[] = responseData.data;
+          const data: Wilayah[] = responseData.data; // Access data from the 'data' property
           setRegencies(data.map(r => ({ value: r.code, label: r.name })));
         } catch (error) {
-          console.error("Error fetching regencies:", error);
+          console.error("Error fetching regencies via proxy:", error);
           toast({ title: "Error", description: `Gagal memuat data kabupaten/kota: ${(error as Error).message}`, variant: "destructive" });
            setRegencies([]);
         } finally {
@@ -254,12 +254,12 @@ export function RegistrationForm() {
         setVillages([]);
         try {
           const response = await fetch(`/api/wilayah/districts/${selectedRegencyCode}`);
-          if (!response.ok) throw new Error('Failed to fetch districts. Status: ' + response.status);
+          if (!response.ok) throw new Error('Gagal memuat kecamatan dari proxy. Status: ' + response.status);
           const responseData = await response.json();
-          const data: Wilayah[] = responseData.data;
+          const data: Wilayah[] = responseData.data; // Access data from the 'data' property
           setDistricts(data.map(d => ({ value: d.code, label: d.name })));
         } catch (error) {
-          console.error("Error fetching districts:", error);
+          console.error("Error fetching districts via proxy:", error);
           toast({ title: "Error", description: `Gagal memuat data kecamatan: ${(error as Error).message}`, variant: "destructive" });
           setDistricts([]);
         } finally {
@@ -281,12 +281,12 @@ export function RegistrationForm() {
         setVillages([]);
         try {
           const response = await fetch(`/api/wilayah/villages/${selectedDistrictCode}`);
-           if (!response.ok) throw new Error('Failed to fetch villages. Status: ' + response.status);
+           if (!response.ok) throw new Error('Gagal memuat desa/kelurahan dari proxy. Status: ' + response.status);
           const responseData = await response.json();
-          const data: VillageWilayah[] = responseData.data;
+          const data: VillageWilayah[] = responseData.data; // Access data from the 'data' property
           setVillages(data.map(v => ({ value: v.code, label: v.name, postalCode: v.postal_code })));
         } catch (error) {
-          console.error("Error fetching villages:", error);
+          console.error("Error fetching villages via proxy:", error);
           toast({ title: "Error", description: `Gagal memuat data desa/kelurahan: ${(error as Error).message}`, variant: "destructive" });
           setVillages([]);
         } finally {
@@ -448,7 +448,7 @@ export function RegistrationForm() {
   };
 
   const onFormError = async (errors: FieldErrors<RegistrationFormData>) => {
-    console.log("Form errors:", errors);
+    console.log("Form errors:", errors); // This line logs the errors
     toast({
       title: "Formulir Belum Lengkap",
       description: "Mohon periksa kembali isian Anda pada langkah yang ditandai.",
@@ -837,6 +837,7 @@ export function RegistrationForm() {
                                     setVillages([]);
                                     setProvincePopoverOpen(false);
                                     form.trigger("provinsi");
+                                    form.trigger("kabupaten");
                                   }}
                                 >
                                   <CheckIcon className={cn("mr-2 h-4 w-4", province.label === field.value ? "opacity-100" : "opacity-0")} />
@@ -896,6 +897,7 @@ export function RegistrationForm() {
                                     setVillages([]);
                                     setRegencyPopoverOpen(false);
                                     form.trigger("kabupaten");
+                                    form.trigger("kecamatan");
                                   }}
                                 >
                                   <CheckIcon className={cn("mr-2 h-4 w-4", regency.label === field.value ? "opacity-100" : "opacity-0")} />
@@ -952,6 +954,7 @@ export function RegistrationForm() {
                                     setVillages([]);
                                     setDistrictPopoverOpen(false);
                                     form.trigger("kecamatan");
+                                    form.trigger("desaKelurahan");
                                   }}
                                 >
                                   <CheckIcon className={cn("mr-2 h-4 w-4", district.label === field.value ? "opacity-100" : "opacity-0")} />
