@@ -132,9 +132,12 @@ export const jenisKelaminOptions = ["Laki-laki", "Perempuan"] as const;
 export const agamaOptionsList = ["Islam", "Kristen/Protestan", "Katolik", "Hindu", "Budha", "Khonghucu", "Lainnya"] as const;
 export const tempatTinggalOptionsList = ["Bersama orang tua", "Wali", "Kos", "Asrama", "Panti Asuhan", "Lainnya"] as const;
 export const modaTransportasiOptions = [
-  { id: "jalan_kaki", label: "Jalan kaki" },
-  { id: "kendaraan_pribadi", label: "Kendaraan pribadi" },
-  { id: "kendaraan_umum_angkot", label: "Kendaraan umum/angkot" },
-  { id: "jemputan_sekolah", label: "Jemputan sekolah" },
+  { id: "jalan_kaki", label: "Jalan Kaki" },
+  { id: "bersepeda", label: "Bersepeda" },
+  { id: "kendaraan_bermotor", label: "Kendaraan Bermotor" },
+  { id: "kendaraan_umum_angkot", label: "Kendaraan Umum/Angkot" },
+  { id: "jemputan_sekolah", label: "Jemputan Sekolah" },
   { id: "lainnya", label: "Lainnya" },
 ] as const;
+
+    
