@@ -150,89 +150,94 @@ export function RegistrationForm() {
     return stepData?.fields || [];
   };
 
+  const validateStep = async (stepNumber: number): Promise<boolean> => {
+    const fieldsToValidate = getFieldsForStep(stepNumber);
+    await form.trigger(fieldsToValidate); // Trigger validation for relevant fields
+
+    let isStepValid = true;
+    if (stepNumber === 1) {
+      isStepValid = !fieldsToValidate.some(field => {
+          const error = getFieldError(field, form.formState.errors);
+          if (field === "agamaLainnya" && form.getValues("agama") !== "Lainnya") return false;
+          if (field === "tempatTinggalLainnya" && form.getValues("tempatTinggal") !== "Lainnya") return false;
+          if (field === "modaTransportasiLainnya" && !form.getValues("modaTransportasi").includes("lainnya")) return false;
+          return !!error;
+      });
+    } else if (stepNumber === 2) { 
+      isStepValid = requiredParentSchema.safeParse(form.getValues().ayah).success;
+    } else if (stepNumber === 3) { 
+      isStepValid = requiredParentSchema.safeParse(form.getValues().ibu).success;
+    } else if (stepNumber === 4) { 
+      isStepValid = requiredParentSchema.safeParse(form.getValues().wali).success;
+    } else if (stepNumber === 5) {
+      const contactData = form.getValues();
+      const atLeastOnePhone = !!contactData.nomorTeleponAyah || !!contactData.nomorTeleponIbu || !!contactData.nomorTeleponWali;
+      if (!atLeastOnePhone) {
+        isStepValid = false;
+      } else {
+        // Only validate formats if a number is provided
+        const phoneFields: FieldPath<RegistrationFormData>[] = [];
+        if (contactData.nomorTeleponAyah) phoneFields.push("nomorTeleponAyah");
+        if (contactData.nomorTeleponIbu) phoneFields.push("nomorTeleponIbu");
+        if (contactData.nomorTeleponWali) phoneFields.push("nomorTeleponWali");
+        
+        if (phoneFields.length > 0) {
+            await form.trigger(phoneFields);
+            isStepValid = !phoneFields.some(field => !!getFieldError(field, form.formState.errors));
+        } else {
+             isStepValid = true; // No numbers provided, but requirement is at least one (handled by atLeastOnePhone)
+        }
+      }
+       if (!atLeastOnePhone && !form.formState.errors.nomorTeleponAyah) {
+         form.setError("nomorTeleponAyah", { type: "manual", message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi." });
+         isStepValid = false;
+       }
+    }
+    return isStepValid;
+  };
+
   const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     const stepBeingLeft = currentStep;
-    let isCurrentStepValid = true;
-
-    if (action === 'next' || (action === 'jumpTo' && targetStep && targetStep > stepBeingLeft)) {
-      const fieldsToValidate = getFieldsForStep(stepBeingLeft);
-      await form.trigger(fieldsToValidate);
-
-      if (stepBeingLeft === 1) {
-        isCurrentStepValid = !fieldsToValidate.some(field => {
-            const error = getFieldError(field, form.formState.errors);
-            if (field === "agamaLainnya" && form.getValues("agama") !== "Lainnya") return false;
-            if (field === "tempatTinggalLainnya" && form.getValues("tempatTinggal") !== "Lainnya") return false;
-            if (field === "modaTransportasiLainnya" && !form.getValues("modaTransportasi").includes("lainnya")) return false;
-            return !!error;
-        });
-      } else if (stepBeingLeft === 2) { 
-        isCurrentStepValid = requiredParentSchema.safeParse(form.getValues().ayah).success;
-      } else if (stepBeingLeft === 3) { 
-        isCurrentStepValid = requiredParentSchema.safeParse(form.getValues().ibu).success;
-      } else if (stepBeingLeft === 4) { 
-        isCurrentStepValid = requiredParentSchema.safeParse(form.getValues().wali).success;
-      } else if (stepBeingLeft === 5) {
-        const contactValidationResult = registrationSchema
-          .pick({ nomorTeleponAyah: true, nomorTeleponIbu: true, nomorTeleponWali: true })
-          .safeParse(form.getValues());
-        isCurrentStepValid = contactValidationResult.success &&
-                              !form.formState.errors.nomorTeleponAyah &&
-                              !form.formState.errors.nomorTeleponIbu &&
-                              !form.formState.errors.nomorTeleponWali;
-      }
-      setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isCurrentStepValid }));
-    }
-
-    if (!isCurrentStepValid && action === 'next') {
-        // If trying to move next from an invalid step, don't proceed.
-        return;
-    }
+    
+    // Always validate the step being left to update its indicator
+    const isStepLeftValid = await validateStep(stepBeingLeft);
+    setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepLeftValid }));
 
     if (action === 'next') {
       if (currentStep < TOTAL_STEPS) setCurrentStep(prev => prev + 1);
     } else if (action === 'prev') {
       if (currentStep > 1) setCurrentStep(prev => prev - 1);
     } else if (action === 'jumpTo' && targetStep !== undefined) {
-        if (targetStep < currentStep) { // Allow jumping back
-            setCurrentStep(targetStep);
-        } else { // Jumping forward
-            let canJump = true;
-            for (let i = stepBeingLeft; i < targetStep; i++) {
-                const fieldsForIntermediateStep = getFieldsForStep(i);
-                await form.trigger(fieldsForIntermediateStep);
-                let isIntermediateStepValid = true;
-                 if (i === 1) {
-                    isIntermediateStepValid = !fieldsForIntermediateStep.some(field => {
-                        const error = getFieldError(field, form.formState.errors);
-                        if (field === "agamaLainnya" && form.getValues("agama") !== "Lainnya") return false;
-                        if (field === "tempatTinggalLainnya" && form.getValues("tempatTinggal") !== "Lainnya") return false;
-                        if (field === "modaTransportasiLainnya" && !form.getValues("modaTransportasi").includes("lainnya")) return false;
-                        return !!error;
-                    });
-                } else if (i === 2) {
-                    isIntermediateStepValid = requiredParentSchema.safeParse(form.getValues().ayah).success;
-                } else if (i === 3) {
-                    isIntermediateStepValid = requiredParentSchema.safeParse(form.getValues().ibu).success;
-                } else if (i === 4) {
-                    isIntermediateStepValid = requiredParentSchema.safeParse(form.getValues().wali).success;
-                } else if (i === 5) {
-                    const contactValidationRes = registrationSchema.pick({ nomorTeleponAyah: true, nomorTeleponIbu: true, nomorTeleponWali: true }).safeParse(form.getValues());
-                    isIntermediateStepValid = contactValidationRes.success && !form.formState.errors.nomorTeleponAyah && !form.formState.errors.nomorTeleponIbu && !form.formState.errors.nomorTeleponWali;
-                }
-                setStepCompletionStatus(prev => ({ ...prev, [i]: isIntermediateStepValid }));
-                if (!isIntermediateStepValid) {
-                    canJump = false;
-                    setCurrentStep(i); // Set current step to the first invalid intermediate step
-                    break;
-                }
-            }
-            if (canJump) setCurrentStep(targetStep);
-        }
+        setCurrentStep(targetStep);
     }
   };
 
   const onFormSubmit = async (data: RegistrationFormData) => {
+    // Final validation of all steps before submission
+    let allStepsValid = true;
+    const newCompletionStatus: Record<number, boolean | undefined> = {};
+    for (let i = 1; i <= TOTAL_STEPS; i++) {
+      const isValid = await validateStep(i);
+      newCompletionStatus[i] = isValid;
+      if (!isValid) {
+        allStepsValid = false;
+      }
+    }
+    setStepCompletionStatus(newCompletionStatus);
+
+    if (!allStepsValid) {
+      const firstErrorStep = Object.entries(newCompletionStatus).find(([_, valid]) => !valid)?.[0];
+      if (firstErrorStep) {
+        setCurrentStep(parseInt(firstErrorStep, 10));
+      }
+      toast({
+        title: "Formulir Belum Lengkap",
+        description: "Mohon periksa kembali isian Anda pada langkah yang ditandai.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     console.log("Form submitted successfully:", data);
     toast({
       title: "Pendaftaran Terkirim!",
@@ -243,7 +248,7 @@ export function RegistrationForm() {
     setStepCompletionStatus(allComplete);
   };
 
-  const onFormError = (errors: FieldErrors<RegistrationFormData>) => {
+  const onFormError = async (errors: FieldErrors<RegistrationFormData>) => {
     toast({
       title: "Formulir Belum Lengkap",
       description: "Mohon periksa kembali isian Anda pada langkah yang ditandai.",
@@ -254,33 +259,10 @@ export function RegistrationForm() {
     let firstErrorStep = TOTAL_STEPS + 1;
 
     for (let i = 1; i <= TOTAL_STEPS; i++) {
-      let currentStepHasError = false;
-      const fieldsForStep = getFieldsForStep(i);
-      
-      if (i === 1) {
-        currentStepHasError = fieldsForStep.some(field => {
-            const error = getFieldError(field, errors);
-            // Only consider "Lainnya" fields as errors if their parent selector is "Lainnya"
-            if (field === "agamaLainnya" && form.getValues("agama") !== "Lainnya" && !errors.agamaLainnya) return false;
-            if (field === "tempatTinggalLainnya" && form.getValues("tempatTinggal") !== "Lainnya" && !errors.tempatTinggalLainnya) return false;
-            if (field === "modaTransportasiLainnya" && !form.getValues("modaTransportasi").includes("lainnya") && !errors.modaTransportasiLainnya) return false;
-            return !!error;
-        });
-      } else if (i === 2) { 
-          currentStepHasError = !requiredParentSchema.safeParse(form.getValues().ayah).success;
-      } else if (i === 3) { 
-          currentStepHasError = !requiredParentSchema.safeParse(form.getValues().ibu).success;
-      } else if (i === 4) { 
-        currentStepHasError = !requiredParentSchema.safeParse(form.getValues().wali).success;
-      } else if (i === 5) { 
-        currentStepHasError = !!(errors.nomorTeleponAyah || errors.nomorTeleponIbu || errors.nomorTeleponWali);
-      }
-
-      if (currentStepHasError) {
-        newCompletionStatus[i] = false;
-        if (i < firstErrorStep) firstErrorStep = i;
-      } else {
-        newCompletionStatus[i] = true;
+      const isStepCurrentlyValid = await validateStep(i); // Re-validate to get current status
+      newCompletionStatus[i] = isStepCurrentlyValid;
+      if (!isStepCurrentlyValid && i < firstErrorStep) {
+        firstErrorStep = i;
       }
     }
     setStepCompletionStatus(newCompletionStatus);
@@ -309,15 +291,16 @@ export function RegistrationForm() {
                         ? "bg-primary text-primary-foreground border-destructive ring-2 ring-destructive ring-offset-background" 
                         : "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-primary ring-offset-background")
                     : successfullyValidated
-                    ? "border-green-500 bg-card"
+                    ? "border-green-500 bg-card" // Validated and not current
                     : attemptedAndInvalid
-                    ? "border-destructive bg-card" 
-                    : "border-border bg-card", 
+                    ? "border-destructive bg-card" // Invalid and not current
+                    : "border-border bg-card", // Default, not current, not yet validated or attempted
                 )}
                 onClick={() => processStep('jumpTo', step.num)}
                 title={step.title}
                 aria-current={isCurrent ? "step" : undefined}
               >
+                {/* Show Check or X icon regardless of current step, based on validation status */}
                 {successfullyValidated && (
                   <Check className="w-4 h-4 absolute top-0.5 right-0.5 text-green-600" strokeWidth={3} />
                 )}
@@ -352,16 +335,14 @@ export function RegistrationForm() {
   const renderParentFields = (parentType: 'ayah' | 'ibu' | 'wali') => {
     const title = parentType === 'ayah' ? 'Ayah Kandung' : parentType === 'ibu' ? 'Ibu Kandung' : 'Wali';
     const namePrefix = parentType;
-    const description = parentType === 'wali' 
-      ? "Data Wali wajib diisi. Jika Ayah/Ibu adalah penanggung jawab, salin datanya. Jika diasuh kerabat lain (kakek, nenek, paman, bibi, dsb), isikan data wali yang sebenarnya."
-      : undefined;
+    const description = "Data Wali wajib diisi. Jika Ayah/Ibu adalah penanggung jawab, salin datanya. Jika diasuh kerabat lain (kakek, nenek, paman, bibi, dsb), isikan data wali yang sebenarnya.";
 
 
     return (
       <Card className="w-full shadow-lg">
         <CardHeader>
           <CardTitle className="font-headline text-xl text-center">{`Data ${title}`}</CardTitle>
-          {description && (
+          {parentType === 'wali' && (
             <CardDescription className="text-center pt-1">
               {description}
             </CardDescription>
@@ -655,6 +636,9 @@ export function RegistrationForm() {
                 <FormItem><FormLabel>Nomor Telepon Wali</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
             </CardContent>
+             <CardFooter>
+                <FormMessage>{form.formState.errors.nomorTeleponAyah?.message && form.formState.errors.nomorTeleponAyah.type === 'manual' ? form.formState.errors.nomorTeleponAyah.message : ""}</FormMessage>
+             </CardFooter>
           </Card>
         )}
 
