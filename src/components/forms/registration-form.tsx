@@ -37,7 +37,7 @@ import {
   agamaOptionsList,
   tempatTinggalOptionsList,
   modaTransportasiOptions,
-  pendidikanOptionsList, // Updated for parents and "Lainnya"
+  pendidikanOptionsList,
   pekerjaanOptionsList,
   penghasilanOptionsList,
 } from '@/lib/schemas';
@@ -46,7 +46,6 @@ import { Separator } from '../ui/separator';
 
 const TOTAL_STEPS = 5;
 
-// Helper function to get nested field errors
 function getFieldError(path: string, errors: FieldErrors<RegistrationFormData>): FieldError | undefined {
   const pathArray = path.split('.');
   let current: any = errors;
@@ -68,7 +67,7 @@ export function RegistrationForm() {
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
-    mode: 'onChange', // Validate on change to update field states for better UX if needed
+    mode: 'onChange',
     defaultValues: {
       namaLengkap: '',
       namaPanggilan: '',
@@ -161,8 +160,6 @@ export function RegistrationForm() {
         if (form.getValues("wali.pendidikan") === "Lainnya") step4Fields.push("wali.pendidikanLainnya");
         return step4Fields;
       case 5:
-        // For step 5, the main validation is the Zod superRefine for at least one phone number.
-        // Individual fields also have format validation.
         return ["nomorTeleponAyah", "nomorTeleponIbu", "nomorTeleponWali"];
       default:
         return [];
@@ -175,13 +172,10 @@ export function RegistrationForm() {
       let isCurrentStepValid = true;
       if (fieldsToValidate.length > 0) {
         isCurrentStepValid = await form.trigger(fieldsToValidate);
-        if (currentStep === 5) { // Special check for step 5 "at least one phone"
+        if (currentStep === 5) {
             const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
             if (!nomorTeleponAyah && !nomorTeleponIbu && !nomorTeleponWali) {
                 isCurrentStepValid = false;
-                 // We can't easily trigger the Zod superRefine error here for display,
-                 // but we mark the step as invalid for the indicator.
-                 // The actual error message will show on submit.
             }
         }
       }
@@ -203,11 +197,9 @@ export function RegistrationForm() {
       title: "Pendaftaran Terkirim!",
       description: "Data Anda telah berhasil direkam.",
     });
-    // Mark all steps as complete
     const allComplete: Record<number, boolean> = {};
     for (let i = 1; i <= TOTAL_STEPS; i++) allComplete[i] = true;
     setStepCompletionStatus(allComplete);
-    // form.reset(); // Optionally reset
   };
 
   const onFormError = (errors: FieldErrors<RegistrationFormData>) => {
@@ -222,27 +214,36 @@ export function RegistrationForm() {
 
     for (let i = 1; i <= TOTAL_STEPS; i++) {
       const stepFields = getFieldsForStep(i);
-      let stepHasError = false;
+      let currentStepHasError = false;
       for (const field of stepFields) {
         if (getFieldError(field, errors)) {
-          stepHasError = true;
+          currentStepHasError = true;
           break;
         }
       }
-      // Check specific Zod superRefine error for step 5
-      if (i === 5 && errors.nomorTeleponAyah?.message?.includes("Minimal satu nomor telepon")) {
-        stepHasError = true;
+      
+      if (i === 5) {
+        // Explicitly check the phone rule for step 5 if not already caught by field path errors
+        if (errors.nomorTeleponAyah?.message?.includes("Minimal satu nomor telepon")) {
+          currentStepHasError = true;
+        }
+        // If form submission failed (errors object is not empty) AND phones are actually empty,
+        // step 5 is definitely a problem, even if Zod error wasn't pathed to nomorTeleponAyah perfectly.
+        else if (Object.keys(errors).length > 0) {
+            const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
+            if (!nomorTeleponAyah && !nomorTeleponIbu && !nomorTeleponWali) {
+                currentStepHasError = true;
+            }
+        }
       }
 
 
-      if (stepHasError) {
+      if (currentStepHasError) {
         newCompletionStatus[i] = false;
         if (i < firstErrorStep) {
           firstErrorStep = i;
         }
       } else {
-        // If no errors for this step after full validation, mark as true
-        // Only override if it wasn't already false from a previous "next" click partial validation
          if (newCompletionStatus[i] !== false) {
            newCompletionStatus[i] = true;
          }
@@ -263,7 +264,7 @@ export function RegistrationForm() {
           const successfullyValidated = stepCompletionStatus[stepNum] === true;
 
           let indicatorContent: React.ReactNode = stepNum;
-          if (successfullyValidated && !isCurrent && !attemptedAndInvalid) {
+          if (successfullyValidated && !isCurrent) {
              indicatorContent = <Check className="w-4 h-4" />;
           }
           if (attemptedAndInvalid) {
@@ -284,7 +285,7 @@ export function RegistrationForm() {
                   ? "border-green-500 text-green-600"
                   : "border-border"
               )}
-              onClick={() => setCurrentStep(stepNum)} // Allow direct navigation by clicking indicators
+              onClick={() => setCurrentStep(stepNum)}
               title={`Langkah ${stepNum}`}
             >
               {indicatorContent}
@@ -458,7 +459,6 @@ export function RegistrationForm() {
       form.setValue('wali.pekerjaan', sourceData.pekerjaan || undefined);
       form.setValue('wali.pekerjaanLainnya', sourceData.pekerjaanLainnya || '');
       form.setValue('wali.penghasilan', sourceData.penghasilan || undefined);
-      // Trigger validation for wali fields after copying
       form.trigger([
         "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan",
         "wali.pendidikanLainnya", "wali.pekerjaan", "wali.pekerjaanLainnya", "wali.penghasilan"
