@@ -5,12 +5,20 @@ import React, { useState, useEffect } from 'react';
 import { useForm, type FieldPath, type FieldErrors, type FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
-import { CalendarIcon, ArrowLeft, ArrowRight, Check, UserRound, User as UserIcon, ShieldCheck, Phone, XIcon } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, ArrowRight, Check, UserRound, User as UserIcon, ShieldCheck, Phone, XIcon, ChevronsUpDown, CheckIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Form,
   FormControl,
@@ -66,6 +74,21 @@ const stepsData = [
   { num: 5, title: "Kontak", Icon: Phone, fields: ["nomorTeleponAyah", "nomorTeleponIbu", "nomorTeleponWali"] as FieldPath<RegistrationFormData>[] },
 ];
 
+interface WilayahBase {
+  code: string;
+  name: string;
+}
+interface Wilayah extends WilayahBase {}
+interface VillageWilayah extends WilayahBase {
+  postal_code: string;
+}
+interface WilayahOption {
+  value: string; // code
+  label: string; // name
+  postalCode?: string;
+}
+
+
 function getFieldError(path: string, errors: FieldErrors<RegistrationFormData>): FieldError | undefined {
   const pathArray = path.split('.');
   let current: any = errors;
@@ -84,6 +107,30 @@ export function RegistrationForm() {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [stepCompletionStatus, setStepCompletionStatus] = useState<Record<number, boolean | undefined>>({});
+
+  // State for wilayah data and loading states
+  const [provinces, setProvinces] = useState<WilayahOption[]>([]);
+  const [regencies, setRegencies] = useState<WilayahOption[]>([]);
+  const [districts, setDistricts] = useState<WilayahOption[]>([]);
+  const [villages, setVillages] = useState<WilayahOption[]>([]);
+
+  const [provincesLoading, setProvincesLoading] = useState(false);
+  const [regenciesLoading, setRegenciesLoading] = useState(false);
+  const [districtsLoading, setDistrictsLoading] = useState(false);
+  const [villagesLoading, setVillagesLoading] = useState(false);
+
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState<string | null>(null);
+  const [selectedRegencyCode, setSelectedRegencyCode] = useState<string | null>(null);
+  const [selectedDistrictCode, setSelectedDistrictCode] = useState<string | null>(null);
+
+  const [isKodePosReadOnly, setIsKodePosReadOnly] = useState(false);
+  
+  // Popover open states
+  const [provincePopoverOpen, setProvincePopoverOpen] = useState(false);
+  const [regencyPopoverOpen, setRegencyPopoverOpen] = useState(false);
+  const [districtPopoverOpen, setDistrictPopoverOpen] = useState(false);
+  const [villagePopoverOpen, setVillagePopoverOpen] = useState(false);
+
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
@@ -147,6 +194,112 @@ export function RegistrationForm() {
     },
   });
 
+  // Fetch provinces
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      setProvincesLoading(true);
+      try {
+        const response = await fetch('/api/wilayah/provinces');
+        if (!response.ok) throw new Error('Failed to fetch provinces. Status: ' + response.status);
+        const responseData = await response.json();
+        const data: Wilayah[] = responseData.data;
+        setProvinces(data.map(p => ({ value: p.code, label: p.name })));
+      } catch (error) {
+        console.error("Error fetching provinces:", error);
+        toast({ title: "Error", description: `Gagal memuat data provinsi: ${(error as Error).message}`, variant: "destructive" });
+        setProvinces([]);
+      } finally {
+        setProvincesLoading(false);
+      }
+    };
+    fetchProvinces();
+  }, [toast]);
+
+  // Fetch regencies when province changes
+  useEffect(() => {
+    if (selectedProvinceCode) {
+      const fetchRegencies = async () => {
+        setRegenciesLoading(true);
+        setRegencies([]);
+        setDistricts([]);
+        setVillages([]);
+        try {
+          const response = await fetch(`/api/wilayah/regencies/${selectedProvinceCode}`);
+          if (!response.ok) throw new Error('Failed to fetch regencies. Status: ' + response.status);
+          const responseData = await response.json();
+          const data: Wilayah[] = responseData.data;
+          setRegencies(data.map(r => ({ value: r.code, label: r.name })));
+        } catch (error) {
+          console.error("Error fetching regencies:", error);
+          toast({ title: "Error", description: `Gagal memuat data kabupaten/kota: ${(error as Error).message}`, variant: "destructive" });
+           setRegencies([]);
+        } finally {
+          setRegenciesLoading(false);
+        }
+      };
+      fetchRegencies();
+    } else {
+      setRegencies([]);
+      setDistricts([]);
+      setVillages([]);
+    }
+  }, [selectedProvinceCode, toast]);
+
+  // Fetch districts when regency changes
+  useEffect(() => {
+    if (selectedRegencyCode) {
+      const fetchDistricts = async () => {
+        setDistrictsLoading(true);
+        setDistricts([]);
+        setVillages([]);
+        try {
+          const response = await fetch(`/api/wilayah/districts/${selectedRegencyCode}`);
+          if (!response.ok) throw new Error('Failed to fetch districts. Status: ' + response.status);
+          const responseData = await response.json();
+          const data: Wilayah[] = responseData.data;
+          setDistricts(data.map(d => ({ value: d.code, label: d.name })));
+        } catch (error) {
+          console.error("Error fetching districts:", error);
+          toast({ title: "Error", description: `Gagal memuat data kecamatan: ${(error as Error).message}`, variant: "destructive" });
+          setDistricts([]);
+        } finally {
+          setDistrictsLoading(false);
+        }
+      };
+      fetchDistricts();
+    } else {
+      setDistricts([]);
+      setVillages([]);
+    }
+  }, [selectedRegencyCode, toast]);
+
+  // Fetch villages when district changes
+  useEffect(() => {
+    if (selectedDistrictCode) {
+      const fetchVillages = async () => {
+        setVillagesLoading(true);
+        setVillages([]);
+        try {
+          const response = await fetch(`/api/wilayah/villages/${selectedDistrictCode}`);
+           if (!response.ok) throw new Error('Failed to fetch villages. Status: ' + response.status);
+          const responseData = await response.json();
+          const data: VillageWilayah[] = responseData.data;
+          setVillages(data.map(v => ({ value: v.code, label: v.name, postalCode: v.postal_code })));
+        } catch (error) {
+          console.error("Error fetching villages:", error);
+          toast({ title: "Error", description: `Gagal memuat data desa/kelurahan: ${(error as Error).message}`, variant: "destructive" });
+          setVillages([]);
+        } finally {
+          setVillagesLoading(false);
+        }
+      };
+      fetchVillages();
+    } else {
+      setVillages([]);
+    }
+  }, [selectedDistrictCode, toast]);
+
+
   const getFieldsForStep = (step: number): FieldPath<RegistrationFormData>[] => {
     const stepData = stepsData.find(s => s.num === step);
     return stepData?.fields || [];
@@ -154,7 +307,7 @@ export function RegistrationForm() {
 
   const validateStep = async (stepNumber: number): Promise<boolean> => {
     const fieldsToValidate = getFieldsForStep(stepNumber);
-    if (fieldsToValidate.length === 0) return true; // No fields to validate for this step
+    if (fieldsToValidate.length === 0) return true;
 
     await form.trigger(fieldsToValidate);
 
@@ -165,7 +318,7 @@ export function RegistrationForm() {
           if (field === "agamaLainnya" && form.getValues("agama") !== "Lainnya") return false;
           if (field === "tempatTinggalLainnya" && form.getValues("tempatTinggal") !== "Lainnya") return false;
           if (field === "modaTransportasiLainnya" && !form.getValues("modaTransportasi").includes("lainnya")) return false;
-          if (field === "alamatJalan") return false; // alamatJalan is optional, so its error shouldn't invalidate the step
+          if (field === "alamatJalan") return false; 
           return !!error;
       });
     } else if (stepNumber === 2) {
@@ -236,7 +389,7 @@ export function RegistrationForm() {
               await form.trigger(phoneFieldsToValidate);
               isStepValid = !phoneFieldsToValidate.some(field => !!getFieldError(field, form.formState.errors));
             } else {
-              isStepValid = true; // Should be true if atLeastOnePhone was the only initial error and now it's cleared.
+              isStepValid = true; 
             }
         }
     }
@@ -295,6 +448,7 @@ export function RegistrationForm() {
   };
 
   const onFormError = async (errors: FieldErrors<RegistrationFormData>) => {
+    console.log("Form errors:", errors);
     toast({
       title: "Formulir Belum Lengkap",
       description: "Mohon periksa kembali isian Anda pada langkah yang ditandai.",
@@ -316,7 +470,7 @@ export function RegistrationForm() {
       setCurrentStep(firstErrorStep);
     }
   };
-
+  
   const renderStepIndicators = () => {
     return (
       <div className="grid grid-cols-5 gap-1 mb-8 rounded-md border shadow-sm p-0.5">
@@ -636,38 +790,243 @@ export function RegistrationForm() {
                     <FormItem><FormLabel>Detail Tempat Tinggal Lainnya</FormLabel><FormControl><Input placeholder="Sebutkan tempat tinggal lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                   )} />
               )}
-               <FormField control={form.control} name="provinsi" render={({ field }) => (
-                <FormItem><FormLabel>Provinsi</FormLabel><FormControl><Input
-                  placeholder="Masukkan provinsi"
-                  {...field}
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="kabupaten" render={({ field }) => (
-                <FormItem><FormLabel>Kabupaten/Kota</FormLabel><FormControl><Input
-                  placeholder="Masukkan kabupaten/kota"
-                  {...field}
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="kecamatan" render={({ field }) => (
-                <FormItem><FormLabel>Kecamatan</FormLabel><FormControl><Input
-                  placeholder="Nama kecamatan"
-                  {...field}
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="desaKelurahan" render={({ field }) => (
-                <FormItem><FormLabel>Desa/Kelurahan</FormLabel><FormControl><Input
-                  placeholder="Nama desa/kelurahan"
-                  {...field}
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                /></FormControl><FormMessage /></FormItem>
-              )} />
+              
+              <FormField
+                control={form.control}
+                name="provinsi"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Provinsi</FormLabel>
+                    <Popover open={provincePopoverOpen} onOpenChange={setProvincePopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                            disabled={provincesLoading || provinces.length === 0}
+                          >
+                            {field.value ? field.value : (provincesLoading ? "Memuat..." : "Pilih Provinsi")}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                          <CommandInput placeholder="Cari provinsi..." />
+                          <CommandList>
+                            <CommandEmpty>Provinsi tidak ditemukan.</CommandEmpty>
+                            <CommandGroup>
+                              {provinces.map((province) => (
+                                <CommandItem
+                                  value={province.label}
+                                  key={province.value}
+                                  onSelect={() => {
+                                    console.log("PROVINSI ONSELECT: Selected value:", province.label, "Actual value from option:", province.value);
+                                    form.setValue("provinsi", province.label);
+                                    setSelectedProvinceCode(province.value);
+                                    form.setValue("kabupaten", "");
+                                    setSelectedRegencyCode(null);
+                                    form.setValue("kecamatan", "");
+                                    setSelectedDistrictCode(null);
+                                    form.setValue("desaKelurahan", "");
+                                    form.setValue("kodePos", "");
+                                    setIsKodePosReadOnly(false);
+                                    setRegencies([]);
+                                    setDistricts([]);
+                                    setVillages([]);
+                                    setProvincePopoverOpen(false);
+                                    form.trigger("provinsi");
+                                  }}
+                                >
+                                  <CheckIcon className={cn("mr-2 h-4 w-4", province.label === field.value ? "opacity-100" : "opacity-0")} />
+                                  {province.label}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="kabupaten"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Kabupaten/Kota</FormLabel>
+                    <Popover open={regencyPopoverOpen} onOpenChange={setRegencyPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            disabled={!selectedProvinceCode || regenciesLoading || regencies.length === 0}
+                            className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                          >
+                            {field.value ? field.value : (regenciesLoading ? "Memuat..." : "Pilih Kabupaten/Kota")}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                          <CommandInput placeholder="Cari kabupaten/kota..." />
+                          <CommandList>
+                            <CommandEmpty>Kabupaten/Kota tidak ditemukan.</CommandEmpty>
+                            <CommandGroup>
+                              {regencies.map((regency) => (
+                                <CommandItem
+                                  value={regency.label}
+                                  key={regency.value}
+                                  onSelect={() => {
+                                    console.log("KABUPATEN ONSELECT: Selected value:", regency.label, "Actual value from option:", regency.value);
+                                    form.setValue("kabupaten", regency.label);
+                                    setSelectedRegencyCode(regency.value);
+                                    form.setValue("kecamatan", "");
+                                    setSelectedDistrictCode(null);
+                                    form.setValue("desaKelurahan", "");
+                                    form.setValue("kodePos", "");
+                                    setIsKodePosReadOnly(false);
+                                    setDistricts([]);
+                                    setVillages([]);
+                                    setRegencyPopoverOpen(false);
+                                    form.trigger("kabupaten");
+                                  }}
+                                >
+                                  <CheckIcon className={cn("mr-2 h-4 w-4", regency.label === field.value ? "opacity-100" : "opacity-0")} />
+                                  {regency.label}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="kecamatan"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Kecamatan</FormLabel>
+                    <Popover open={districtPopoverOpen} onOpenChange={setDistrictPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            disabled={!selectedRegencyCode || districtsLoading || districts.length === 0}
+                            className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                          >
+                            {field.value ? field.value : (districtsLoading ? "Memuat..." : "Pilih Kecamatan")}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                          <CommandInput placeholder="Cari kecamatan..." />
+                          <CommandList>
+                            <CommandEmpty>Kecamatan tidak ditemukan.</CommandEmpty>
+                            <CommandGroup>
+                              {districts.map((district) => (
+                                <CommandItem
+                                  value={district.label}
+                                  key={district.value}
+                                  onSelect={() => {
+                                     console.log("KECAMATAN ONSELECT: Selected value:", district.label, "Actual value from option:", district.value);
+                                    form.setValue("kecamatan", district.label);
+                                    setSelectedDistrictCode(district.value);
+                                    form.setValue("desaKelurahan", "");
+                                    form.setValue("kodePos", "");
+                                    setIsKodePosReadOnly(false);
+                                    setVillages([]);
+                                    setDistrictPopoverOpen(false);
+                                    form.trigger("kecamatan");
+                                  }}
+                                >
+                                  <CheckIcon className={cn("mr-2 h-4 w-4", district.label === field.value ? "opacity-100" : "opacity-0")} />
+                                  {district.label}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="desaKelurahan"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Desa/Kelurahan</FormLabel>
+                    <Popover open={villagePopoverOpen} onOpenChange={setVillagePopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            disabled={!selectedDistrictCode || villagesLoading || villages.length === 0}
+                            className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                          >
+                            {field.value ? field.value : (villagesLoading ? "Memuat..." : "Pilih Desa/Kelurahan")}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                          <CommandInput placeholder="Cari desa/kelurahan..." />
+                          <CommandList>
+                            <CommandEmpty>Desa/Kelurahan tidak ditemukan.</CommandEmpty>
+                            <CommandGroup>
+                              {villages.map((village) => (
+                                <CommandItem
+                                  value={village.label}
+                                  key={village.value}
+                                  onSelect={() => {
+                                    console.log("DESA/KELURAHAN ONSELECT: Selected value:", village.label, "Actual value from option:", village.value, "Postal Code:", village.postalCode);
+                                    form.setValue("desaKelurahan", village.label);
+                                    if (village.postalCode) {
+                                      form.setValue("kodePos", village.postalCode);
+                                      setIsKodePosReadOnly(true);
+                                    } else {
+                                      form.setValue("kodePos", "");
+                                      setIsKodePosReadOnly(false);
+                                    }
+                                    setVillagePopoverOpen(false);
+                                    form.trigger("desaKelurahan");
+                                    form.trigger("kodePos");
+                                  }}
+                                >
+                                  <CheckIcon className={cn("mr-2 h-4 w-4", village.label === field.value ? "opacity-100" : "opacity-0")} />
+                                  {village.label}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField control={form.control} name="dusun" render={({ field }) => (
                 <FormItem><FormLabel>Dusun</FormLabel><FormControl><Input
                   placeholder="Nama dusun/dukuh"
@@ -680,10 +1039,10 @@ export function RegistrationForm() {
                 <FormItem><FormLabel>RT/RW</FormLabel><FormControl><Input placeholder="Contoh: 001/002" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="alamatJalan" render={({ field }) => (
-                <FormItem><FormLabel>Alamat Jalan</FormLabel><FormControl><Input placeholder="Contoh: Jl. Kenanga No. 27 (Bisa nama jalan saja)" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Alamat Jalan</FormLabel><FormControl><Input placeholder="Contoh: Jl. Kenanga No. 27 (Bisa nama jalan saja)" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Kosongkan jika tidak tahu nama jalan.</FormDescription><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="kodePos" render={({ field }) => (
-                <FormItem><FormLabel>Kode Pos</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={5} placeholder="5 digit kode pos" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Kode Pos</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={5} placeholder="5 digit kode pos" {...field} value={field.value ?? ''} readOnly={isKodePosReadOnly} /></FormControl><FormMessage /></FormItem>
               )} />
               <Separator className="my-4" />
               <FormField control={form.control} name="modaTransportasi" render={() => (
