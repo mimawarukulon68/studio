@@ -55,7 +55,7 @@ const parentSharedFields = {
   penghasilan: z.enum(penghasilanOptionsList).optional().nullable(),
 };
 
-const requiredParentSchema = z.object({
+export const requiredParentSchema = z.object({
   nama: z.string().min(1, "Nama wajib diisi"),
   ...parentSharedFields
 }).superRefine(parentSharedRefinement);
@@ -141,7 +141,7 @@ export const registrationSchema = z.object({
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi.",
-      path: ["nomorTeleponAyah"],
+      path: ["nomorTeleponAyah"], // This error will be associated with the first phone field for simplicity
     });
   }
 });
@@ -159,3 +159,5 @@ export const modaTransportasiOptions = [
   { id: "lainnya", label: "Lainnya" },
 ] as const;
 
+
+    

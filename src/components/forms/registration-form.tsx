@@ -40,7 +40,8 @@ import {
   pendidikanOptionsList,
   pekerjaanOptionsList,
   penghasilanOptionsList,
-  optionalParentSchema, // Import for direct parsing if needed
+  optionalParentSchema,
+  requiredParentSchema,
 } from '@/lib/schemas';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
@@ -68,7 +69,7 @@ export function RegistrationForm() {
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
-    mode: 'onChange',
+    mode: 'onChange', // onChange mode helps with immediate feedback but validation on step change is more complex
     defaultValues: {
       namaLengkap: '',
       namaPanggilan: '',
@@ -167,39 +168,50 @@ export function RegistrationForm() {
     }
   };
 
-  const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
+const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     const stepBeingLeft = currentStep;
     let isCurrentStepValid = true;
 
     if (action === 'next' || (action === 'jumpTo' && targetStep && targetStep > stepBeingLeft)) {
-      const fieldsToValidate = getFieldsForStep(stepBeingLeft);
+      const stepFields = getFieldsForStep(stepBeingLeft);
+
+      if (stepBeingLeft === 1) {
+        if (stepFields.length > 0) {
+          isCurrentStepValid = await form.trigger(stepFields);
+        }
+      } else if (stepBeingLeft === 2) {
+        const parentData = form.getValues().ayah;
+        const parseResult = requiredParentSchema.safeParse(parentData);
+        isCurrentStepValid = parseResult.success;
+      } else if (stepBeingLeft === 3) {
+        const parentData = form.getValues().ibu;
+        const parseResult = requiredParentSchema.safeParse(parentData);
+        isCurrentStepValid = parseResult.success;
+      } else if (stepBeingLeft === 4) {
+        const waliData = form.getValues().wali;
+        const isWaliEffectivelyEmpty = !Object.values(waliData || {}).some(val => 
+          val !== undefined && val !== null && val !== '' && (!Array.isArray(val) || val.length > 0)
+        );
+        if (isWaliEffectivelyEmpty) {
+          isCurrentStepValid = true; 
+        } else {
+          const parseResult = optionalParentSchema.safeParse(waliData);
+          isCurrentStepValid = parseResult.success; 
+        }
+      } else if (stepBeingLeft === 5) {
+        const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
+        const atLeastOnePhone = nomorTeleponAyah || nomorTeleponIbu || nomorTeleponWali;
+        
+        let individualPhonesValid = true;
+        if (nomorTeleponAyah && form.formState.errors.nomorTeleponAyah) individualPhonesValid = false;
+        if (nomorTeleponIbu && form.formState.errors.nomorTeleponIbu) individualPhonesValid = false;
+        if (nomorTeleponWali && form.formState.errors.nomorTeleponWali) individualPhonesValid = false;
+        
+        isCurrentStepValid = atLeastOnePhone && individualPhonesValid;
+      }
       
-      if (fieldsToValidate.length > 0) {
-          isCurrentStepValid = await form.trigger(fieldsToValidate);
-      }
-
-      if (stepBeingLeft === 4) { // Additional check for Wali data (Step 4)
-          const waliData = form.getValues().wali;
-          const isWaliEffectivelyEmpty = !Object.values(waliData || {}).some(v => v !== undefined && v !== '' && (Array.isArray(v) ? v.length > 0 : true));
-
-          if (isWaliEffectivelyEmpty) {
-              // Wali is empty, which is allowed. `isCurrentStepValid` from trigger should be true.
-          } else {
-              // Wali has some data, parse it against its own schema
-              const parseResult = optionalParentSchema.safeParse(waliData);
-              if (!parseResult.success) {
-                  isCurrentStepValid = false;
-              }
-          }
-      } else if (stepBeingLeft === 5) { // Additional check for Phone numbers (Step 5)
-          const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
-          if (!nomorTeleponAyah && !nomorTeleponIbu && !nomorTeleponWali) {
-              isCurrentStepValid = false; 
-          }
-      }
       setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isCurrentStepValid }));
     }
-
 
     if (action === 'next') {
       if (currentStep < TOTAL_STEPS) setCurrentStep(prev => prev + 1);
@@ -237,6 +249,7 @@ export function RegistrationForm() {
       const stepFields = getFieldsForStep(i);
       let currentStepHasError = false;
 
+      // Check for errors in individual fields for the current step
       for (const field of stepFields) {
         if (getFieldError(field, errors)) {
           currentStepHasError = true;
@@ -244,15 +257,24 @@ export function RegistrationForm() {
         }
       }
       
-      if (i === 4 && !currentStepHasError) {
+      // More comprehensive object-level validation for steps 2, 3, 4, 5
+      if (i === 2 && !currentStepHasError) {
+        const parentData = form.getValues().ayah;
+        if (!requiredParentSchema.safeParse(parentData).success) {
+            currentStepHasError = true;
+        }
+      } else if (i === 3 && !currentStepHasError) {
+        const parentData = form.getValues().ibu;
+        if (!requiredParentSchema.safeParse(parentData).success) {
+            currentStepHasError = true;
+        }
+      } else if (i === 4 && !currentStepHasError) {
         const waliData = form.getValues().wali;
-        const isWaliEffectivelyEmpty = !Object.values(waliData || {}).some(v => v !== undefined && v !== '' && (Array.isArray(v) ? v.length > 0 : true));
+        const isWaliEffectivelyEmpty = !Object.values(waliData || {}).some(val => 
+          val !== undefined && val !== null && val !== '' && (!Array.isArray(val) || val.length > 0)
+        );
         if (!isWaliEffectivelyEmpty) {
-           // registrationSchema is ZodEffects, access underlying object via ._def.schema
-           // then access .shape.wali which is ZodOptional, then .unwrap() to get the actual schema for wali
-          const waliSchema = registrationSchema._def.schema.shape.wali.unwrap();
-          const parseResult = waliSchema.safeParse(waliData);
-          if (!parseResult.success) {
+          if (!optionalParentSchema.safeParse(waliData).success) {
             currentStepHasError = true;
           }
         }
@@ -261,8 +283,11 @@ export function RegistrationForm() {
         if (!nomorTeleponAyah && !nomorTeleponIbu && !nomorTeleponWali) {
             currentStepHasError = true;
         }
-        // Also check for a specific error message from superRefine, if present
-        if (errors.nomorTeleponAyah?.message?.includes("Minimal satu nomor telepon")) {
+        // Check for a specific error message from superRefine, if present at a root level or on a specific field from superRefine
+        if (errors.nomorTeleponAyah?.message?.includes("Minimal satu nomor telepon") || 
+            errors.nomorTeleponIbu?.message?.includes("Minimal satu nomor telepon") || 
+            errors.nomorTeleponWali?.message?.includes("Minimal satu nomor telepon") ||
+            (errors as any)._errors?.some((err: any) => err.message?.includes("Minimal satu nomor telepon"))) { // Check root errors
              currentStepHasError = true;
         }
       }
@@ -273,6 +298,9 @@ export function RegistrationForm() {
           firstErrorStep = i;
         }
       } else {
+        // If no errors specific to this step were found by field or object checks, mark as complete.
+        // This might be overly optimistic if form.trigger wasn't run or didn't catch everything for step 1.
+        // However, onFormError is primarily for the *final submit* errors.
         newCompletionStatus[i] = true;
       }
     }
@@ -485,10 +513,14 @@ export function RegistrationForm() {
       form.setValue('wali.pekerjaan', sourceData.pekerjaan || undefined);
       form.setValue('wali.pekerjaanLainnya', sourceData.pekerjaanLainnya || '');
       form.setValue('wali.penghasilan', sourceData.penghasilan || undefined);
-      form.trigger([
+      // Trigger validation for wali fields after copying
+      const waliFieldsToTrigger: FieldPath<RegistrationFormData>[] = [
         "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan",
         "wali.pendidikanLainnya", "wali.pekerjaan", "wali.pekerjaanLainnya", "wali.penghasilan"
-      ]);
+      ];
+      if(sourceData.pendidikan === "Lainnya") waliFieldsToTrigger.push("wali.pendidikanLainnya");
+      if(sourceData.pekerjaan === "Lainnya") waliFieldsToTrigger.push("wali.pekerjaanLainnya");
+      form.trigger(waliFieldsToTrigger);
     }
   };
 
