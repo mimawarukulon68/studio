@@ -106,6 +106,7 @@ export function RegistrationForm() {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [stepCompletionStatus, setStepCompletionStatus] = useState<Record<number, boolean | undefined>>({});
+  const [isAttemptingSubmit, setIsAttemptingSubmit] = useState(false);
 
   const [provinces, setProvinces] = useState<WilayahOption[]>([]);
   const [regencies, setRegencies] = useState<WilayahOption[]>([]);
@@ -131,7 +132,7 @@ export function RegistrationForm() {
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
-    mode: 'onBlur', // Changed from 'onChange' to 'onBlur'
+    mode: 'onBlur', 
     defaultValues: {
       namaLengkap: '',
       namaPanggilan: '',
@@ -326,53 +327,44 @@ export function RegistrationForm() {
           if (field === "alamatJalan") return false; 
           return !!error;
       });
-    } else if (stepNumber === 2) {
+    } else if (stepNumber === 2) { // Ayah
         const ayahData = form.getValues().ayah;
         const validationResult = requiredParentSchema.safeParse(ayahData);
         isStepValid = validationResult.success;
         if(!isStepValid && validationResult.error) {
             validationResult.error.errors.forEach(err => {
                 const path = `ayah.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
-                if (!form.formState.errors.ayah?.[err.path[0] as keyof typeof form.formState.errors.ayah]) {
-                     form.setError(path, { type: 'manual', message: err.message });
-                }
+                 form.setError(path, { type: 'manual', message: err.message });
             });
-        } else if (isStepValid && form.formState.errors.ayah) {
-            (Object.keys(form.formState.errors.ayah) as (keyof typeof form.formState.errors.ayah)[]).forEach(key => {
-                 form.clearErrors(`ayah.${key}` as FieldPath<RegistrationFormData>);
-            });
+        } else if (isStepValid ) {
+            const ayahFields = getFieldsForStep(stepNumber);
+            ayahFields.forEach(field => form.clearErrors(field));
         }
-    } else if (stepNumber === 3) {
+    } else if (stepNumber === 3) { // Ibu
         const ibuData = form.getValues().ibu;
         const validationResult = requiredParentSchema.safeParse(ibuData);
         isStepValid = validationResult.success;
          if(!isStepValid && validationResult.error) {
             validationResult.error.errors.forEach(err => {
                 const path = `ibu.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
-                if (!form.formState.errors.ibu?.[err.path[0] as keyof typeof form.formState.errors.ibu]) {
-                     form.setError(path, { type: 'manual', message: err.message });
-                }
+                form.setError(path, { type: 'manual', message: err.message });
             });
-        } else if (isStepValid && form.formState.errors.ibu) {
-            (Object.keys(form.formState.errors.ibu) as (keyof typeof form.formState.errors.ibu)[]).forEach(key => {
-                 form.clearErrors(`ibu.${key}` as FieldPath<RegistrationFormData>);
-            });
+        } else if (isStepValid) {
+            const ibuFields = getFieldsForStep(stepNumber);
+            ibuFields.forEach(field => form.clearErrors(field));
         }
-    } else if (stepNumber === 4) {
+    } else if (stepNumber === 4) { // Wali
         const waliData = form.getValues().wali;
         const validationResult = requiredParentSchema.safeParse(waliData);
         isStepValid = validationResult.success;
          if(!isStepValid && validationResult.error) {
             validationResult.error.errors.forEach(err => {
                 const path = `wali.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
-                 if (!form.formState.errors.wali?.[err.path[0] as keyof typeof form.formState.errors.wali]) {
-                     form.setError(path, { type: 'manual', message: err.message });
-                }
+                form.setError(path, { type: 'manual', message: err.message });
             });
-        } else if (isStepValid && form.formState.errors.wali) {
-             (Object.keys(form.formState.errors.wali) as (keyof typeof form.formState.errors.wali)[]).forEach(key => {
-                 form.clearErrors(`wali.${key}` as FieldPath<RegistrationFormData>);
-            });
+        } else if (isStepValid) {
+            const waliFields = getFieldsForStep(stepNumber);
+            waliFields.forEach(field => form.clearErrors(field));
         }
     } else if (stepNumber === 5) {
         const contactData = form.getValues();
@@ -403,6 +395,8 @@ export function RegistrationForm() {
 
 
   const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
+    setIsAttemptingSubmit(false); // Ensure this is false during any step navigation
+
     const stepBeingLeft = currentStep;
     const isStepBeingLeftValid = await validateStep(stepBeingLeft);
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
@@ -422,6 +416,17 @@ export function RegistrationForm() {
 
 
   const onFormSubmit = async (data: RegistrationFormData) => {
+    if (!isAttemptingSubmit) {
+      // RHF might call this if schema is valid due to onBlur, but not a direct submit.
+      // Update step completion for UI feedback.
+      const tempCompletionStatus: Record<number, boolean | undefined> = {};
+      for (let i = 1; i <= TOTAL_STEPS; i++) {
+          tempCompletionStatus[i] = await validateStep(i);
+      }
+      setStepCompletionStatus(tempCompletionStatus);
+      return; // Do not proceed with full submission logic
+    }
+
     let allStepsValid = true;
     const newCompletionStatus: Record<number, boolean | undefined> = {};
     for (let i = 1; i <= TOTAL_STEPS; i++) {
@@ -443,18 +448,30 @@ export function RegistrationForm() {
         description: "Mohon periksa kembali isian Anda pada langkah yang ditandai.",
         variant: "destructive",
       });
-      return;
+    } else {
+      console.log("Form submitted successfully:", data);
+      toast({
+        title: "Pendaftaran Terkirim!",
+        description: "Data Anda telah berhasil direkam.",
+      });
+      // Optionally: form.reset(); setCurrentStep(1);
     }
-
-    console.log("Form submitted successfully:", data);
-    toast({
-      title: "Pendaftaran Terkirim!",
-      description: "Data Anda telah berhasil direkam.",
-    });
+    setIsAttemptingSubmit(false); // Reset the flag
   };
 
   const onFormError = async (errors: FieldErrors<RegistrationFormData>) => {
-    console.log("Form errors on submit:", errors);
+    if (!isAttemptingSubmit) {
+      // RHF called this due to background validation, not a direct submit.
+      // Update step completion for UI feedback.
+      const tempCompletionStatus: Record<number, boolean | undefined> = {};
+       for (let i = 1; i <= TOTAL_STEPS; i++) {
+          tempCompletionStatus[i] = await validateStep(i);
+      }
+      setStepCompletionStatus(tempCompletionStatus);
+      return; // Do not proceed with full error handling logic
+    }
+    
+    console.log("Form errors on submit (from RHF):", errors);
     toast({
       title: "Formulir Belum Lengkap",
       description: "Mohon periksa kembali isian Anda pada langkah yang ditandai.",
@@ -475,6 +492,7 @@ export function RegistrationForm() {
     if (firstErrorStep <= TOTAL_STEPS) {
       setCurrentStep(firstErrorStep);
     }
+    setIsAttemptingSubmit(false); // Reset the flag
   };
   
   const renderStepIndicators = () => {
@@ -1125,7 +1143,12 @@ export function RegistrationForm() {
               Berikutnya <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           ) : (
-            <Button type="submit" className="w-full md:w-auto text-lg py-6 ml-auto" disabled={form.formState.isSubmitting || form.formState.isSubmitSuccessful}>
+            <Button 
+              type="submit" 
+              onClick={() => setIsAttemptingSubmit(true)} 
+              className="w-full md:w-auto text-lg py-6 ml-auto" 
+              disabled={form.formState.isSubmitting || form.formState.isSubmitSuccessful}
+            >
               {form.formState.isSubmitting ? 'Mengirim...' : 'Kirim Pendaftaran'}
             </Button>
           )}
