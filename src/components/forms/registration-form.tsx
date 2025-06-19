@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'; // Import ScrollArea
 import { cn } from '@/lib/utils';
 import {
   registrationSchema,
@@ -176,9 +177,8 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
       const fieldsToValidate = getFieldsForStep(stepBeingLeft);
       await form.trigger(fieldsToValidate);
 
-      if (stepBeingLeft === 1) { // Identitas Peserta Didik
+      if (stepBeingLeft === 1) { 
         isCurrentStepValid = fieldsToValidate.every(field => !getFieldError(field, form.formState.errors));
-        // Check conditional "Lainnya" fields for step 1 specifically
         if (form.getValues("agama") === "Lainnya" && !form.getValues("agamaLainnya")) isCurrentStepValid = false;
         if (form.getValues("tempatTinggal") === "Lainnya" && !form.getValues("tempatTinggalLainnya")) isCurrentStepValid = false;
         if (form.getValues("modaTransportasi").includes("lainnya") && !form.getValues("modaTransportasiLainnya")) isCurrentStepValid = false;
@@ -191,7 +191,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
         const parentData = form.getValues().ibu;
         const parseResult = requiredParentSchema.safeParse(parentData);
         isCurrentStepValid = parseResult.success;
-      } else if (stepBeingLeft === 4) { // Data Wali
+      } else if (stepBeingLeft === 4) { // Data Wali - now required
         const waliData = form.getValues().wali;
         const parseResult = requiredParentSchema.safeParse(waliData);
         isCurrentStepValid = parseResult.success;
@@ -252,7 +252,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
         }
       }
       
-      if (i === 1 && !currentStepHasError) { // Double check "Lainnya" for step 1
+      if (i === 1 && !currentStepHasError) { 
         if (form.getValues("agama") === "Lainnya" && !form.getValues("agamaLainnya")) currentStepHasError = true;
         if (form.getValues("tempatTinggal") === "Lainnya" && !form.getValues("tempatTinggalLainnya")) currentStepHasError = true;
         if (form.getValues("modaTransportasi").includes("lainnya") && !form.getValues("modaTransportasiLainnya")) currentStepHasError = true;
@@ -262,7 +262,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
       } else if (i === 3 && !currentStepHasError) {
         const parentData = form.getValues().ibu;
         if (!requiredParentSchema.safeParse(parentData).success) currentStepHasError = true;
-      } else if (i === 4 && !currentStepHasError) {
+      } else if (i === 4 && !currentStepHasError) { // Wali data is now required
         const waliData = form.getValues().wali;
         if (!requiredParentSchema.safeParse(waliData).success) currentStepHasError = true;
       } else if (i === 5 && !currentStepHasError) {
@@ -270,7 +270,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
         if (!nomorTeleponAyah && !nomorTeleponIbu && !nomorTeleponWali) {
             currentStepHasError = true;
         }
-        if (errors.nomorTeleponAyah?.message?.includes("Minimal satu nomor telepon") || 
+         if (errors.nomorTeleponAyah?.message?.includes("Minimal satu nomor telepon") || 
             errors.nomorTeleponIbu?.message?.includes("Minimal satu nomor telepon") || 
             errors.nomorTeleponWali?.message?.includes("Minimal satu nomor telepon") ||
             (errors as any)._errors?.some((err: any) => err.message?.includes("Minimal satu nomor telepon"))) { 
@@ -282,7 +282,6 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
         newCompletionStatus[i] = false;
         if (i < firstErrorStep) firstErrorStep = i;
       } else {
-        // Only mark as true if there are no specific errors for this step from the `errors` object
         let stepHasNoZodErrors = true;
         for (const field of stepFields) {
             if (getFieldError(field, errors)) {
@@ -290,11 +289,10 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
                 break;
             }
         }
-         // Also check for object-level errors (e.g., from superRefine)
         if (i === 1 && (errors as any)._errors?.some((e: any) => e.path?.startsWith("step1"))) stepHasNoZodErrors = false;
         if (i === 2 && (errors as any).ayah?._errors) stepHasNoZodErrors = false;
         if (i === 3 && (errors as any).ibu?._errors) stepHasNoZodErrors = false;
-        if (i === 4 && (errors as any).wali?._errors) stepHasNoZodErrors = false;
+        if (i === 4 && (errors as any).wali?._errors) stepHasNoZodErrors = false; // Check for wali errors
         if (i === 5 && (errors as any)._errors?.some((e: any) => e.path?.some((p: string) => p.includes("nomorTelepon")))) stepHasNoZodErrors = false;
 
 
@@ -309,57 +307,61 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
 
   const renderStepIndicators = () => {
     return (
-      <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8">
-        {stepsData.map((step) => {
-          const isCurrent = currentStep === step.num;
-          const successfullyValidated = stepCompletionStatus[step.num] === true;
-          const attemptedAndInvalid = stepCompletionStatus[step.num] === false;
-          const StepIcon = step.Icon;
+      <ScrollArea className="w-full whitespace-nowrap rounded-md border mb-8 shadow-sm">
+        <div className="flex w-max space-x-3 p-4">
+          {stepsData.map((step) => {
+            const isCurrent = currentStep === step.num;
+            const successfullyValidated = stepCompletionStatus[step.num] === true;
+            const attemptedAndInvalid = stepCompletionStatus[step.num] === false;
+            const StepIcon = step.Icon;
 
-          return (
-            <div
-              key={step.num}
-              className={cn(
-                "flex flex-col items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all w-28 h-24 sm:w-32 sm:h-28 text-center relative shadow-sm",
-                isCurrent
-                  ? "bg-primary text-primary-foreground border-primary ring-2 ring-primary ring-offset-2 scale-105"
-                  : successfullyValidated
-                  ? "border-green-500 bg-card"
-                  : attemptedAndInvalid
-                  ? "border-destructive bg-card animate-pulse"
-                  : "border-border bg-card hover:border-primary/70",
-              )}
-              onClick={() => processStep('jumpTo', step.num)}
-              title={`Langkah ${step.num}: ${step.title}`}
-              aria-current={isCurrent ? "step" : undefined}
-            >
-              {successfullyValidated && !isCurrent && (
-                <Check className="w-5 h-5 absolute top-1.5 right-1.5 text-green-600" strokeWidth={3} />
-              )}
-              {attemptedAndInvalid && (
-                <X className="w-5 h-5 absolute top-1.5 right-1.5 text-destructive" strokeWidth={3} />
-              )}
-              
-              <StepIcon className={cn(
-                  "w-7 h-7 sm:w-8 sm:h-8 mb-1.5",
-                  isCurrent ? "text-primary-foreground" : 
-                  successfullyValidated ? "text-green-500" : 
-                  attemptedAndInvalid ? "text-destructive" : 
-                  "text-primary" 
-              )} />
-              <span className={cn(
-                  "text-xs sm:text-sm leading-tight font-medium",
-                  isCurrent ? "text-primary-foreground" :
-                  successfullyValidated ? "text-green-700" : 
-                  attemptedAndInvalid ? "text-destructive" :
-                  "text-card-foreground"
-              )}>
-                  {step.title}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+            return (
+              <div
+                key={step.num}
+                className={cn(
+                  "flex flex-col items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all w-32 h-28 text-center relative shadow-sm",
+                  "hover:border-primary/70",
+                  isCurrent
+                    ? "bg-primary text-primary-foreground border-primary ring-2 ring-primary ring-offset-2 scale-105"
+                    : successfullyValidated
+                    ? "border-green-500 bg-card"
+                    : attemptedAndInvalid
+                    ? "border-destructive bg-card animate-pulse"
+                    : "border-border bg-card",
+                )}
+                onClick={() => processStep('jumpTo', step.num)}
+                title={`Langkah ${step.num}: ${step.title}`}
+                aria-current={isCurrent ? "step" : undefined}
+              >
+                {successfullyValidated && !isCurrent && (
+                  <Check className="w-5 h-5 absolute top-1.5 right-1.5 text-green-600" strokeWidth={3} />
+                )}
+                {attemptedAndInvalid && (
+                  <X className="w-5 h-5 absolute top-1.5 right-1.5 text-destructive" strokeWidth={3} />
+                )}
+                
+                <StepIcon className={cn(
+                    "w-8 h-8 mb-1.5",
+                    isCurrent ? "text-primary-foreground" : 
+                    successfullyValidated ? "text-green-500" : 
+                    attemptedAndInvalid ? "text-destructive" : 
+                    "text-primary" 
+                )} />
+                <span className={cn(
+                    "text-sm leading-tight font-medium",
+                    isCurrent ? "text-primary-foreground" :
+                    successfullyValidated ? "text-green-700" : 
+                    attemptedAndInvalid ? "text-destructive" :
+                    "text-card-foreground"
+                )}>
+                    {step.title}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
     );
   };
 
@@ -374,9 +376,9 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
           <CardTitle className="font-headline text-xl text-center">{`Data ${title}`}</CardTitle>
           {parentType === 'wali' && (
             <CardDescription className="text-center pt-1">
-              Wali adalah pihak yang saat ini bertanggung jawab atas peserta didik.
+              Wali adalah pihak yang saat ini bertanggung jawab atas peserta didik. Data Wali wajib diisi.
               Jika Ayah/Ibu masih menjadi penanggung jawab utama, silakan salin data dari mereka.
-              Namun, jika peserta didik diasuh oleh kerabat lain (misalnya kakek, nenek, paman, bibi, dsb), mohon isikan data sesuai wali yang sebenarnya. Data Wali wajib diisi.
+              Namun, jika peserta didik diasuh oleh kerabat lain (misalnya kakek, nenek, paman, bibi, dsb), mohon isikan data sesuai wali yang sebenarnya.
             </CardDescription>
           )}
         </CardHeader>
