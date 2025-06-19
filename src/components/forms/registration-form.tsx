@@ -410,30 +410,19 @@ export function RegistrationForm() {
 
  const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     const stepBeingLeft = currentStep;
-    const isCurrentStepValid = await validateStep(stepBeingLeft);
-    setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isCurrentStepValid }));
+    // Validate the step being left to update its visual status, but don't block navigation
+    const isStepBeingLeftValid = await validateStep(stepBeingLeft);
+    setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
 
     if (action === 'next') {
-      if (isCurrentStepValid && currentStep < TOTAL_STEPS) {
+      if (currentStep < TOTAL_STEPS) {
         setCurrentStep(prev => prev + 1);
-      } else if (!isCurrentStepValid) {
-        toast({
-          title: "Formulir Belum Lengkap",
-          description: "Mohon periksa kembali isian Anda pada langkah ini sebelum melanjutkan.",
-          variant: "destructive",
-        });
       }
     } else if (action === 'prev') {
-      if (currentStep > 1) setCurrentStep(prev => prev - 1);
+      if (currentStep > 1) {
+        setCurrentStep(prev => prev - 1);
+      }
     } else if (action === 'jumpTo' && targetStep !== undefined) {
-        if (targetStep > stepBeingLeft && !isCurrentStepValid) {
-           toast({
-             title: "Langkah Belum Selesai",
-             description: `Mohon lengkapi dahulu Langkah ${stepBeingLeft} sebelum ke Langkah ${targetStep}.`,
-             variant: "destructive",
-           });
-           return;
-        }
         setCurrentStep(targetStep);
     }
   };
