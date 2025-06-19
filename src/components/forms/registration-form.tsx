@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, type FieldPath, type FieldErrors, type FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
-import { CalendarIcon, ArrowLeft, ArrowRight, Check, X, UserRound, User as UserIcon, ShieldCheck, Phone } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, ArrowRight, Check, UserRound, User as UserIcon, ShieldCheck, Phone } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -170,38 +170,38 @@ export function RegistrationForm() {
 
 const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     const stepBeingLeft = currentStep;
-    let isCurrentStepValid = true;
+    let isStepBeingLeftValid = true;
 
     if (action === 'next' || (action === 'jumpTo' && targetStep && targetStep > stepBeingLeft)) {
       const fieldsToValidate = getFieldsForStep(stepBeingLeft);
-       await form.trigger(fieldsToValidate);
+      await form.trigger(fieldsToValidate);
 
       if (stepBeingLeft === 1) { 
-        isCurrentStepValid = fieldsToValidate.every(field => !getFieldError(field, form.formState.errors));
-        if (form.getValues("agama") === "Lainnya" && !form.getValues("agamaLainnya")) isCurrentStepValid = false;
-        if (form.getValues("tempatTinggal") === "Lainnya" && !form.getValues("tempatTinggalLainnya")) isCurrentStepValid = false;
-        if (form.getValues("modaTransportasi").includes("lainnya") && !form.getValues("modaTransportasiLainnya")) isCurrentStepValid = false;
-      } else if (stepBeingLeft === 2) { // Data Ayah
+        isStepBeingLeftValid = fieldsToValidate.every(field => !getFieldError(field, form.formState.errors));
+        if (form.getValues("agama") === "Lainnya" && !form.getValues("agamaLainnya")) isStepBeingLeftValid = false;
+        if (form.getValues("tempatTinggal") === "Lainnya" && !form.getValues("tempatTinggalLainnya")) isStepBeingLeftValid = false;
+        if (form.getValues("modaTransportasi").includes("lainnya") && !form.getValues("modaTransportasiLainnya")) isStepBeingLeftValid = false;
+      } else if (stepBeingLeft === 2) { 
         const parentData = form.getValues().ayah;
-        isCurrentStepValid = requiredParentSchema.safeParse(parentData).success;
-      } else if (stepBeingLeft === 3) { // Data Ibu
+        isStepBeingLeftValid = requiredParentSchema.safeParse(parentData).success;
+      } else if (stepBeingLeft === 3) {
         const parentData = form.getValues().ibu;
-        isCurrentStepValid = requiredParentSchema.safeParse(parentData).success;
-      } else if (stepBeingLeft === 4) { // Data Wali
+        isStepBeingLeftValid = requiredParentSchema.safeParse(parentData).success;
+      } else if (stepBeingLeft === 4) {
         const waliData = form.getValues().wali;
-        isCurrentStepValid = requiredParentSchema.safeParse(waliData).success;
-      } else if (stepBeingLeft === 5) { // Kontak
+        isStepBeingLeftValid = requiredParentSchema.safeParse(waliData).success;
+      } else if (stepBeingLeft === 5) {
         const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
-        const atLeastOnePhone = nomorTeleponAyah || nomorTeleponIbu || nomorTeleponWali;
+        const atLeastOnePhone = !!nomorTeleponAyah || !!nomorTeleponIbu || !!nomorTeleponWali;
         
         let individualPhonesValid = true;
         if (nomorTeleponAyah && form.formState.errors.nomorTeleponAyah) individualPhonesValid = false;
         if (nomorTeleponIbu && form.formState.errors.nomorTeleponIbu) individualPhonesValid = false;
         if (nomorTeleponWali && form.formState.errors.nomorTeleponWali) individualPhonesValid = false;
         
-        isCurrentStepValid = atLeastOnePhone && individualPhonesValid;
+        isStepBeingLeftValid = atLeastOnePhone && individualPhonesValid;
       }
-      setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isCurrentStepValid }));
+      setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
     }
 
     if (action === 'next') {
@@ -238,34 +238,28 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
 
     for (let i = 1; i <= TOTAL_STEPS; i++) {
       let currentStepHasError = false;
-      const stepFields = getFieldsForStep(i);
-
-      for (const field of stepFields) {
-        if (getFieldError(field, errors)) {
-          currentStepHasError = true;
-          break;
-        }
-      }
       
-      if (i === 1) { 
+      if (i === 1) {
+        const fieldsToCheck = getFieldsForStep(i);
+        currentStepHasError = fieldsToCheck.some(field => getFieldError(field, errors));
         if (form.getValues("agama") === "Lainnya" && !form.getValues("agamaLainnya")) currentStepHasError = true;
         if (form.getValues("tempatTinggal") === "Lainnya" && !form.getValues("tempatTinggalLainnya")) currentStepHasError = true;
         if (form.getValues("modaTransportasi").includes("lainnya") && !form.getValues("modaTransportasiLainnya")) currentStepHasError = true;
       } else if (i === 2) {
-        const parentData = form.getValues().ayah;
-        if (!requiredParentSchema.safeParse(parentData).success) currentStepHasError = true;
+        currentStepHasError = !requiredParentSchema.safeParse(form.getValues().ayah).success;
       } else if (i === 3) {
-        const parentData = form.getValues().ibu;
-        if (!requiredParentSchema.safeParse(parentData).success) currentStepHasError = true;
+        currentStepHasError = !requiredParentSchema.safeParse(form.getValues().ibu).success;
       } else if (i === 4) { 
-        const waliData = form.getValues().wali;
-         if (!requiredParentSchema.safeParse(waliData).success) currentStepHasError = true;
+        currentStepHasError = !requiredParentSchema.safeParse(form.getValues().wali).success;
       } else if (i === 5) {
         const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
-        if (!nomorTeleponAyah && !nomorTeleponIbu && !nomorTeleponWali) {
-            currentStepHasError = true;
-        }
-         if (errors.nomorTeleponAyah?.message?.includes("Minimal satu nomor telepon") || 
+        const atLeastOnePhone = !!nomorTeleponAyah || !!nomorTeleponIbu || !!nomorTeleponWali;
+        let individualPhonesValid = true;
+        if (nomorTeleponAyah && errors.nomorTeleponAyah) individualPhonesValid = false;
+        if (nomorTeleponIbu && errors.nomorTeleponIbu) individualPhonesValid = false;
+        if (nomorTeleponWali && errors.nomorTeleponWali) individualPhonesValid = false;
+        currentStepHasError = !atLeastOnePhone || !individualPhonesValid;
+        if (errors.nomorTeleponAyah?.message?.includes("Minimal satu nomor telepon") || 
             errors.nomorTeleponIbu?.message?.includes("Minimal satu nomor telepon") || 
             errors.nomorTeleponWali?.message?.includes("Minimal satu nomor telepon") ||
             (errors as any)._errors?.some((err: any) => err.message?.includes("Minimal satu nomor telepon"))) { 
@@ -277,13 +271,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
         newCompletionStatus[i] = false;
         if (i < firstErrorStep) firstErrorStep = i;
       } else {
-        // If no specific field error on this step, check object-level validation for relevant steps
-        let stepIsValidBySchema = true;
-        if (i === 2 && !requiredParentSchema.safeParse(form.getValues().ayah).success) stepIsValidBySchema = false;
-        if (i === 3 && !requiredParentSchema.safeParse(form.getValues().ibu).success) stepIsValidBySchema = false;
-        if (i === 4 && !requiredParentSchema.safeParse(form.getValues().wali).success) stepIsValidBySchema = false; 
-        
-        newCompletionStatus[i] = stepIsValidBySchema;
+        newCompletionStatus[i] = true;
       }
     }
     setStepCompletionStatus(newCompletionStatus);
@@ -292,7 +280,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
     }
   };
 
-  const renderStepIndicators = () => {
+ const renderStepIndicators = () => {
     return (
       <div className="grid grid-cols-5 gap-1 mb-8 rounded-md border shadow-sm p-2">
           {stepsData.map((step) => {
@@ -308,11 +296,11 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
                   "flex flex-col items-center justify-center p-2 rounded-lg border-2 cursor-pointer transition-all text-center relative shadow-sm",
                   "hover:border-primary/70",
                   isCurrent
-                    ? "bg-primary text-primary-foreground border-primary ring-2 ring-primary ring-offset-2" // Removed scale-105
+                    ? (attemptedAndInvalid ? "bg-primary text-primary-foreground border-destructive ring-2 ring-primary ring-offset-2" : "bg-primary text-primary-foreground border-primary ring-2 ring-primary ring-offset-2")
                     : successfullyValidated
                     ? "border-green-500 bg-card"
                     : attemptedAndInvalid
-                    ? "border-destructive bg-card animate-pulse"
+                    ? "border-destructive bg-card" 
                     : "border-border bg-card",
                 )}
                 onClick={() => processStep('jumpTo', step.num)}
@@ -321,9 +309,6 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
               >
                 {successfullyValidated && !isCurrent && (
                   <Check className="w-5 h-5 absolute top-1.5 right-1.5 text-green-600" strokeWidth={3} />
-                )}
-                {attemptedAndInvalid && (
-                  <X className="w-5 h-5 absolute top-1.5 right-1.5 text-destructive" strokeWidth={3} />
                 )}
                 
                 <StepIcon className={cn(
@@ -684,5 +669,6 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
     
 
     
+
 
 
