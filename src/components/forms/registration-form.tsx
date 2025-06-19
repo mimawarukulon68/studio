@@ -174,6 +174,11 @@ export function RegistrationForm() {
                      form.setError(path, { type: 'manual', message: err.message });
                 }
             });
+        } else if (isStepValid && form.formState.errors.ayah) {
+            // Clear manual errors if step becomes valid
+            (Object.keys(form.formState.errors.ayah) as (keyof typeof form.formState.errors.ayah)[]).forEach(key => {
+                 form.clearErrors(`ayah.${key}` as FieldPath<RegistrationFormData>);
+            });
         }
     } else if (stepNumber === 3) {
         const ibuData = form.getValues().ibu;
@@ -185,6 +190,10 @@ export function RegistrationForm() {
                 if (!form.formState.errors.ibu?.[err.path[0] as keyof typeof form.formState.errors.ibu]) {
                      form.setError(path, { type: 'manual', message: err.message });
                 }
+            });
+        } else if (isStepValid && form.formState.errors.ibu) {
+            (Object.keys(form.formState.errors.ibu) as (keyof typeof form.formState.errors.ibu)[]).forEach(key => {
+                 form.clearErrors(`ibu.${key}` as FieldPath<RegistrationFormData>);
             });
         }
     } else if (stepNumber === 4) {
@@ -198,6 +207,10 @@ export function RegistrationForm() {
                      form.setError(path, { type: 'manual', message: err.message });
                 }
             });
+        } else if (isStepValid && form.formState.errors.wali) {
+             (Object.keys(form.formState.errors.wali) as (keyof typeof form.formState.errors.wali)[]).forEach(key => {
+                 form.clearErrors(`wali.${key}` as FieldPath<RegistrationFormData>);
+            });
         }
     } else if (stepNumber === 5) {
         const contactData = form.getValues();
@@ -207,7 +220,8 @@ export function RegistrationForm() {
             form.setError("nomorTeleponAyah", { type: "manual", message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi." });
             isStepValid = false;
         } else {
-            if (form.formState.errors.nomorTeleponAyah?.type === 'manual') {
+            // Clear the manual "at least one phone" error if it was previously set
+            if (form.formState.errors.nomorTeleponAyah?.type === 'manual' && form.formState.errors.nomorTeleponAyah?.message?.startsWith("Minimal satu nomor")) {
                 form.clearErrors("nomorTeleponAyah");
             }
 
@@ -217,10 +231,11 @@ export function RegistrationForm() {
             if (contactData.nomorTeleponWali) phoneFields.push("nomorTeleponWali");
 
             if (phoneFields.length > 0) {
-                await form.trigger(phoneFields);
+                await form.trigger(phoneFields); // Trigger validation for only filled phone fields
                 isStepValid = !phoneFields.some(field => !!getFieldError(field, form.formState.errors));
             } else {
-                isStepValid = true;
+                 // This case should ideally not be reached if atLeastOnePhone is true
+                isStepValid = true; // Or false, depending on desired behavior if all are empty but "at least one" was cleared
             }
         }
     }
@@ -230,6 +245,7 @@ export function RegistrationForm() {
 
  const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     const stepBeingLeft = currentStep;
+    // Always validate the step being left to update its visual status
     const isStepLeftValid = await validateStep(stepBeingLeft);
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepLeftValid }));
 
@@ -315,7 +331,7 @@ export function RegistrationForm() {
             <div
               key={step.num}
               className={cn(
-                "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-all text-center relative shadow-sm hover:border-primary/70",
+                "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-colors text-center relative shadow-sm hover:border-primary/70",
                 isCurrent
                   ? (attemptedAndInvalid
                       ? "bg-primary text-primary-foreground border-destructive ring-2 ring-destructive ring-offset-background"
@@ -330,10 +346,10 @@ export function RegistrationForm() {
               title={step.title}
               aria-current={isCurrent ? "step" : undefined}
             >
-              {successfullyValidated && (
+              {(successfullyValidated || (isCurrent && successfullyValidated)) && (
                 <Check className="w-4 h-4 absolute top-0.5 right-0.5 text-green-600" strokeWidth={3} />
               )}
-              {attemptedAndInvalid && (
+              {(attemptedAndInvalid || (isCurrent && attemptedAndInvalid)) && (
                 <XIcon className="w-4 h-4 absolute top-0.5 right-0.5 text-destructive" strokeWidth={3} />
               )}
 
@@ -391,7 +407,12 @@ export function RegistrationForm() {
               <FormItem>
                 <FormLabel>{`Nama ${title}`}</FormLabel>
                 <FormControl>
-                  <Input placeholder={`Masukkan nama ${title.toLowerCase()}`} {...field} value={field.value ?? ''} />
+                  <Input
+                    placeholder={`Masukkan nama ${title.toLowerCase()}`}
+                    {...field}
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -546,10 +567,20 @@ export function RegistrationForm() {
             </CardHeader>
             <CardContent className="space-y-6">
               <FormField control={form.control} name="namaLengkap" render={({ field }) => (
-                <FormItem><FormLabel>Nama Lengkap</FormLabel><FormControl><Input placeholder="Sesuai Akta Kelahiran" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Nama Lengkap</FormLabel><FormControl><Input
+                  placeholder="Sesuai Akta Kelahiran"
+                  {...field}
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="namaPanggilan" render={({ field }) => (
-                <FormItem><FormLabel>Nama Panggilan</FormLabel><FormControl><Input placeholder="Nama panggilan anda" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Nama Panggilan</FormLabel><FormControl><Input
+                  placeholder="Nama panggilan anda"
+                  {...field}
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="jenisKelamin" render={({ field }) => (
                 <FormItem><FormLabel>Jenis Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih jenis kelamin" /></SelectTrigger></FormControl><SelectContent>{jenisKelaminOptions.map(jk => <SelectItem key={jk} value={jk}>{jk}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
@@ -561,7 +592,12 @@ export function RegistrationForm() {
                 <FormItem><FormLabel>NIK (Nomor Induk Kependudukan)</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={16} placeholder="16 digit NIK (sesuai Kartu Keluarga)" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="tempatLahir" render={({ field }) => (
-                <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input placeholder="Kota/Kabupaten kelahiran" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input
+                  placeholder="Kota/Kabupaten kelahiran"
+                  {...field}
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="tanggalLahir" render={({ field }) => (
                   <FormItem className="flex flex-col"><FormLabel>Tanggal Lahir</FormLabel>
