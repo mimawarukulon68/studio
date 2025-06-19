@@ -174,7 +174,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
 
     if (action === 'next' || (action === 'jumpTo' && targetStep && targetStep > stepBeingLeft)) {
       const fieldsToValidate = getFieldsForStep(stepBeingLeft);
-      await form.trigger(fieldsToValidate);
+       await form.trigger(fieldsToValidate);
 
       if (stepBeingLeft === 1) { 
         isCurrentStepValid = fieldsToValidate.every(field => !getFieldError(field, form.formState.errors));
@@ -187,7 +187,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
       } else if (stepBeingLeft === 3) { // Data Ibu
         const parentData = form.getValues().ibu;
         isCurrentStepValid = requiredParentSchema.safeParse(parentData).success;
-      } else if (stepBeingLeft === 4) { // Data Wali (required)
+      } else if (stepBeingLeft === 4) { // Data Wali
         const waliData = form.getValues().wali;
         isCurrentStepValid = requiredParentSchema.safeParse(waliData).success;
       } else if (stepBeingLeft === 5) { // Kontak
@@ -247,20 +247,20 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
         }
       }
       
-      if (i === 1 && !currentStepHasError) { 
+      if (i === 1) { 
         if (form.getValues("agama") === "Lainnya" && !form.getValues("agamaLainnya")) currentStepHasError = true;
         if (form.getValues("tempatTinggal") === "Lainnya" && !form.getValues("tempatTinggalLainnya")) currentStepHasError = true;
         if (form.getValues("modaTransportasi").includes("lainnya") && !form.getValues("modaTransportasiLainnya")) currentStepHasError = true;
-      } else if (i === 2 && !currentStepHasError) {
+      } else if (i === 2) {
         const parentData = form.getValues().ayah;
         if (!requiredParentSchema.safeParse(parentData).success) currentStepHasError = true;
-      } else if (i === 3 && !currentStepHasError) {
+      } else if (i === 3) {
         const parentData = form.getValues().ibu;
         if (!requiredParentSchema.safeParse(parentData).success) currentStepHasError = true;
-      } else if (i === 4 && !currentStepHasError) { 
+      } else if (i === 4) { 
         const waliData = form.getValues().wali;
-        if (!requiredParentSchema.safeParse(waliData).success) currentStepHasError = true;
-      } else if (i === 5 && !currentStepHasError) {
+         if (!requiredParentSchema.safeParse(waliData).success) currentStepHasError = true;
+      } else if (i === 5) {
         const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
         if (!nomorTeleponAyah && !nomorTeleponIbu && !nomorTeleponWali) {
             currentStepHasError = true;
@@ -277,16 +277,13 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
         newCompletionStatus[i] = false;
         if (i < firstErrorStep) firstErrorStep = i;
       } else {
-        let stepHasNoZodErrors = true;
-        // This part is tricky because Zod errors on the root object (from superRefine) don't easily map to fields.
-        // We primarily rely on the individual field checks above.
-        // However, for object-level checks (like requiredParentSchema for ayah, ibu, wali), a direct parse is more robust.
-        if (i === 2 && !requiredParentSchema.safeParse(form.getValues().ayah).success) stepHasNoZodErrors = false;
-        if (i === 3 && !requiredParentSchema.safeParse(form.getValues().ibu).success) stepHasNoZodErrors = false;
-        if (i === 4 && !requiredParentSchema.safeParse(form.getValues().wali).success) stepHasNoZodErrors = false; 
-        // For step 5, the combined phone check is more complex and is handled by currentStepHasError above.
+        // If no specific field error on this step, check object-level validation for relevant steps
+        let stepIsValidBySchema = true;
+        if (i === 2 && !requiredParentSchema.safeParse(form.getValues().ayah).success) stepIsValidBySchema = false;
+        if (i === 3 && !requiredParentSchema.safeParse(form.getValues().ibu).success) stepIsValidBySchema = false;
+        if (i === 4 && !requiredParentSchema.safeParse(form.getValues().wali).success) stepIsValidBySchema = false; 
         
-        newCompletionStatus[i] = stepHasNoZodErrors && !currentStepHasError; // Ensure currentStepHasError is also considered
+        newCompletionStatus[i] = stepIsValidBySchema;
       }
     }
     setStepCompletionStatus(newCompletionStatus);
@@ -311,7 +308,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
                   "flex flex-col items-center justify-center p-2 rounded-lg border-2 cursor-pointer transition-all text-center relative shadow-sm",
                   "hover:border-primary/70",
                   isCurrent
-                    ? "bg-primary text-primary-foreground border-primary ring-2 ring-primary ring-offset-2 scale-105"
+                    ? "bg-primary text-primary-foreground border-primary ring-2 ring-primary ring-offset-2" // Removed scale-105
                     : successfullyValidated
                     ? "border-green-500 bg-card"
                     : attemptedAndInvalid
@@ -330,14 +327,14 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
                 )}
                 
                 <StepIcon className={cn(
-                    "w-6 h-6 mb-1", // Reduced icon size
+                    "w-6 h-6 mb-1", 
                     isCurrent ? "text-primary-foreground" : 
                     successfullyValidated ? "text-green-500" : 
                     attemptedAndInvalid ? "text-destructive" : 
                     "text-primary" 
                 )} />
                 <span className={cn(
-                    "text-xs leading-tight font-medium", // Reduced text size
+                    "text-xs leading-tight font-medium", 
                     isCurrent ? "text-primary-foreground" :
                     successfullyValidated ? "text-green-700" : 
                     attemptedAndInvalid ? "text-destructive" :
@@ -356,16 +353,18 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
   const renderParentFields = (parentType: 'ayah' | 'ibu' | 'wali') => {
     const title = parentType === 'ayah' ? 'Ayah Kandung' : parentType === 'ibu' ? 'Ibu Kandung' : 'Wali';
     const namePrefix = parentType;
+    const description = parentType === 'wali' 
+      ? "Wali adalah pihak yang saat ini bertanggung jawab atas peserta didik. Data Wali wajib diisi. Jika Ayah/Ibu masih menjadi penanggung jawab utama, silakan salin data dari mereka. Namun, jika peserta didik diasuh oleh kerabat lain (misalnya kakek, nenek, paman, bibi, dsb), mohon isikan data sesuai wali yang sebenarnya."
+      : undefined;
+
 
     return (
       <Card className="w-full shadow-lg">
         <CardHeader>
           <CardTitle className="font-headline text-xl text-center">{`Data ${title}`}</CardTitle>
-          {parentType === 'wali' && (
+          {description && (
             <CardDescription className="text-center pt-1">
-              Wali adalah pihak yang saat ini bertanggung jawab atas peserta didik. Data Wali wajib diisi.
-              Jika Ayah/Ibu masih menjadi penanggung jawab utama, silakan salin data dari mereka.
-              Namun, jika peserta didik diasuh oleh kerabat lain (misalnya kakek, nenek, paman, bibi, dsb), mohon isikan data sesuai wali yang sebenarnya.
+              {description}
             </CardDescription>
           )}
         </CardHeader>
@@ -581,7 +580,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
                 <FormItem><FormLabel>Jumlah Saudara Kandung</FormLabel><FormControl><Input type="number" placeholder="Contoh: 2" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
               )} />
               <Separator className="my-4" />
-              <p className="font-medium">Alamat Tempat Tinggal</p>
+              <p className="font-medium text-center">Alamat Tempat Tinggal</p>
               <FormField control={form.control} name="alamatJalan" render={({ field }) => (
                 <FormItem><FormLabel>Alamat Jalan</FormLabel><FormControl><Input placeholder="Nama jalan dan nomor rumah" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
@@ -685,4 +684,5 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
     
 
     
+
 
