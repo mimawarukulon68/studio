@@ -404,11 +404,9 @@ export function RegistrationForm() {
 
   const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     const stepBeingLeft = currentStep;
-    // Always validate the step being left to update its visual status
     const isStepBeingLeftValid = await validateStep(stepBeingLeft);
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
 
-    // Allow navigation regardless of step validity
     if (action === 'next') {
       if (currentStep < TOTAL_STEPS) {
         setCurrentStep(prev => prev + 1);
@@ -456,7 +454,7 @@ export function RegistrationForm() {
   };
 
   const onFormError = async (errors: FieldErrors<RegistrationFormData>) => {
-    console.log("Form errors on submit:", errors); 
+    console.log("Form errors on submit:", errors);
     toast({
       title: "Formulir Belum Lengkap",
       description: "Mohon periksa kembali isian Anda pada langkah yang ditandai.",
@@ -771,7 +769,7 @@ export function RegistrationForm() {
                           id="tanggalLahir"
                           label="Tanggal Lahir"
                           initialDate={field.value}
-                          onDateChange={(date) => field.onChange(date)} // onChange now directly receives Date | undefined
+                          onDateChange={(date) => field.onChange(date)}
                           ariaInvalid={!!fieldState.error}
                        />
                     </FormControl>
@@ -826,7 +824,7 @@ export function RegistrationForm() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5} sticky="partial">
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                         <Command>
                           <CommandInput placeholder="Cari provinsi..." />
                           <CommandList>
@@ -888,7 +886,7 @@ export function RegistrationForm() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5} sticky="partial">
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                         <Command>
                           <CommandInput placeholder="Cari kabupaten/kota..." />
                           <CommandList>
@@ -947,7 +945,7 @@ export function RegistrationForm() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5} sticky="partial">
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                         <Command>
                           <CommandInput placeholder="Cari kecamatan..." />
                           <CommandList>
@@ -1003,7 +1001,7 @@ export function RegistrationForm() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" side="top" align="start" sideOffset={5} sticky="partial">
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                         <Command>
                           <CommandInput placeholder="Cari desa/kelurahan..." />
                           <CommandList>
