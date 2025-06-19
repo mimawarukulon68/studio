@@ -168,39 +168,43 @@ export function RegistrationForm() {
     return currentFields;
   };
 
-const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
+  const isParentDataEffectivelyEmpty = (parentData: RegistrationFormData['ayah'] | RegistrationFormData['ibu'] | RegistrationFormData['wali']) => {
+    if (!parentData) return true;
+    return Object.values(parentData).every(value => value === '' || value === undefined || value === null);
+  };
+
+  const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     const stepBeingLeft = currentStep;
-    let isStepBeingLeftValid = true;
+    let isCurrentStepValid = true;
 
     if (action === 'next' || (action === 'jumpTo' && targetStep && targetStep > stepBeingLeft)) {
       const fieldsToValidate = getFieldsForStep(stepBeingLeft);
       await form.trigger(fieldsToValidate);
 
       if (stepBeingLeft === 1) {
-        isStepBeingLeftValid = fieldsToValidate.every(field => !getFieldError(field, form.formState.errors));
-        if (form.getValues("agama") === "Lainnya" && !form.getValues("agamaLainnya")) isStepBeingLeftValid = false;
-        if (form.getValues("tempatTinggal") === "Lainnya" && !form.getValues("tempatTinggalLainnya")) isStepBeingLeftValid = false;
-        if (form.getValues("modaTransportasi").includes("lainnya") && !form.getValues("modaTransportasiLainnya")) isStepBeingLeftValid = false;
-      } else if (stepBeingLeft === 2) {
-        const parentData = form.getValues().ayah;
-        isStepBeingLeftValid = requiredParentSchema.safeParse(parentData).success;
-      } else if (stepBeingLeft === 3) {
-        const parentData = form.getValues().ibu;
-        isStepBeingLeftValid = requiredParentSchema.safeParse(parentData).success;
-      } else if (stepBeingLeft === 4) {
-        const waliData = form.getValues().wali;
-        isStepBeingLeftValid = requiredParentSchema.safeParse(waliData).success;
-      } else if (stepBeingLeft === 5) {
+        isCurrentStepValid = fieldsToValidate.every(field => !getFieldError(field, form.formState.errors));
+        if (form.getValues("agama") === "Lainnya" && !form.getValues("agamaLainnya")) isCurrentStepValid = false;
+        if (form.getValues("tempatTinggal") === "Lainnya" && !form.getValues("tempatTinggalLainnya")) isCurrentStepValid = false;
+        if (form.getValues("modaTransportasi").includes("lainnya") && !form.getValues("modaTransportasiLainnya")) isCurrentStepValid = false;
+
+      } else if (stepBeingLeft === 2) { // Ayah
+        isCurrentStepValid = requiredParentSchema.safeParse(form.getValues().ayah).success;
+      } else if (stepBeingLeft === 3) { // Ibu
+        isCurrentStepValid = requiredParentSchema.safeParse(form.getValues().ibu).success;
+      } else if (stepBeingLeft === 4) { // Wali - Wajib
+        isCurrentStepValid = requiredParentSchema.safeParse(form.getValues().wali).success;
+      } else if (stepBeingLeft === 5) { // Kontak
         const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
         const atLeastOnePhone = !!nomorTeleponAyah || !!nomorTeleponIbu || !!nomorTeleponWali;
         let individualPhonesValid = true;
         if (nomorTeleponAyah && form.formState.errors.nomorTeleponAyah) individualPhonesValid = false;
         if (nomorTeleponIbu && form.formState.errors.nomorTeleponIbu) individualPhonesValid = false;
         if (nomorTeleponWali && form.formState.errors.nomorTeleponWali) individualPhonesValid = false;
-        isStepBeingLeftValid = atLeastOnePhone && individualPhonesValid;
+        isCurrentStepValid = atLeastOnePhone && individualPhonesValid;
       }
-      setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
+      setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isCurrentStepValid }));
     }
+
 
     if (action === 'next') {
       if (currentStep < TOTAL_STEPS) setCurrentStep(prev => prev + 1);
@@ -231,7 +235,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
       variant: "destructive",
     });
 
-    const newCompletionStatus: Record<number, boolean> = { ...stepCompletionStatus };
+    const newCompletionStatus: Record<number, boolean | undefined> = { ...stepCompletionStatus };
     let firstErrorStep = TOTAL_STEPS + 1;
 
     for (let i = 1; i <= TOTAL_STEPS; i++) {
@@ -240,16 +244,18 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
       if (i === 1) {
         const fieldsToCheck = getFieldsForStep(i);
         currentStepHasError = fieldsToCheck.some(field => getFieldError(field, errors));
-        if (form.getValues("agama") === "Lainnya" && !form.getValues("agamaLainnya")) currentStepHasError = true;
-        if (form.getValues("tempatTinggal") === "Lainnya" && !form.getValues("tempatTinggalLainnya")) currentStepHasError = true;
-        if (form.getValues("modaTransportasi").includes("lainnya") && !form.getValues("modaTransportasiLainnya")) currentStepHasError = true;
-      } else if (i === 2) {
-        currentStepHasError = !requiredParentSchema.safeParse(form.getValues().ayah).success;
-      } else if (i === 3) {
-        currentStepHasError = !requiredParentSchema.safeParse(form.getValues().ibu).success;
-      } else if (i === 4) { 
-        currentStepHasError = !requiredParentSchema.safeParse(form.getValues().wali).success;
-      } else if (i === 5) {
+        if (form.getValues("agama") === "Lainnya" && (!form.getValues("agamaLainnya") || errors.agamaLainnya)) currentStepHasError = true;
+        if (form.getValues("tempatTinggal") === "Lainnya" && (!form.getValues("tempatTinggalLainnya") || errors.tempatTinggalLainnya)) currentStepHasError = true;
+        if (form.getValues("modaTransportasi").includes("lainnya") && (!form.getValues("modaTransportasiLainnya") || errors.modaTransportasiLainnya)) currentStepHasError = true;
+
+      } else if (i === 2) { // Ayah
+          currentStepHasError = !requiredParentSchema.safeParse(form.getValues().ayah).success;
+      } else if (i === 3) { // Ibu
+          currentStepHasError = !requiredParentSchema.safeParse(form.getValues().ibu).success;
+      } else if (i === 4) { // Wali
+        const waliData = form.getValues().wali;
+        currentStepHasError = !requiredParentSchema.safeParse(waliData).success;
+      } else if (i === 5) { // Kontak
         const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
         const atLeastOnePhone = !!nomorTeleponAyah || !!nomorTeleponIbu || !!nomorTeleponWali;
         let individualPhonesValid = true;
@@ -278,8 +284,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
         newCompletionStatus[i] = false;
         if (i < firstErrorStep) firstErrorStep = i;
       } else {
-        // Only mark as true if it wasn't previously marked as false due to submit error
-        if (newCompletionStatus[i] !== false) {
+        if (newCompletionStatus[i] !== false) { // Only mark as true if not already marked false from previous submit
              newCompletionStatus[i] = true;
         }
       }
@@ -295,9 +300,6 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
       <div className="grid grid-cols-5 gap-1 mb-8 rounded-md border shadow-sm p-1">
           {stepsData.map((step) => {
             const isCurrent = currentStep === step.num;
-            // undefined means not yet validated by leaving the step or submitting
-            // true means validated successfully
-            // false means validation attempted and failed
             const validationState = stepCompletionStatus[step.num];
             const successfullyValidated = validationState === true;
             const attemptedAndInvalid = validationState === false;
@@ -309,7 +311,9 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
                 className={cn(
                   "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-all text-center relative shadow-sm hover:border-primary/70",
                   isCurrent
-                    ? (attemptedAndInvalid ? "bg-primary text-primary-foreground border-destructive ring-2 ring-destructive ring-offset-background" : "bg-primary text-primary-foreground border-primary ring-2 ring-primary ring-offset-background")
+                    ? (attemptedAndInvalid 
+                        ? "bg-primary text-primary-foreground border-destructive ring-2 ring-destructive ring-offset-background" 
+                        : "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-primary ring-offset-background")
                     : successfullyValidated
                     ? "border-green-500 bg-card"
                     : attemptedAndInvalid
@@ -350,7 +354,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
     const title = parentType === 'ayah' ? 'Ayah Kandung' : parentType === 'ibu' ? 'Ibu Kandung' : 'Wali';
     const namePrefix = parentType;
     const description = parentType === 'wali' 
-      ? "Wali adalah pihak yang saat ini bertanggung jawab atas peserta didik. Data Wali wajib diisi. Jika Ayah/Ibu masih menjadi penanggung jawab utama, silakan salin data dari mereka. Namun, jika peserta didik diasuh oleh kerabat lain (misalnya kakek, nenek, paman, bibi, dsb), mohon isikan data sesuai wali yang sebenarnya."
+      ? "Data Wali wajib diisi. Jika Ayah/Ibu adalah penanggung jawab, salin datanya. Jika diasuh kerabat lain (kakek, nenek, paman, bibi, dsb), isikan data wali yang sebenarnya."
       : undefined;
 
 
@@ -680,6 +684,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
     
 
     
+
 
 
 
