@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, type FieldPath, type FieldErrors, type FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
-import { CalendarIcon, ArrowLeft, ArrowRight, Check, X } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, ArrowRight, Check, X, UserRound, User as UserIcon, ShieldCheck, Phone } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -40,12 +40,31 @@ import {
   pendidikanOptionsList,
   pekerjaanOptionsList,
   penghasilanOptionsList,
-  requiredParentSchema, // Import for direct parsing
+  requiredParentSchema,
 } from '@/lib/schemas';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 
 const TOTAL_STEPS = 5;
+
+const stepsData = [
+  { num: 1, title: "Identitas Siswa", Icon: UserRound, fields: [
+    "namaLengkap", "namaPanggilan", "jenisKelamin", "nisn", "nikSiswa",
+    "tempatLahir", "tanggalLahir", "agama", "anakKe", "jumlahSaudaraKandung",
+    "alamatJalan", "rtRw", "dusun", "desaKelurahan", "kecamatan", "kodePos",
+    "tempatTinggal", "modaTransportasi"
+  ] as FieldPath<RegistrationFormData>[] },
+  { num: 2, title: "Data Ayah", Icon: UserIcon, fields: [
+    "ayah.nama", "ayah.nik", "ayah.tahunLahir", "ayah.pendidikan", "ayah.pekerjaan", "ayah.penghasilan"
+  ] as FieldPath<RegistrationFormData>[] },
+  { num: 3, title: "Data Ibu", Icon: UserIcon, fields: [
+    "ibu.nama", "ibu.nik", "ibu.tahunLahir", "ibu.pendidikan", "ibu.pekerjaan", "ibu.penghasilan"
+  ] as FieldPath<RegistrationFormData>[] },
+  { num: 4, title: "Data Wali", Icon: ShieldCheck, fields: [
+     "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan", "wali.pekerjaan", "wali.penghasilan"
+  ] as FieldPath<RegistrationFormData>[] },
+  { num: 5, title: "Kontak", Icon: Phone, fields: ["nomorTeleponAyah", "nomorTeleponIbu", "nomorTeleponWali"] as FieldPath<RegistrationFormData>[] },
+];
 
 function getFieldError(path: string, errors: FieldErrors<RegistrationFormData>): FieldError | undefined {
   const pathArray = path.split('.');
@@ -110,7 +129,7 @@ export function RegistrationForm() {
         pekerjaanLainnya: '',
         penghasilan: undefined,
       },
-      wali: { // Wali is now required, so it should have default values like ayah/ibu
+      wali: { 
         nama: '',
         nik: '',
         tahunLahir: undefined,
@@ -127,44 +146,26 @@ export function RegistrationForm() {
   });
 
   const getFieldsForStep = (step: number): FieldPath<RegistrationFormData>[] => {
-    switch (step) {
-      case 1:
-        const step1Fields: FieldPath<RegistrationFormData>[] = [
-          "namaLengkap", "namaPanggilan", "jenisKelamin", "nisn", "nikSiswa",
-          "tempatLahir", "tanggalLahir", "agama", "anakKe", "jumlahSaudaraKandung",
-          "alamatJalan", "rtRw", "dusun", "desaKelurahan", "kecamatan", "kodePos",
-          "tempatTinggal", "modaTransportasi"
-        ];
-        if (form.getValues("agama") === "Lainnya") step1Fields.push("agamaLainnya");
-        if (form.getValues("tempatTinggal") === "Lainnya") step1Fields.push("tempatTinggalLainnya");
-        if (form.getValues("modaTransportasi").includes("lainnya")) step1Fields.push("modaTransportasiLainnya");
-        return step1Fields;
-      case 2: // Ayah
-        const step2Fields: FieldPath<RegistrationFormData>[] = [
-          "ayah.nama", "ayah.nik", "ayah.tahunLahir", "ayah.pendidikan", "ayah.pekerjaan", "ayah.penghasilan"
-        ];
-        if (form.getValues("ayah.pekerjaan") === "Lainnya") step2Fields.push("ayah.pekerjaanLainnya");
-        if (form.getValues("ayah.pendidikan") === "Lainnya") step2Fields.push("ayah.pendidikanLainnya");
-        return step2Fields;
-      case 3: // Ibu
-        const step3Fields: FieldPath<RegistrationFormData>[] = [
-          "ibu.nama", "ibu.nik", "ibu.tahunLahir", "ibu.pendidikan", "ibu.pekerjaan", "ibu.penghasilan"
-        ];
-        if (form.getValues("ibu.pekerjaan") === "Lainnya") step3Fields.push("ibu.pekerjaanLainnya");
-        if (form.getValues("ibu.pendidikan") === "Lainnya") step3Fields.push("ibu.pendidikanLainnya");
-        return step3Fields;
-      case 4: // Wali
-        const step4Fields: FieldPath<RegistrationFormData>[] = [
-           "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan", "wali.pekerjaan", "wali.penghasilan"
-        ];
-        if (form.getValues("wali.pekerjaan") === "Lainnya") step4Fields.push("wali.pekerjaanLainnya");
-        if (form.getValues("wali.pendidikan") === "Lainnya") step4Fields.push("wali.pendidikanLainnya");
-        return step4Fields;
-      case 5:
-        return ["nomorTeleponAyah", "nomorTeleponIbu", "nomorTeleponWali"];
-      default:
-        return [];
+    const stepData = stepsData.find(s => s.num === step);
+    if (!stepData) return [];
+    
+    let currentFields: FieldPath<RegistrationFormData>[] = [...stepData.fields];
+
+    if (step === 1) {
+        if (form.getValues("agama") === "Lainnya") currentFields.push("agamaLainnya");
+        if (form.getValues("tempatTinggal") === "Lainnya") currentFields.push("tempatTinggalLainnya");
+        if (form.getValues("modaTransportasi").includes("lainnya")) currentFields.push("modaTransportasiLainnya");
+    } else if (step === 2) { // Ayah
+        if (form.getValues("ayah.pekerjaan") === "Lainnya") currentFields.push("ayah.pekerjaanLainnya");
+        if (form.getValues("ayah.pendidikan") === "Lainnya") currentFields.push("ayah.pendidikanLainnya");
+    } else if (step === 3) { // Ibu
+        if (form.getValues("ibu.pekerjaan") === "Lainnya") currentFields.push("ibu.pekerjaanLainnya");
+        if (form.getValues("ibu.pendidikan") === "Lainnya") currentFields.push("ibu.pendidikanLainnya");
+    } else if (step === 4) { // Wali
+        if (form.getValues("wali.pekerjaan") === "Lainnya") currentFields.push("wali.pekerjaanLainnya");
+        if (form.getValues("wali.pendidikan") === "Lainnya") currentFields.push("wali.pendidikanLainnya");
     }
+    return currentFields;
   };
 
 const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
@@ -172,10 +173,16 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
     let isCurrentStepValid = true;
 
     if (action === 'next' || (action === 'jumpTo' && targetStep && targetStep > stepBeingLeft)) {
-      const stepFields = getFieldsForStep(stepBeingLeft);
+      const fieldsToValidate = getFieldsForStep(stepBeingLeft);
+      await form.trigger(fieldsToValidate);
 
       if (stepBeingLeft === 1) { // Identitas Peserta Didik
-        isCurrentStepValid = await form.trigger(stepFields);
+        isCurrentStepValid = fieldsToValidate.every(field => !getFieldError(field, form.formState.errors));
+        // Check conditional "Lainnya" fields for step 1 specifically
+        if (form.getValues("agama") === "Lainnya" && !form.getValues("agamaLainnya")) isCurrentStepValid = false;
+        if (form.getValues("tempatTinggal") === "Lainnya" && !form.getValues("tempatTinggalLainnya")) isCurrentStepValid = false;
+        if (form.getValues("modaTransportasi").includes("lainnya") && !form.getValues("modaTransportasiLainnya")) isCurrentStepValid = false;
+
       } else if (stepBeingLeft === 2) { // Data Ayah
         const parentData = form.getValues().ayah;
         const parseResult = requiredParentSchema.safeParse(parentData);
@@ -184,7 +191,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
         const parentData = form.getValues().ibu;
         const parseResult = requiredParentSchema.safeParse(parentData);
         isCurrentStepValid = parseResult.success;
-      } else if (stepBeingLeft === 4) { // Data Wali (now required)
+      } else if (stepBeingLeft === 4) { // Data Wali
         const waliData = form.getValues().wali;
         const parseResult = requiredParentSchema.safeParse(waliData);
         isCurrentStepValid = parseResult.success;
@@ -193,17 +200,12 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
         const atLeastOnePhone = nomorTeleponAyah || nomorTeleponIbu || nomorTeleponWali;
         
         let individualPhonesValid = true;
-        if (nomorTeleponAyah) await form.trigger("nomorTeleponAyah");
-        if (nomorTeleponIbu) await form.trigger("nomorTeleponIbu");
-        if (nomorTeleponWali) await form.trigger("nomorTeleponWali");
-
         if (nomorTeleponAyah && form.formState.errors.nomorTeleponAyah) individualPhonesValid = false;
         if (nomorTeleponIbu && form.formState.errors.nomorTeleponIbu) individualPhonesValid = false;
         if (nomorTeleponWali && form.formState.errors.nomorTeleponWali) individualPhonesValid = false;
         
         isCurrentStepValid = atLeastOnePhone && individualPhonesValid;
       }
-      
       setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isCurrentStepValid }));
     }
 
@@ -240,8 +242,8 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
     let firstErrorStep = TOTAL_STEPS + 1;
 
     for (let i = 1; i <= TOTAL_STEPS; i++) {
-      const stepFields = getFieldsForStep(i);
       let currentStepHasError = false;
+      const stepFields = getFieldsForStep(i);
 
       for (const field of stepFields) {
         if (getFieldError(field, errors)) {
@@ -250,22 +252,20 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
         }
       }
       
-      if (i === 2 && !currentStepHasError) { // Ayah
+      if (i === 1 && !currentStepHasError) { // Double check "Lainnya" for step 1
+        if (form.getValues("agama") === "Lainnya" && !form.getValues("agamaLainnya")) currentStepHasError = true;
+        if (form.getValues("tempatTinggal") === "Lainnya" && !form.getValues("tempatTinggalLainnya")) currentStepHasError = true;
+        if (form.getValues("modaTransportasi").includes("lainnya") && !form.getValues("modaTransportasiLainnya")) currentStepHasError = true;
+      } else if (i === 2 && !currentStepHasError) {
         const parentData = form.getValues().ayah;
-        if (!requiredParentSchema.safeParse(parentData).success) {
-            currentStepHasError = true;
-        }
-      } else if (i === 3 && !currentStepHasError) { // Ibu
+        if (!requiredParentSchema.safeParse(parentData).success) currentStepHasError = true;
+      } else if (i === 3 && !currentStepHasError) {
         const parentData = form.getValues().ibu;
-        if (!requiredParentSchema.safeParse(parentData).success) {
-            currentStepHasError = true;
-        }
-      } else if (i === 4 && !currentStepHasError) { // Wali (now required)
+        if (!requiredParentSchema.safeParse(parentData).success) currentStepHasError = true;
+      } else if (i === 4 && !currentStepHasError) {
         const waliData = form.getValues().wali;
-        if (!requiredParentSchema.safeParse(waliData).success) {
-            currentStepHasError = true;
-        }
-      } else if (i === 5 && !currentStepHasError) { // Kontak
+        if (!requiredParentSchema.safeParse(waliData).success) currentStepHasError = true;
+      } else if (i === 5 && !currentStepHasError) {
         const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
         if (!nomorTeleponAyah && !nomorTeleponIbu && !nomorTeleponWali) {
             currentStepHasError = true;
@@ -280,11 +280,25 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
 
       if (currentStepHasError) {
         newCompletionStatus[i] = false;
-        if (i < firstErrorStep) {
-          firstErrorStep = i;
-        }
+        if (i < firstErrorStep) firstErrorStep = i;
       } else {
-        newCompletionStatus[i] = true; 
+        // Only mark as true if there are no specific errors for this step from the `errors` object
+        let stepHasNoZodErrors = true;
+        for (const field of stepFields) {
+            if (getFieldError(field, errors)) {
+                stepHasNoZodErrors = false;
+                break;
+            }
+        }
+         // Also check for object-level errors (e.g., from superRefine)
+        if (i === 1 && (errors as any)._errors?.some((e: any) => e.path?.startsWith("step1"))) stepHasNoZodErrors = false;
+        if (i === 2 && (errors as any).ayah?._errors) stepHasNoZodErrors = false;
+        if (i === 3 && (errors as any).ibu?._errors) stepHasNoZodErrors = false;
+        if (i === 4 && (errors as any).wali?._errors) stepHasNoZodErrors = false;
+        if (i === 5 && (errors as any)._errors?.some((e: any) => e.path?.some((p: string) => p.includes("nomorTelepon")))) stepHasNoZodErrors = false;
+
+
+        newCompletionStatus[i] = stepHasNoZodErrors;
       }
     }
     setStepCompletionStatus(newCompletionStatus);
@@ -295,37 +309,53 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
 
   const renderStepIndicators = () => {
     return (
-      <div className="flex justify-center space-x-1 sm:space-x-2 mb-6">
-        {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((stepNum) => {
-          const isCurrent = currentStep === stepNum;
-          const successfullyValidated = stepCompletionStatus[stepNum] === true;
-          const attemptedAndInvalid = stepCompletionStatus[stepNum] === false;
-
-          let indicatorContent: React.ReactNode = stepNum;
-          if (successfullyValidated && !isCurrent) {
-             indicatorContent = <Check className="w-4 h-4" />;
-          } else if (attemptedAndInvalid) {
-             indicatorContent = <X className="w-4 h-4" />;
-          }
+      <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8">
+        {stepsData.map((step) => {
+          const isCurrent = currentStep === step.num;
+          const successfullyValidated = stepCompletionStatus[step.num] === true;
+          const attemptedAndInvalid = stepCompletionStatus[step.num] === false;
+          const StepIcon = step.Icon;
 
           return (
             <div
-              key={stepNum}
+              key={step.num}
               className={cn(
-                "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 text-xs sm:text-sm font-medium cursor-pointer transition-all",
+                "flex flex-col items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all w-28 h-24 sm:w-32 sm:h-28 text-center relative shadow-sm",
                 isCurrent
-                  ? "bg-primary text-primary-foreground border-primary shadow-md scale-110"
-                  : "bg-card text-card-foreground hover:border-primary/50",
-                attemptedAndInvalid
-                  ? "border-destructive text-destructive animate-pulse"
-                  : successfullyValidated && !isCurrent
-                  ? "border-green-500 text-green-600"
-                  : "border-border"
+                  ? "bg-primary text-primary-foreground border-primary ring-2 ring-primary ring-offset-2 scale-105"
+                  : successfullyValidated
+                  ? "border-green-500 bg-card"
+                  : attemptedAndInvalid
+                  ? "border-destructive bg-card animate-pulse"
+                  : "border-border bg-card hover:border-primary/70",
               )}
-              onClick={() => processStep('jumpTo', stepNum)}
-              title={`Langkah ${stepNum}`}
+              onClick={() => processStep('jumpTo', step.num)}
+              title={`Langkah ${step.num}: ${step.title}`}
+              aria-current={isCurrent ? "step" : undefined}
             >
-              {indicatorContent}
+              {successfullyValidated && !isCurrent && (
+                <Check className="w-5 h-5 absolute top-1.5 right-1.5 text-green-600" strokeWidth={3} />
+              )}
+              {attemptedAndInvalid && (
+                <X className="w-5 h-5 absolute top-1.5 right-1.5 text-destructive" strokeWidth={3} />
+              )}
+              
+              <StepIcon className={cn(
+                  "w-7 h-7 sm:w-8 sm:h-8 mb-1.5",
+                  isCurrent ? "text-primary-foreground" : 
+                  successfullyValidated ? "text-green-500" : 
+                  attemptedAndInvalid ? "text-destructive" : 
+                  "text-primary" 
+              )} />
+              <span className={cn(
+                  "text-xs sm:text-sm leading-tight font-medium",
+                  isCurrent ? "text-primary-foreground" :
+                  successfullyValidated ? "text-green-700" : 
+                  attemptedAndInvalid ? "text-destructive" :
+                  "text-card-foreground"
+              )}>
+                  {step.title}
+              </span>
             </div>
           );
         })}
@@ -341,19 +371,18 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
     return (
       <Card className="w-full shadow-lg">
         <CardHeader>
-          <CardTitle className="font-headline text-xl">{`Data ${title}`}</CardTitle>
+          <CardTitle className="font-headline text-xl text-center">{`Data ${title}`}</CardTitle>
           {parentType === 'wali' && (
-            <CardDescription>
+            <CardDescription className="text-center pt-1">
               Wali adalah pihak yang saat ini bertanggung jawab atas peserta didik.
               Jika Ayah/Ibu masih menjadi penanggung jawab utama, silakan salin data dari mereka.
-              Namun, jika peserta didik diasuh oleh kerabat lain (misalnya kakek, nenek, paman, bibi, dsb), mohon isikan data sesuai wali yang sebenarnya.
-              Data Wali wajib diisi.
+              Namun, jika peserta didik diasuh oleh kerabat lain (misalnya kakek, nenek, paman, bibi, dsb), mohon isikan data sesuai wali yang sebenarnya. Data Wali wajib diisi.
             </CardDescription>
           )}
         </CardHeader>
         <CardContent className="space-y-6">
           {parentType === 'wali' && (
-            <div className="flex space-x-2">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 justify-center">
               <Button type="button" variant="outline" onClick={() => copyParentData('ayah')}>Salin dari Ayah</Button>
               <Button type="button" variant="outline" onClick={() => copyParentData('ibu')}>Salin dari Ibu</Button>
             </div>
@@ -510,16 +539,13 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onFormSubmit, onFormError)} className="w-full max-w-2xl space-y-8 p-4 md:p-0">
+      <form onSubmit={form.handleSubmit(onFormSubmit, onFormError)} className="w-full max-w-3xl space-y-8 p-4 md:p-0">
         {renderStepIndicators()}
-        <div className="my-4">
-          <p className="text-center text-sm text-muted-foreground">Langkah {currentStep} dari {TOTAL_STEPS}</p>
-        </div>
-
+        
         {currentStep === 1 && (
           <Card className="w-full shadow-lg">
             <CardHeader>
-              <CardTitle className="font-headline text-xl">Langkah 1: Identitas Peserta Didik</CardTitle>
+              <CardTitle className="font-headline text-xl text-center">Identitas Peserta Didik</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <FormField control={form.control} name="namaLengkap" render={({ field }) => (
@@ -628,8 +654,8 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
         {currentStep === 5 && (
           <Card className="w-full shadow-lg">
             <CardHeader>
-              <CardTitle className="font-headline text-xl">Langkah 5: Kontak yang Bisa Dihubungi</CardTitle>
-              <CardDescription>Minimal isi salah satu nomor telepon. Awali nomor dengan +62 (contoh: +6281234567890).</CardDescription>
+              <CardTitle className="font-headline text-xl text-center">Kontak yang Bisa Dihubungi</CardTitle>
+              <CardDescription className="text-center pt-1">Minimal isi salah satu nomor telepon. Awali nomor dengan +62 (contoh: +6281234567890).</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <FormField control={form.control} name="nomorTeleponAyah" render={({ field }) => (
@@ -639,18 +665,19 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
                 <FormItem><FormLabel>Nomor Telepon Ibu</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="nomorTeleponWali" render={({ field }) => (
-                <FormItem><FormLabel>Nomor Telepon Wali (Jika Ada)</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Nomor Telepon Wali</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
             </CardContent>
           </Card>
         )}
 
         <CardFooter className="flex justify-between mt-8">
-          {currentStep > 1 && (
+          {currentStep > 1 ? (
             <Button type="button" variant="outline" onClick={() => processStep('prev')} disabled={form.formState.isSubmitting}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Sebelumnya
             </Button>
-          )}
+          ) : ( <div /> /* Placeholder to keep "Berikutnya" on the right */ ) }
+
           {currentStep < TOTAL_STEPS ? (
             <Button type="button" onClick={() => processStep('next')} disabled={form.formState.isSubmitting} className="ml-auto">
               Berikutnya <ArrowRight className="ml-2 h-4 w-4" />
@@ -665,6 +692,6 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
     </Form>
   );
 }
-
+    
 
     
