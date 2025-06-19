@@ -51,8 +51,8 @@ const stepsData = [
   { num: 1, title: "Identitas Siswa", Icon: UserRound, fields: [
     "namaLengkap", "namaPanggilan", "jenisKelamin", "nisn", "nikSiswa",
     "tempatLahir", "tanggalLahir", "agama", "anakKe", "jumlahSaudaraKandung",
-    "alamatJalan", "rtRw", "dusun", "desaKelurahan", "kecamatan", "kodePos",
-    "tempatTinggal", "modaTransportasi", "agamaLainnya", "tempatTinggalLainnya", "modaTransportasiLainnya"
+    "tempatTinggal", "provinsi", "kabupaten", "kecamatan", "desaKelurahan", "dusun", "rtRw", "alamatJalan", "kodePos",
+    "modaTransportasi", "agamaLainnya", "tempatTinggalLainnya", "modaTransportasiLainnya"
   ] as FieldPath<RegistrationFormData>[] },
   { num: 2, title: "Data Ayah", Icon: UserIcon, fields: [
     "ayah.nama", "ayah.nik", "ayah.tahunLahir", "ayah.pendidikan", "ayah.pekerjaan", "ayah.penghasilan", "ayah.pendidikanLainnya", "ayah.pekerjaanLainnya"
@@ -99,14 +99,16 @@ export function RegistrationForm() {
       agamaLainnya: '',
       anakKe: undefined,
       jumlahSaudaraKandung: undefined,
-      alamatJalan: '',
-      rtRw: '',
-      dusun: '',
-      desaKelurahan: '',
-      kecamatan: '',
-      kodePos: '',
       tempatTinggal: undefined,
       tempatTinggalLainnya: '',
+      provinsi: '',
+      kabupaten: '',
+      kecamatan: '',
+      desaKelurahan: '',
+      dusun: '',
+      rtRw: '',
+      alamatJalan: '',
+      kodePos: '',
       modaTransportasi: [],
       modaTransportasiLainnya: '',
       ayah: {
@@ -152,6 +154,8 @@ export function RegistrationForm() {
 
   const validateStep = async (stepNumber: number): Promise<boolean> => {
     const fieldsToValidate = getFieldsForStep(stepNumber);
+    if (fieldsToValidate.length === 0) return true; // No fields to validate for this step
+
     await form.trigger(fieldsToValidate);
 
     let isStepValid = true;
@@ -161,6 +165,7 @@ export function RegistrationForm() {
           if (field === "agamaLainnya" && form.getValues("agama") !== "Lainnya") return false;
           if (field === "tempatTinggalLainnya" && form.getValues("tempatTinggal") !== "Lainnya") return false;
           if (field === "modaTransportasiLainnya" && !form.getValues("modaTransportasi").includes("lainnya")) return false;
+          if (field === "alamatJalan") return false; // alamatJalan is optional, so its error shouldn't invalidate the step
           return !!error;
       });
     } else if (stepNumber === 2) {
@@ -175,7 +180,6 @@ export function RegistrationForm() {
                 }
             });
         } else if (isStepValid && form.formState.errors.ayah) {
-            // Clear manual errors if step becomes valid
             (Object.keys(form.formState.errors.ayah) as (keyof typeof form.formState.errors.ayah)[]).forEach(key => {
                  form.clearErrors(`ayah.${key}` as FieldPath<RegistrationFormData>);
             });
@@ -220,22 +224,19 @@ export function RegistrationForm() {
             form.setError("nomorTeleponAyah", { type: "manual", message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi." });
             isStepValid = false;
         } else {
-            // Clear the manual "at least one phone" error if it was previously set
             if (form.formState.errors.nomorTeleponAyah?.type === 'manual' && form.formState.errors.nomorTeleponAyah?.message?.startsWith("Minimal satu nomor")) {
                 form.clearErrors("nomorTeleponAyah");
             }
-
-            const phoneFields: FieldPath<RegistrationFormData>[] = [];
-            if (contactData.nomorTeleponAyah) phoneFields.push("nomorTeleponAyah");
-            if (contactData.nomorTeleponIbu) phoneFields.push("nomorTeleponIbu");
-            if (contactData.nomorTeleponWali) phoneFields.push("nomorTeleponWali");
-
-            if (phoneFields.length > 0) {
-                await form.trigger(phoneFields); // Trigger validation for only filled phone fields
-                isStepValid = !phoneFields.some(field => !!getFieldError(field, form.formState.errors));
+            const phoneFieldsToValidate: FieldPath<RegistrationFormData>[] = [];
+            if (contactData.nomorTeleponAyah) phoneFieldsToValidate.push("nomorTeleponAyah");
+            if (contactData.nomorTeleponIbu) phoneFieldsToValidate.push("nomorTeleponIbu");
+            if (contactData.nomorTeleponWali) phoneFieldsToValidate.push("nomorTeleponWali");
+            
+            if (phoneFieldsToValidate.length > 0) {
+              await form.trigger(phoneFieldsToValidate);
+              isStepValid = !phoneFieldsToValidate.some(field => !!getFieldError(field, form.formState.errors));
             } else {
-                 // This case should ideally not be reached if atLeastOnePhone is true
-                isStepValid = true; // Or false, depending on desired behavior if all are empty but "at least one" was cleared
+              isStepValid = true; // Should be true if atLeastOnePhone was the only initial error and now it's cleared.
             }
         }
     }
@@ -245,9 +246,8 @@ export function RegistrationForm() {
 
  const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     const stepBeingLeft = currentStep;
-    // Always validate the step being left to update its visual status
-    const isStepLeftValid = await validateStep(stepBeingLeft);
-    setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepLeftValid }));
+    const isCurrentStepValid = await validateStep(stepBeingLeft);
+    setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isCurrentStepValid }));
 
     if (action === 'next') {
       if (currentStep < TOTAL_STEPS) setCurrentStep(prev => prev + 1);
@@ -624,27 +624,10 @@ export function RegistrationForm() {
               <FormField control={form.control} name="jumlahSaudaraKandung" render={({ field }) => (
                 <FormItem><FormLabel>Jumlah Saudara Kandung</FormLabel><FormControl><Input type="number" min="0" placeholder="Isi 0 jika tidak punya" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
               )} />
+              
               <Separator className="my-4" />
               <p className="font-medium text-center">Alamat Tempat Tinggal</p>
-              <FormField control={form.control} name="alamatJalan" render={({ field }) => (
-                <FormItem><FormLabel>Alamat Jalan</FormLabel><FormControl><Input placeholder="Nama jalan dan nomor rumah" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="rtRw" render={({ field }) => (
-                <FormItem><FormLabel>RT/RW</FormLabel><FormControl><Input placeholder="Contoh: 001/002" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="dusun" render={({ field }) => (
-                <FormItem><FormLabel>Dusun</FormLabel><FormControl><Input placeholder="Nama dusun/dukuh" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="desaKelurahan" render={({ field }) => (
-                <FormItem><FormLabel>Desa/Kelurahan</FormLabel><FormControl><Input placeholder="Nama desa/kelurahan" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="kecamatan" render={({ field }) => (
-                <FormItem><FormLabel>Kecamatan</FormLabel><FormControl><Input placeholder="Nama kecamatan" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="kodePos" render={({ field }) => (
-                <FormItem><FormLabel>Kode Pos</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={5} placeholder="5 digit kode pos" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <Separator className="my-4" />
+
               <FormField control={form.control} name="tempatTinggal" render={({ field }) => (
                 <FormItem><FormLabel>Tempat Tinggal Saat Ini</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih tempat tinggal" /></SelectTrigger></FormControl><SelectContent>{tempatTinggalOptionsList.map(tt => <SelectItem key={tt} value={tt}>{tt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
               )} />
@@ -653,6 +636,56 @@ export function RegistrationForm() {
                     <FormItem><FormLabel>Detail Tempat Tinggal Lainnya</FormLabel><FormControl><Input placeholder="Sebutkan tempat tinggal lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                   )} />
               )}
+               <FormField control={form.control} name="provinsi" render={({ field }) => (
+                <FormItem><FormLabel>Provinsi</FormLabel><FormControl><Input
+                  placeholder="Masukkan provinsi"
+                  {...field}
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="kabupaten" render={({ field }) => (
+                <FormItem><FormLabel>Kabupaten/Kota</FormLabel><FormControl><Input
+                  placeholder="Masukkan kabupaten/kota"
+                  {...field}
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="kecamatan" render={({ field }) => (
+                <FormItem><FormLabel>Kecamatan</FormLabel><FormControl><Input
+                  placeholder="Nama kecamatan"
+                  {...field}
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="desaKelurahan" render={({ field }) => (
+                <FormItem><FormLabel>Desa/Kelurahan</FormLabel><FormControl><Input
+                  placeholder="Nama desa/kelurahan"
+                  {...field}
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="dusun" render={({ field }) => (
+                <FormItem><FormLabel>Dusun</FormLabel><FormControl><Input
+                  placeholder="Nama dusun/dukuh"
+                  {...field}
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="rtRw" render={({ field }) => (
+                <FormItem><FormLabel>RT/RW</FormLabel><FormControl><Input placeholder="Contoh: 001/002" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="alamatJalan" render={({ field }) => (
+                <FormItem><FormLabel>Alamat Jalan</FormLabel><FormControl><Input placeholder="Contoh: Jl. Kenanga No. 27 (Bisa nama jalan saja)" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="kodePos" render={({ field }) => (
+                <FormItem><FormLabel>Kode Pos</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={5} placeholder="5 digit kode pos" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <Separator className="my-4" />
               <FormField control={form.control} name="modaTransportasi" render={() => (
                 <FormItem><FormLabel>Moda Transportasi ke Sekolah</FormLabel>
                   <div className="space-y-2">

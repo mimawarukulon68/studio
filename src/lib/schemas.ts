@@ -73,14 +73,18 @@ export const registrationSchema = z.object({
   agamaLainnya: z.string().optional(),
   anakKe: z.preprocess(numberPreprocess, z.number({ required_error: "Anak keberapa wajib diisi", invalid_type_error: "Anak keberapa harus angka" }).int().min(1, "Anak keberapa minimal 1")),
   jumlahSaudaraKandung: z.preprocess(numberPreprocess, z.number({ required_error: "Jumlah saudara wajib diisi", invalid_type_error: "Jumlah saudara harus angka" }).int().min(0, "Jumlah saudara minimal 0")),
-  alamatJalan: z.string().min(1, "Alamat jalan wajib diisi"),
-  rtRw: z.string().min(1, "RT/RW wajib diisi").regex(/^\d{1,3}\/\d{1,3}$/, "Format RT/RW salah (contoh: 001/002)"),
-  dusun: z.string().min(1, "Dusun wajib diisi"),
-  desaKelurahan: z.string().min(1, "Desa/Kelurahan wajib diisi"),
-  kecamatan: z.string().min(1, "Kecamatan wajib diisi"),
-  kodePos: z.string().min(1, "Kode pos wajib diisi").length(5, "Kode pos harus 5 digit").regex(/^\d{5}$/, "Kode Pos harus 5 digit angka"),
+  
   tempatTinggal: z.enum(["Bersama orang tua", "Wali", "Kos", "Asrama", "Panti Asuhan", "Lainnya"], { required_error: "Tempat tinggal wajib dipilih" }),
   tempatTinggalLainnya: z.string().optional(),
+  provinsi: z.string().min(1, "Provinsi wajib diisi"),
+  kabupaten: z.string().min(1, "Kabupaten/Kota wajib diisi"),
+  kecamatan: z.string().min(1, "Kecamatan wajib diisi"),
+  desaKelurahan: z.string().min(1, "Desa/Kelurahan wajib diisi"),
+  dusun: z.string().min(1, "Dusun wajib diisi"),
+  rtRw: z.string().min(1, "RT/RW wajib diisi").regex(/^\d{1,3}\/\d{1,3}$/, "Format RT/RW salah (contoh: 001/002)"),
+  alamatJalan: z.string().optional(),
+  kodePos: z.string().min(1, "Kode pos wajib diisi").length(5, "Kode pos harus 5 digit").regex(/^\d{5}$/, "Kode Pos harus 5 digit angka"),
+  
   modaTransportasi: z.array(z.string()).min(1, "Pilih minimal satu moda transportasi"),
   modaTransportasiLainnya: z.string().optional(),
 
@@ -139,5 +143,3 @@ export const modaTransportasiOptions = [
   { id: "jemputan_sekolah", label: "Jemputan Sekolah" },
   { id: "lainnya", label: "Lainnya" },
 ] as const;
-
-    
