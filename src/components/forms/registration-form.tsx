@@ -83,11 +83,11 @@ function getFieldError(path: string, errors: FieldErrors<RegistrationFormData>):
 export function RegistrationForm() {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
-  const [stepCompletionStatus, setStepCompletionStatus] = useState<Record<number, boolean | undefined>>({}); 
+  const [stepCompletionStatus, setStepCompletionStatus] = useState<Record<number, boolean | undefined>>({});
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
-    mode: 'onChange', 
+    mode: 'onChange',
     defaultValues: {
       namaLengkap: '',
       namaPanggilan: '',
@@ -129,7 +129,7 @@ export function RegistrationForm() {
         pekerjaanLainnya: '',
         penghasilan: undefined,
       },
-      wali: { 
+      wali: {
         nama: '',
         nik: '',
         tahunLahir: undefined,
@@ -152,7 +152,7 @@ export function RegistrationForm() {
 
   const validateStep = async (stepNumber: number): Promise<boolean> => {
     const fieldsToValidate = getFieldsForStep(stepNumber);
-    await form.trigger(fieldsToValidate); // Trigger validation for relevant fields
+    await form.trigger(fieldsToValidate);
 
     let isStepValid = true;
     if (stepNumber === 1) {
@@ -163,43 +163,44 @@ export function RegistrationForm() {
           if (field === "modaTransportasiLainnya" && !form.getValues("modaTransportasi").includes("lainnya")) return false;
           return !!error;
       });
-    } else if (stepNumber === 2) { 
+    } else if (stepNumber === 2) {
       isStepValid = requiredParentSchema.safeParse(form.getValues().ayah).success;
-    } else if (stepNumber === 3) { 
+    } else if (stepNumber === 3) {
       isStepValid = requiredParentSchema.safeParse(form.getValues().ibu).success;
-    } else if (stepNumber === 4) { 
+    } else if (stepNumber === 4) {
       isStepValid = requiredParentSchema.safeParse(form.getValues().wali).success;
     } else if (stepNumber === 5) {
-      const contactData = form.getValues();
-      const atLeastOnePhone = !!contactData.nomorTeleponAyah || !!contactData.nomorTeleponIbu || !!contactData.nomorTeleponWali;
-      if (!atLeastOnePhone) {
-        isStepValid = false;
-      } else {
-        // Only validate formats if a number is provided
-        const phoneFields: FieldPath<RegistrationFormData>[] = [];
-        if (contactData.nomorTeleponAyah) phoneFields.push("nomorTeleponAyah");
-        if (contactData.nomorTeleponIbu) phoneFields.push("nomorTeleponIbu");
-        if (contactData.nomorTeleponWali) phoneFields.push("nomorTeleponWali");
-        
-        if (phoneFields.length > 0) {
-            await form.trigger(phoneFields);
-            isStepValid = !phoneFields.some(field => !!getFieldError(field, form.formState.errors));
+        const contactData = form.getValues();
+        const atLeastOnePhone = !!contactData.nomorTeleponAyah || !!contactData.nomorTeleponIbu || !!contactData.nomorTeleponWali;
+
+        if (!atLeastOnePhone) {
+            form.setError("nomorTeleponAyah", { type: "manual", message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi." });
+            isStepValid = false;
         } else {
-             isStepValid = true; // No numbers provided, but requirement is at least one (handled by atLeastOnePhone)
+            if (form.formState.errors.nomorTeleponAyah?.type === 'manual') {
+                form.clearErrors("nomorTeleponAyah");
+            }
+
+            const phoneFields: FieldPath<RegistrationFormData>[] = [];
+            if (contactData.nomorTeleponAyah) phoneFields.push("nomorTeleponAyah");
+            if (contactData.nomorTeleponIbu) phoneFields.push("nomorTeleponIbu");
+            if (contactData.nomorTeleponWali) phoneFields.push("nomorTeleponWali");
+
+            if (phoneFields.length > 0) {
+                await form.trigger(phoneFields);
+                isStepValid = !phoneFields.some(field => !!getFieldError(field, form.formState.errors));
+            } else {
+                isStepValid = true; // No specific phone fields were filled, so no validation errors on them
+            }
         }
-      }
-       if (!atLeastOnePhone && !form.formState.errors.nomorTeleponAyah) {
-         form.setError("nomorTeleponAyah", { type: "manual", message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi." });
-         isStepValid = false;
-       }
     }
     return isStepValid;
   };
 
-  const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
+
+ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     const stepBeingLeft = currentStep;
-    
-    // Always validate the step being left to update its indicator
+
     const isStepLeftValid = await validateStep(stepBeingLeft);
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepLeftValid }));
 
@@ -212,8 +213,8 @@ export function RegistrationForm() {
     }
   };
 
+
   const onFormSubmit = async (data: RegistrationFormData) => {
-    // Final validation of all steps before submission
     let allStepsValid = true;
     const newCompletionStatus: Record<number, boolean | undefined> = {};
     for (let i = 1; i <= TOTAL_STEPS; i++) {
@@ -259,7 +260,7 @@ export function RegistrationForm() {
     let firstErrorStep = TOTAL_STEPS + 1;
 
     for (let i = 1; i <= TOTAL_STEPS; i++) {
-      const isStepCurrentlyValid = await validateStep(i); // Re-validate to get current status
+      const isStepCurrentlyValid = await validateStep(i);
       newCompletionStatus[i] = isStepCurrentlyValid;
       if (!isStepCurrentlyValid && i < firstErrorStep) {
         firstErrorStep = i;
@@ -271,63 +272,62 @@ export function RegistrationForm() {
     }
   };
 
- const renderStepIndicators = () => {
+  const renderStepIndicators = () => {
     return (
-      <div className="grid grid-cols-5 gap-1 mb-8 rounded-md border shadow-sm p-1">
-          {stepsData.map((step) => {
-            const isCurrent = currentStep === step.num;
-            const validationState = stepCompletionStatus[step.num];
-            const successfullyValidated = validationState === true;
-            const attemptedAndInvalid = validationState === false;
-            const StepIcon = step.Icon;
+      <div className="grid grid-cols-5 gap-1 mb-8 rounded-md border shadow-sm p-0.5">
+        {stepsData.map((step) => {
+          const isCurrent = currentStep === step.num;
+          const validationState = stepCompletionStatus[step.num];
+          const successfullyValidated = validationState === true;
+          const attemptedAndInvalid = validationState === false;
+          const StepIcon = step.Icon;
 
-            return (
-              <div
-                key={step.num}
-                className={cn(
-                  "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-all text-center relative shadow-sm hover:border-primary/70",
-                  isCurrent
-                    ? (attemptedAndInvalid 
-                        ? "bg-primary text-primary-foreground border-destructive ring-2 ring-destructive ring-offset-background" 
-                        : "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-primary ring-offset-background")
-                    : successfullyValidated
-                    ? "border-green-500 bg-card" // Validated and not current
-                    : attemptedAndInvalid
-                    ? "border-destructive bg-card" // Invalid and not current
-                    : "border-border bg-card", // Default, not current, not yet validated or attempted
-                )}
-                onClick={() => processStep('jumpTo', step.num)}
-                title={step.title}
-                aria-current={isCurrent ? "step" : undefined}
-              >
-                {/* Show Check or X icon regardless of current step, based on validation status */}
-                {successfullyValidated && (
-                  <Check className="w-4 h-4 absolute top-0.5 right-0.5 text-green-600" strokeWidth={3} />
-                )}
-                {attemptedAndInvalid && (
-                  <XIcon className="w-4 h-4 absolute top-0.5 right-0.5 text-destructive" strokeWidth={3} />
-                )}
-                
-                <StepIcon className={cn(
-                    "w-5 h-5 mb-0.5", 
-                    isCurrent ? "text-primary-foreground" : 
-                    attemptedAndInvalid ? "text-destructive" : 
-                    successfullyValidated ? "text-green-600" :
-                    "text-primary" 
-                )} />
-                <span className={cn(
-                    "text-xs leading-tight font-medium", 
-                    isCurrent ? "text-primary-foreground" :
-                    attemptedAndInvalid ? "text-destructive" :
-                    successfullyValidated ? "text-green-700" :
-                    "text-card-foreground"
-                )}>
-                    {step.title}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+          return (
+            <div
+              key={step.num}
+              className={cn(
+                "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-all text-center relative shadow-sm hover:border-primary/70",
+                isCurrent
+                  ? (attemptedAndInvalid
+                      ? "bg-primary text-primary-foreground border-destructive ring-2 ring-destructive ring-offset-background"
+                      : "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-primary ring-offset-background")
+                  : successfullyValidated
+                  ? "border-green-500 bg-card"
+                  : attemptedAndInvalid
+                  ? "border-destructive bg-card"
+                  : "border-border bg-card",
+              )}
+              onClick={() => processStep('jumpTo', step.num)}
+              title={step.title}
+              aria-current={isCurrent ? "step" : undefined}
+            >
+              {successfullyValidated && (
+                <Check className="w-4 h-4 absolute top-0.5 right-0.5 text-green-600" strokeWidth={3} />
+              )}
+              {attemptedAndInvalid && (
+                <XIcon className="w-4 h-4 absolute top-0.5 right-0.5 text-destructive" strokeWidth={3} />
+              )}
+
+              <StepIcon className={cn(
+                  "w-5 h-5 mb-0.5",
+                  isCurrent ? "text-primary-foreground" :
+                  attemptedAndInvalid ? "text-destructive" :
+                  successfullyValidated ? "text-green-600" :
+                  "text-primary"
+              )} />
+              <span className={cn(
+                  "text-xs leading-tight font-medium",
+                  isCurrent ? "text-primary-foreground" :
+                  attemptedAndInvalid ? "text-destructive" :
+                  successfullyValidated ? "text-green-700" :
+                  "text-card-foreground"
+              )}>
+                  {step.title}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     );
   };
 
@@ -494,7 +494,7 @@ export function RegistrationForm() {
       form.setValue('wali.pekerjaan', sourceData.pekerjaan || undefined);
       form.setValue('wali.pekerjaanLainnya', sourceData.pekerjaanLainnya || '');
       form.setValue('wali.penghasilan', sourceData.penghasilan || undefined);
-      
+
       const waliFieldsToTrigger: FieldPath<RegistrationFormData>[] = [
         "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan",
         "wali.pekerjaan", "wali.penghasilan"
@@ -509,7 +509,7 @@ export function RegistrationForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onFormSubmit, onFormError)} className="w-full max-w-3xl space-y-8 p-4 md:p-0">
         {renderStepIndicators()}
-        
+
         {currentStep === 1 && (
           <Card className="w-full shadow-lg">
             <CardHeader>
@@ -520,7 +520,7 @@ export function RegistrationForm() {
                 <FormItem><FormLabel>Nama Lengkap</FormLabel><FormControl><Input placeholder="Sesuai Akta Kelahiran" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="namaPanggilan" render={({ field }) => (
-                <FormItem><FormLabel>Nama Panggilan</FormLabel><FormControl><Input placeholder="Nama sehari-hari" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Nama Panggilan</FormLabel><FormControl><Input placeholder="Nama panggilan anda" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="jenisKelamin" render={({ field }) => (
                 <FormItem><FormLabel>Jenis Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih jenis kelamin" /></SelectTrigger></FormControl><SelectContent>{jenisKelaminOptions.map(jk => <SelectItem key={jk} value={jk}>{jk}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
@@ -554,10 +554,10 @@ export function RegistrationForm() {
                   )} />
               )}
               <FormField control={form.control} name="anakKe" render={({ field }) => (
-                <FormItem><FormLabel>Anak Keberapa</FormLabel><FormControl><Input type="number" placeholder="Contoh: 1" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Anak Keberapa</FormLabel><FormControl><Input type="number" min="1" placeholder="Contoh: 1" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="jumlahSaudaraKandung" render={({ field }) => (
-                <FormItem><FormLabel>Jumlah Saudara Kandung</FormLabel><FormControl><Input type="number" placeholder="Contoh: 2" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Jumlah Saudara Kandung</FormLabel><FormControl><Input type="number" min="0" placeholder="Isi 0 jika tidak punya" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
               )} />
               <Separator className="my-4" />
               <p className="font-medium text-center">Alamat Tempat Tinggal</p>
@@ -647,7 +647,7 @@ export function RegistrationForm() {
             <Button type="button" variant="outline" onClick={() => processStep('prev')} disabled={form.formState.isSubmitting}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Sebelumnya
             </Button>
-          ) : ( <div /> 
+          ) : ( <div />
           )}
 
           {currentStep < TOTAL_STEPS ? (
@@ -664,14 +664,5 @@ export function RegistrationForm() {
     </Form>
   );
 }
-    
-
-    
-
-
-
-
-
-
 
     
