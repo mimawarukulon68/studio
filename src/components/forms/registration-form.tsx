@@ -83,7 +83,7 @@ function getFieldError(path: string, errors: FieldErrors<RegistrationFormData>):
 export function RegistrationForm() {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
-  const [stepCompletionStatus, setStepCompletionStatus] = useState<Record<number, boolean>>({});
+  const [stepCompletionStatus, setStepCompletionStatus] = useState<Record<number, boolean | undefined>>({}); // undefined means not yet attempted
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
@@ -176,12 +176,12 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
       const fieldsToValidate = getFieldsForStep(stepBeingLeft);
       await form.trigger(fieldsToValidate);
 
-      if (stepBeingLeft === 1) { 
+      if (stepBeingLeft === 1) {
         isStepBeingLeftValid = fieldsToValidate.every(field => !getFieldError(field, form.formState.errors));
         if (form.getValues("agama") === "Lainnya" && !form.getValues("agamaLainnya")) isStepBeingLeftValid = false;
         if (form.getValues("tempatTinggal") === "Lainnya" && !form.getValues("tempatTinggalLainnya")) isStepBeingLeftValid = false;
         if (form.getValues("modaTransportasi").includes("lainnya") && !form.getValues("modaTransportasiLainnya")) isStepBeingLeftValid = false;
-      } else if (stepBeingLeft === 2) { 
+      } else if (stepBeingLeft === 2) {
         const parentData = form.getValues().ayah;
         isStepBeingLeftValid = requiredParentSchema.safeParse(parentData).success;
       } else if (stepBeingLeft === 3) {
@@ -193,12 +193,10 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
       } else if (stepBeingLeft === 5) {
         const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
         const atLeastOnePhone = !!nomorTeleponAyah || !!nomorTeleponIbu || !!nomorTeleponWali;
-        
         let individualPhonesValid = true;
         if (nomorTeleponAyah && form.formState.errors.nomorTeleponAyah) individualPhonesValid = false;
         if (nomorTeleponIbu && form.formState.errors.nomorTeleponIbu) individualPhonesValid = false;
         if (nomorTeleponWali && form.formState.errors.nomorTeleponWali) individualPhonesValid = false;
-        
         isStepBeingLeftValid = atLeastOnePhone && individualPhonesValid;
       }
       setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
@@ -233,7 +231,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
       variant: "destructive",
     });
 
-    const newCompletionStatus = { ...stepCompletionStatus };
+    const newCompletionStatus: Record<number, boolean> = { ...stepCompletionStatus };
     let firstErrorStep = TOTAL_STEPS + 1;
 
     for (let i = 1; i <= TOTAL_STEPS; i++) {
@@ -259,11 +257,20 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
         if (nomorTeleponIbu && errors.nomorTeleponIbu) individualPhonesValid = false;
         if (nomorTeleponWali && errors.nomorTeleponWali) individualPhonesValid = false;
         currentStepHasError = !atLeastOnePhone || !individualPhonesValid;
-        if (errors.nomorTeleponAyah?.message?.includes("Minimal satu nomor telepon") || 
-            errors.nomorTeleponIbu?.message?.includes("Minimal satu nomor telepon") || 
-            errors.nomorTeleponWali?.message?.includes("Minimal satu nomor telepon") ||
-            (errors as any)._errors?.some((err: any) => err.message?.includes("Minimal satu nomor telepon"))) { 
-             currentStepHasError = true;
+        
+        const phoneErrorMessages = registrationSchema.superRefine((data, ctx) => {
+          if (!data.nomorTeleponAyah && !data.nomorTeleponIbu && !data.nomorTeleponWali) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi.",
+              path: ["nomorTeleponAyah"], 
+            });
+          }
+        }).safeParse(form.getValues());
+
+        if(!phoneErrorMessages.success) {
+            const phoneIssue = phoneErrorMessages.error.issues.find(issue => issue.message?.includes("Minimal satu nomor telepon"));
+            if (phoneIssue) currentStepHasError = true;
         }
       }
 
@@ -271,7 +278,10 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
         newCompletionStatus[i] = false;
         if (i < firstErrorStep) firstErrorStep = i;
       } else {
-        newCompletionStatus[i] = true;
+        // Only mark as true if it wasn't previously marked as false due to submit error
+        if (newCompletionStatus[i] !== false) {
+             newCompletionStatus[i] = true;
+        }
       }
     }
     setStepCompletionStatus(newCompletionStatus);
@@ -282,46 +292,47 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
 
  const renderStepIndicators = () => {
     return (
-      <div className="grid grid-cols-5 gap-1 mb-8 rounded-md border shadow-sm p-2">
+      <div className="grid grid-cols-5 gap-1 mb-8 rounded-md border shadow-sm p-1">
           {stepsData.map((step) => {
             const isCurrent = currentStep === step.num;
-            const successfullyValidated = stepCompletionStatus[step.num] === true;
-            const attemptedAndInvalid = stepCompletionStatus[step.num] === false;
+            // undefined means not yet validated by leaving the step or submitting
+            // true means validated successfully
+            // false means validation attempted and failed
+            const validationState = stepCompletionStatus[step.num];
+            const successfullyValidated = validationState === true;
+            const attemptedAndInvalid = validationState === false;
             const StepIcon = step.Icon;
 
             return (
               <div
                 key={step.num}
                 className={cn(
-                  "flex flex-col items-center justify-center p-2 rounded-lg border-2 cursor-pointer transition-all text-center relative shadow-sm",
-                  "hover:border-primary/70",
+                  "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-all text-center relative shadow-sm hover:border-primary/70",
                   isCurrent
-                    ? (attemptedAndInvalid ? "bg-primary text-primary-foreground border-destructive ring-2 ring-primary ring-offset-2" : "bg-primary text-primary-foreground border-primary ring-2 ring-primary ring-offset-2")
+                    ? (attemptedAndInvalid ? "bg-primary text-primary-foreground border-destructive ring-2 ring-destructive ring-offset-background" : "bg-primary text-primary-foreground border-primary ring-2 ring-primary ring-offset-background")
                     : successfullyValidated
                     ? "border-green-500 bg-card"
                     : attemptedAndInvalid
                     ? "border-destructive bg-card" 
-                    : "border-border bg-card",
+                    : "border-border bg-card", 
                 )}
                 onClick={() => processStep('jumpTo', step.num)}
                 title={step.title}
                 aria-current={isCurrent ? "step" : undefined}
               >
                 {successfullyValidated && !isCurrent && (
-                  <Check className="w-5 h-5 absolute top-1.5 right-1.5 text-green-600" strokeWidth={3} />
+                  <Check className="w-4 h-4 absolute top-0.5 right-0.5 text-green-600" strokeWidth={3} />
                 )}
                 
                 <StepIcon className={cn(
-                    "w-6 h-6 mb-1", 
+                    "w-5 h-5 mb-0.5", 
                     isCurrent ? "text-primary-foreground" : 
-                    successfullyValidated ? "text-green-500" : 
                     attemptedAndInvalid ? "text-destructive" : 
                     "text-primary" 
                 )} />
                 <span className={cn(
                     "text-xs leading-tight font-medium", 
                     isCurrent ? "text-primary-foreground" :
-                    successfullyValidated ? "text-green-700" : 
                     attemptedAndInvalid ? "text-destructive" :
                     "text-card-foreground"
                 )}>
@@ -669,6 +680,7 @@ const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: numb
     
 
     
+
 
 
 
