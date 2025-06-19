@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, type FieldPath, type FieldErrors, type FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
-import { CalendarIcon, ArrowLeft, ArrowRight, Check, UserRound, User as UserIcon, ShieldCheck, Phone } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, ArrowRight, Check, UserRound, User as UserIcon, ShieldCheck, Phone, XIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -52,16 +52,16 @@ const stepsData = [
     "namaLengkap", "namaPanggilan", "jenisKelamin", "nisn", "nikSiswa",
     "tempatLahir", "tanggalLahir", "agama", "anakKe", "jumlahSaudaraKandung",
     "alamatJalan", "rtRw", "dusun", "desaKelurahan", "kecamatan", "kodePos",
-    "tempatTinggal", "modaTransportasi"
+    "tempatTinggal", "modaTransportasi", "agamaLainnya", "tempatTinggalLainnya", "modaTransportasiLainnya"
   ] as FieldPath<RegistrationFormData>[] },
   { num: 2, title: "Data Ayah", Icon: UserIcon, fields: [
-    "ayah.nama", "ayah.nik", "ayah.tahunLahir", "ayah.pendidikan", "ayah.pekerjaan", "ayah.penghasilan"
+    "ayah.nama", "ayah.nik", "ayah.tahunLahir", "ayah.pendidikan", "ayah.pekerjaan", "ayah.penghasilan", "ayah.pendidikanLainnya", "ayah.pekerjaanLainnya"
   ] as FieldPath<RegistrationFormData>[] },
   { num: 3, title: "Data Ibu", Icon: UserIcon, fields: [
-    "ibu.nama", "ibu.nik", "ibu.tahunLahir", "ibu.pendidikan", "ibu.pekerjaan", "ibu.penghasilan"
+    "ibu.nama", "ibu.nik", "ibu.tahunLahir", "ibu.pendidikan", "ibu.pekerjaan", "ibu.penghasilan", "ibu.pendidikanLainnya", "ibu.pekerjaanLainnya"
   ] as FieldPath<RegistrationFormData>[] },
   { num: 4, title: "Data Wali", Icon: ShieldCheck, fields: [
-     "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan", "wali.pekerjaan", "wali.penghasilan"
+     "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan", "wali.pekerjaan", "wali.penghasilan", "wali.pendidikanLainnya", "wali.pekerjaanLainnya"
   ] as FieldPath<RegistrationFormData>[] },
   { num: 5, title: "Kontak", Icon: Phone, fields: ["nomorTeleponAyah", "nomorTeleponIbu", "nomorTeleponWali"] as FieldPath<RegistrationFormData>[] },
 ];
@@ -83,7 +83,7 @@ function getFieldError(path: string, errors: FieldErrors<RegistrationFormData>):
 export function RegistrationForm() {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
-  const [stepCompletionStatus, setStepCompletionStatus] = useState<Record<number, boolean | undefined>>({}); // undefined means not yet attempted
+  const [stepCompletionStatus, setStepCompletionStatus] = useState<Record<number, boolean | undefined>>({}); 
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
@@ -147,30 +147,7 @@ export function RegistrationForm() {
 
   const getFieldsForStep = (step: number): FieldPath<RegistrationFormData>[] => {
     const stepData = stepsData.find(s => s.num === step);
-    if (!stepData) return [];
-    
-    let currentFields: FieldPath<RegistrationFormData>[] = [...stepData.fields];
-
-    if (step === 1) {
-        if (form.getValues("agama") === "Lainnya") currentFields.push("agamaLainnya");
-        if (form.getValues("tempatTinggal") === "Lainnya") currentFields.push("tempatTinggalLainnya");
-        if (form.getValues("modaTransportasi").includes("lainnya")) currentFields.push("modaTransportasiLainnya");
-    } else if (step === 2) { 
-        if (form.getValues("ayah.pekerjaan") === "Lainnya") currentFields.push("ayah.pekerjaanLainnya");
-        if (form.getValues("ayah.pendidikan") === "Lainnya") currentFields.push("ayah.pendidikanLainnya");
-    } else if (step === 3) { 
-        if (form.getValues("ibu.pekerjaan") === "Lainnya") currentFields.push("ibu.pekerjaanLainnya");
-        if (form.getValues("ibu.pendidikan") === "Lainnya") currentFields.push("ibu.pendidikanLainnya");
-    } else if (step === 4) { 
-        if (form.getValues("wali.pekerjaan") === "Lainnya") currentFields.push("wali.pekerjaanLainnya");
-        if (form.getValues("wali.pendidikan") === "Lainnya") currentFields.push("wali.pendidikanLainnya");
-    }
-    return currentFields;
-  };
-
-  const isParentDataEffectivelyEmpty = (parentData: RegistrationFormData['ayah'] | RegistrationFormData['ibu'] | RegistrationFormData['wali']) => {
-    if (!parentData) return true;
-    return Object.values(parentData).every(value => value === '' || value === undefined || value === null);
+    return stepData?.fields || [];
   };
 
   const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
@@ -182,38 +159,76 @@ export function RegistrationForm() {
       await form.trigger(fieldsToValidate);
 
       if (stepBeingLeft === 1) {
-        isCurrentStepValid = fieldsToValidate.every(field => !getFieldError(field, form.formState.errors));
-        if (form.getValues("agama") === "Lainnya" && !form.getValues("agamaLainnya")) isCurrentStepValid = false;
-        if (form.getValues("tempatTinggal") === "Lainnya" && !form.getValues("tempatTinggalLainnya")) isCurrentStepValid = false;
-        if (form.getValues("modaTransportasi").includes("lainnya") && !form.getValues("modaTransportasiLainnya")) isCurrentStepValid = false;
-
-      } else if (stepBeingLeft === 2) { // Ayah
+        isCurrentStepValid = !fieldsToValidate.some(field => {
+            const error = getFieldError(field, form.formState.errors);
+            if (field === "agamaLainnya" && form.getValues("agama") !== "Lainnya") return false;
+            if (field === "tempatTinggalLainnya" && form.getValues("tempatTinggal") !== "Lainnya") return false;
+            if (field === "modaTransportasiLainnya" && !form.getValues("modaTransportasi").includes("lainnya")) return false;
+            return !!error;
+        });
+      } else if (stepBeingLeft === 2) { 
         isCurrentStepValid = requiredParentSchema.safeParse(form.getValues().ayah).success;
-      } else if (stepBeingLeft === 3) { // Ibu
+      } else if (stepBeingLeft === 3) { 
         isCurrentStepValid = requiredParentSchema.safeParse(form.getValues().ibu).success;
-      } else if (stepBeingLeft === 4) { // Wali - Wajib
+      } else if (stepBeingLeft === 4) { 
         isCurrentStepValid = requiredParentSchema.safeParse(form.getValues().wali).success;
-      } else if (stepBeingLeft === 5) { // Kontak
-        const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
-        const atLeastOnePhone = !!nomorTeleponAyah || !!nomorTeleponIbu || !!nomorTeleponWali;
-        let individualPhonesValid = true;
-        if (nomorTeleponAyah && form.formState.errors.nomorTeleponAyah) individualPhonesValid = false;
-        if (nomorTeleponIbu && form.formState.errors.nomorTeleponIbu) individualPhonesValid = false;
-        if (nomorTeleponWali && form.formState.errors.nomorTeleponWali) individualPhonesValid = false;
-        isCurrentStepValid = atLeastOnePhone && individualPhonesValid;
+      } else if (stepBeingLeft === 5) {
+        const contactValidationResult = registrationSchema
+          .pick({ nomorTeleponAyah: true, nomorTeleponIbu: true, nomorTeleponWali: true })
+          .safeParse(form.getValues());
+        isCurrentStepValid = contactValidationResult.success &&
+                              !form.formState.errors.nomorTeleponAyah &&
+                              !form.formState.errors.nomorTeleponIbu &&
+                              !form.formState.errors.nomorTeleponWali;
       }
       setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isCurrentStepValid }));
     }
 
+    if (!isCurrentStepValid && action === 'next') {
+        // If trying to move next from an invalid step, don't proceed.
+        return;
+    }
 
     if (action === 'next') {
       if (currentStep < TOTAL_STEPS) setCurrentStep(prev => prev + 1);
     } else if (action === 'prev') {
       if (currentStep > 1) setCurrentStep(prev => prev - 1);
     } else if (action === 'jumpTo' && targetStep !== undefined) {
-      if (targetStep !== currentStep) {
-          setCurrentStep(targetStep);
-      }
+        if (targetStep < currentStep) { // Allow jumping back
+            setCurrentStep(targetStep);
+        } else { // Jumping forward
+            let canJump = true;
+            for (let i = stepBeingLeft; i < targetStep; i++) {
+                const fieldsForIntermediateStep = getFieldsForStep(i);
+                await form.trigger(fieldsForIntermediateStep);
+                let isIntermediateStepValid = true;
+                 if (i === 1) {
+                    isIntermediateStepValid = !fieldsForIntermediateStep.some(field => {
+                        const error = getFieldError(field, form.formState.errors);
+                        if (field === "agamaLainnya" && form.getValues("agama") !== "Lainnya") return false;
+                        if (field === "tempatTinggalLainnya" && form.getValues("tempatTinggal") !== "Lainnya") return false;
+                        if (field === "modaTransportasiLainnya" && !form.getValues("modaTransportasi").includes("lainnya")) return false;
+                        return !!error;
+                    });
+                } else if (i === 2) {
+                    isIntermediateStepValid = requiredParentSchema.safeParse(form.getValues().ayah).success;
+                } else if (i === 3) {
+                    isIntermediateStepValid = requiredParentSchema.safeParse(form.getValues().ibu).success;
+                } else if (i === 4) {
+                    isIntermediateStepValid = requiredParentSchema.safeParse(form.getValues().wali).success;
+                } else if (i === 5) {
+                    const contactValidationRes = registrationSchema.pick({ nomorTeleponAyah: true, nomorTeleponIbu: true, nomorTeleponWali: true }).safeParse(form.getValues());
+                    isIntermediateStepValid = contactValidationRes.success && !form.formState.errors.nomorTeleponAyah && !form.formState.errors.nomorTeleponIbu && !form.formState.errors.nomorTeleponWali;
+                }
+                setStepCompletionStatus(prev => ({ ...prev, [i]: isIntermediateStepValid }));
+                if (!isIntermediateStepValid) {
+                    canJump = false;
+                    setCurrentStep(i); // Set current step to the first invalid intermediate step
+                    break;
+                }
+            }
+            if (canJump) setCurrentStep(targetStep);
+        }
     }
   };
 
@@ -235,58 +250,37 @@ export function RegistrationForm() {
       variant: "destructive",
     });
 
-    const newCompletionStatus: Record<number, boolean | undefined> = { ...stepCompletionStatus };
+    const newCompletionStatus: Record<number, boolean | undefined> = {};
     let firstErrorStep = TOTAL_STEPS + 1;
 
     for (let i = 1; i <= TOTAL_STEPS; i++) {
       let currentStepHasError = false;
+      const fieldsForStep = getFieldsForStep(i);
       
       if (i === 1) {
-        const fieldsToCheck = getFieldsForStep(i);
-        currentStepHasError = fieldsToCheck.some(field => getFieldError(field, errors));
-        if (form.getValues("agama") === "Lainnya" && (!form.getValues("agamaLainnya") || errors.agamaLainnya)) currentStepHasError = true;
-        if (form.getValues("tempatTinggal") === "Lainnya" && (!form.getValues("tempatTinggalLainnya") || errors.tempatTinggalLainnya)) currentStepHasError = true;
-        if (form.getValues("modaTransportasi").includes("lainnya") && (!form.getValues("modaTransportasiLainnya") || errors.modaTransportasiLainnya)) currentStepHasError = true;
-
-      } else if (i === 2) { // Ayah
+        currentStepHasError = fieldsForStep.some(field => {
+            const error = getFieldError(field, errors);
+            // Only consider "Lainnya" fields as errors if their parent selector is "Lainnya"
+            if (field === "agamaLainnya" && form.getValues("agama") !== "Lainnya" && !errors.agamaLainnya) return false;
+            if (field === "tempatTinggalLainnya" && form.getValues("tempatTinggal") !== "Lainnya" && !errors.tempatTinggalLainnya) return false;
+            if (field === "modaTransportasiLainnya" && !form.getValues("modaTransportasi").includes("lainnya") && !errors.modaTransportasiLainnya) return false;
+            return !!error;
+        });
+      } else if (i === 2) { 
           currentStepHasError = !requiredParentSchema.safeParse(form.getValues().ayah).success;
-      } else if (i === 3) { // Ibu
+      } else if (i === 3) { 
           currentStepHasError = !requiredParentSchema.safeParse(form.getValues().ibu).success;
-      } else if (i === 4) { // Wali
-        const waliData = form.getValues().wali;
-        currentStepHasError = !requiredParentSchema.safeParse(waliData).success;
-      } else if (i === 5) { // Kontak
-        const { nomorTeleponAyah, nomorTeleponIbu, nomorTeleponWali } = form.getValues();
-        const atLeastOnePhone = !!nomorTeleponAyah || !!nomorTeleponIbu || !!nomorTeleponWali;
-        let individualPhonesValid = true;
-        if (nomorTeleponAyah && errors.nomorTeleponAyah) individualPhonesValid = false;
-        if (nomorTeleponIbu && errors.nomorTeleponIbu) individualPhonesValid = false;
-        if (nomorTeleponWali && errors.nomorTeleponWali) individualPhonesValid = false;
-        currentStepHasError = !atLeastOnePhone || !individualPhonesValid;
-        
-        const phoneErrorMessages = registrationSchema.superRefine((data, ctx) => {
-          if (!data.nomorTeleponAyah && !data.nomorTeleponIbu && !data.nomorTeleponWali) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi.",
-              path: ["nomorTeleponAyah"], 
-            });
-          }
-        }).safeParse(form.getValues());
-
-        if(!phoneErrorMessages.success) {
-            const phoneIssue = phoneErrorMessages.error.issues.find(issue => issue.message?.includes("Minimal satu nomor telepon"));
-            if (phoneIssue) currentStepHasError = true;
-        }
+      } else if (i === 4) { 
+        currentStepHasError = !requiredParentSchema.safeParse(form.getValues().wali).success;
+      } else if (i === 5) { 
+        currentStepHasError = !!(errors.nomorTeleponAyah || errors.nomorTeleponIbu || errors.nomorTeleponWali);
       }
 
       if (currentStepHasError) {
         newCompletionStatus[i] = false;
         if (i < firstErrorStep) firstErrorStep = i;
       } else {
-        if (newCompletionStatus[i] !== false) { // Only mark as true if not already marked false from previous submit
-             newCompletionStatus[i] = true;
-        }
+        newCompletionStatus[i] = true;
       }
     }
     setStepCompletionStatus(newCompletionStatus);
@@ -324,20 +318,25 @@ export function RegistrationForm() {
                 title={step.title}
                 aria-current={isCurrent ? "step" : undefined}
               >
-                {successfullyValidated && !isCurrent && (
+                {successfullyValidated && (
                   <Check className="w-4 h-4 absolute top-0.5 right-0.5 text-green-600" strokeWidth={3} />
+                )}
+                {attemptedAndInvalid && (
+                  <XIcon className="w-4 h-4 absolute top-0.5 right-0.5 text-destructive" strokeWidth={3} />
                 )}
                 
                 <StepIcon className={cn(
                     "w-5 h-5 mb-0.5", 
                     isCurrent ? "text-primary-foreground" : 
                     attemptedAndInvalid ? "text-destructive" : 
+                    successfullyValidated ? "text-green-600" :
                     "text-primary" 
                 )} />
                 <span className={cn(
                     "text-xs leading-tight font-medium", 
                     isCurrent ? "text-primary-foreground" :
                     attemptedAndInvalid ? "text-destructive" :
+                    successfullyValidated ? "text-green-700" :
                     "text-card-foreground"
                 )}>
                     {step.title}
@@ -689,3 +688,6 @@ export function RegistrationForm() {
 
 
 
+
+
+    
