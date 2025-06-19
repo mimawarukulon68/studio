@@ -131,7 +131,7 @@ export function RegistrationForm() {
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
-    mode: 'onChange', // Validate on change to update step indicators
+    mode: 'onBlur', // Changed from 'onChange' to 'onBlur'
     defaultValues: {
       namaLengkap: '',
       namaPanggilan: '',
@@ -1134,3 +1134,5 @@ export function RegistrationForm() {
     </Form>
   );
 }
+
+    
