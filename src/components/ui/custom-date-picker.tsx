@@ -1,14 +1,15 @@
-// Suggested code may be subject to a license. Learn more: ~LicenseLog:3401891587.
+
 "use client";
 
 import * as React from "react";
 import { CalendarIcon } from "lucide-react";
 import { format, parse, isValid } from 'date-fns';
-import { id } from 'date-fns/locale/id'; // Import specifically
-import { type Locale } from 'date-fns'; // Import Locale type
+import { id as localeID } from 'date-fns/locale/id';
+import { IMaskInput } from 'react-imask';
+import IMask from 'imask';
+
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
@@ -16,41 +17,41 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import type { InputProps } from "@/components/ui/input"; // For styling
 
-// Format tampilan akhir: "dd MMMM yyyy" (contoh: "04 Maret 1997")
 function formatDateForDisplay(date: Date | undefined): string {
   if (!date || !isValid(date)) return "";
- return format(date, "dd MMMM yyyy", { locale: id });
+  return format(date, "dd MMMM yyyy", { locale: localeID });
 }
 
-// Format untuk input manual dan saat fokus: "dd/MM/yyyy"
 function formatDateForInput(date: Date | undefined): string {
   if (!date || !isValid(date)) return "";
-  return format(date, "dd/MM/yyyy", { locale: id });
+  return format(date, "dd/MM/yyyy", { locale: localeID });
 }
 
-// Parsing dari "dd/MM/yyyy" ke Date
-function parseInputToDate(input: string): Date | undefined {
-  // Add a basic check for approximate format before parsing for efficiency
-  if (!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(input)) return undefined;
+function parseInputToDate(input: string | undefined): Date | undefined {
+  if (!input) return undefined;
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(input)) return undefined;
   const parsedDate = parse(input, "dd/MM/yyyy", new Date());
   return isValid(parsedDate) ? parsedDate : undefined;
 }
 
-// Format internal untuk penyimpanan (opsional): "MM/dd/yyyy"
-function formatDateForStorage(date: Date | undefined): string {
-  if (!date || !isValid(date)) return "";
-  // Using en-US locale for MM/dd/yyyy format consistency
-  // It's generally better to use 'en-US' or the default locale for consistent MM/dd/yyyy storage format.
- return format(date, "MM/dd/yyyy"); // Removed explicit locale: id
+function isValidDateString(dateStr: string | undefined): boolean {
+    if (!dateStr) return false;
+    const parsed = parseInputToDate(dateStr);
+    if (!parsed || !isValid(parsed)) return false;
+    // Double check for date rollover issues (e.g. 31/02/2024)
+    const [day, month, year] = dateStr.split('/').map(Number);
+    return parsed.getFullYear() === year && parsed.getMonth() === month - 1 && parsed.getDate() === day;
 }
+
 
 interface CustomDatePickerProps {
   id?: string;
   label?: string;
-  initialDate?: Date;
-  onDateChange?: (date: Date | undefined, internalValue: string) => void;
-  name?: string; // For the hidden input
+  initialValue?: string; // DD/MM/YYYY from RHF
+  onDateChange?: (dateStr: string | undefined) => void; // To RHF
+  name?: string;
   className?: string;
   inputClassName?: string;
   disabled?: boolean;
@@ -60,163 +61,170 @@ interface CustomDatePickerProps {
 export function CustomDatePicker({
   id = "custom-date",
   label,
-  initialDate,
+  initialValue, // This is the value from react-hook-form, expected as "dd/MM/yyyy" string
   onDateChange,
-  name,
+  name, // For RHF, passed to FormField
   className,
   inputClassName,
   disabled = false,
   ariaInvalid = false,
 }: CustomDatePickerProps) {
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
-    initialDate && isValid(initialDate) ? initialDate : undefined
+  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(() =>
+    isValidDateString(initialValue) ? parseInputToDate(initialValue) : undefined
   );
-  const [inputValue, setInputValue] = React.useState<string>(
-    formatDateForDisplay(initialDate && isValid(initialDate) ? initialDate : undefined)
-  );
+  const [maskedInputValue, setMaskedInputValue] = React.useState(initialValue || "");
   const [isPickerOpen, setIsPickerOpen] = React.useState(false);
+  const [isFocused, setIsFocused] = React.useState(false);
 
-  // Synchronize internal state with initialDate prop changes
-  React.useEffect(() => {
-    const currentInitialDate = initialDate && isValid(initialDate) ? initialDate : undefined;
-    // Only update state if the effective initialDate has changed
-    if (selectedDate?.getTime() !== currentInitialDate?.getTime()) {
-        setSelectedDate(currentInitialDate);
-        setInputValue(formatDateForDisplay(currentInitialDate));
-    }
-  }, [initialDate, selectedDate]); // Added selectedDate dependency to prevent potential loop issues
+  const iMaskRef = React.useRef<IMask.MaskedDate | null>(null);
+  const inputElementRef = React.useRef<HTMLInputElement | null>(null);
 
-  // Handle date changes (from input or calendar)
-  const handleValueChange = (date: Date | undefined) => {
-    setSelectedDate(date);
-    // Call the external onDateChange handler
-    if (onDateChange) {
-      onDateChange(date, formatDateForStorage(date));
-    }
-  };
-
-  // Handle input field changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const currentValue = e.target.value;
-    setInputValue(currentValue); // Always update input display as user types
-
-    // Attempt to parse the current input value as the user types or pastes
-    const parsed = parseInputToDate(currentValue);
-
-    if (parsed) {
-       // If valid date is parsed from input, update the selected date state
-       // Only update if it's a different date than the current selectedDate
-       if (!selectedDate || selectedDate.getTime() !== parsed.getTime()){
-         handleValueChange(parsed);
-       }
-    } else if (currentValue.trim() === "") {
-      // If the input is cleared, set selectedDate to undefined
-      if (selectedDate !== undefined) { // Avoid unnecessary state update
-         handleValueChange(undefined);
-      }
-    }
-    // If input is not empty but parsing failed, selectedDate state remains unchanged until blur.
-    // The invalid state is reflected by inputValue not matching a valid date's display format.
-  };
-
-  // Handle input field focus
-  const handleInputFocus = () => {
-    // On focus, format the current selected date (if any) to the input format (DD/MM/YYYY)
-    if (selectedDate) {
-      setInputValue(formatDateForInput(selectedDate));
-    }
-    // Keep popover closed on initial focus unless ArrowDown is pressed
-    // setIsPickerOpen(false); // Optional: ensure picker is closed on focus, but default behavior is usually fine.
-  };
-
-  // Handle input field blur
-  const handleInputBlur = () => {
-    const parsed = parseInputToDate(inputValue);
-
-    if (parsed) {
-      // If parsing is successful on blur
-      if (!selectedDate || selectedDate.getTime() !== parsed.getTime()) {
-        // Update selectedDate if it's a new valid date or was previously undefined
-        handleValueChange(parsed);
-      }
-      // Always format input value to display format (DD MMMM YYYY) on blur if valid
-      setInputValue(formatDateForDisplay(parsed));
-    } else {
-      // If parsing failed on blur
-      if (selectedDate) {
-        // If a valid date was previously selected, revert input display to that date's display format.
-        // The invalid input text entered by the user is discarded from the input display.
-        setInputValue(formatDateForDisplay(selectedDate));
-        // selectedDate state remains unchanged.
-      } else if (inputValue.trim() !== "") {
-        // If no date was selected and input is not empty (contains invalid text),
-        // clear the input display field.
-        setInputValue("");
-        // selectedDate state should already be undefined, handled by handleInputChange
-      }
-      // If inputValue is empty and selectedDate is undefined, do nothing.
-    }
-    // Consider adding a small delay before closing popover on blur if needed for accessibility
-    // setIsPickerOpen(false); // Moved closing picker to calendar select
-  };
-
-  // Handle date selection from the calendar popover
-  const handleCalendarSelect = (dateFromCalendar: Date | undefined) => {
-    // Always close picker after selection (or clearing selection)
-    setIsPickerOpen(false); 
-    
-    if (dateFromCalendar && isValid(dateFromCalendar)) {
-      // If a valid date is selected from calendar, update state and input display
-      handleValueChange(dateFromCalendar);
-      setInputValue(formatDateForDisplay(dateFromCalendar));
-    } else {
-      // If selection is cleared (e.g., clicking already selected date in some libs),
-      // set selectedDate to undefined and clear input display.
-      handleValueChange(undefined);
-      setInputValue("");
-    }
-  };
-
-  // Handle keyboard events on the input field
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Open calendar picker when pressing Arrow Down
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      if (!disabled) setIsPickerOpen(true);
-    }
-     // TODO: Add handling for Enter key to parse/validate input?
-  };
-
-  // Calculate valid year range for the calendar dropdowns
   const currentYear = new Date().getFullYear();
-  const fromYear = currentYear - 120; // Allow picking dates up to 120 years ago
-  const toYear = currentYear;         // Allow picking up to the current year
+  const fromYear = currentYear - 120;
+  const toYear = currentYear;
+
+  React.useEffect(() => {
+    // Sync internal states when initialValue (from RHF) changes
+    if (isValidDateString(initialValue)) {
+      setSelectedDate(parseInputToDate(initialValue));
+    } else {
+      setSelectedDate(undefined);
+    }
+    // Always update maskedInputValue to reflect RHF's state,
+    // especially if RHF clears the field or sets an invalid string.
+    setMaskedInputValue(initialValue || "");
+  }, [initialValue]);
+
+
+  const iMaskOptions: IMask.MaskOptions<IMask.MaskedDate> = {
+    mask: Date,
+    pattern: 'd{/}m{/}Y',
+    lazy: false, // Show mask characters immediately on focus
+    placeholderChar: '_',
+    format: (date) => format(date, "dd/MM/yyyy", { locale: localeID }),
+    parse: (str) => parse(str, "dd/MM/yyyy", new Date()),
+    blocks: {
+      d: { mask: IMask.MaskedRange, from: 1, to: 31, maxLength: 2, autofix: 'pad' },
+      m: { mask: IMask.MaskedRange, from: 1, to: 12, maxLength: 2, autofix: 'pad' },
+      Y: { mask: IMask.MaskedRange, from: fromYear, to: toYear, maxLength: 4 },
+    },
+    validate: (value, masked) => {
+      if (!masked.isComplete) return true;
+      const [day, month, year] = value.split('/').map(Number);
+      if (year < fromYear || year > toYear) return false;
+      const date = new Date(year, month - 1, day);
+      return (
+        date.getFullYear() === year &&
+        date.getMonth() === month - 1 &&
+        date.getDate() === day
+      );
+    },
+  };
+
+  const handleAccept = (value: string, maskRef: IMask.MaskedDate) => {
+    const currentIMaskValue = maskRef.value; // String like "dd/MM/yyyy" or partial
+    setMaskedInputValue(currentIMaskValue); // Keep internal state for IMask value
+
+    if (isValidDateString(currentIMaskValue)) {
+        setSelectedDate(parseInputToDate(currentIMaskValue));
+    } else {
+        setSelectedDate(undefined);
+    }
+    onDateChange?.(currentIMaskValue); // Inform RHF
+  };
   
-  // Determine the initial month displayed in the calendar
-  const defaultCalendarMonth = selectedDate || new Date(Math.max(fromYear, toYear - 20), 0, 1);
+  const handleFocus = () => {
+    setIsFocused(true);
+    // When focusing, ensure maskedInputValue is what RHF holds,
+    // so IMask starts with the correct value.
+    setMaskedInputValue(initialValue || "");
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    setIsFocused(false);
+    // Ensure the latest value from IMask's input element is sent to RHF
+    // as onAccept might not cover all blur scenarios if no change was made.
+    if (inputElementRef.current && onDateChange) {
+      const finalMaskValue = inputElementRef.current.value;
+       if (initialValue !== finalMaskValue) { // Only call if different to avoid loops
+         onDateChange(finalMaskValue);
+       }
+       // Update selectedDate based on this final mask value
+       if (isValidDateString(finalMaskValue)) {
+           setSelectedDate(parseInputToDate(finalMaskValue));
+       } else {
+           setSelectedDate(undefined);
+       }
+    }
+  };
+
+  const handleCalendarSelect = (dateFromCalendar: Date | undefined) => {
+    setIsPickerOpen(false);
+    const formattedValueForRHF = dateFromCalendar ? formatDateForInput(dateFromCalendar) : undefined;
+    
+    setSelectedDate(dateFromCalendar); // Update selectedDate immediately
+    setMaskedInputValue(formattedValueForRHF || ""); // Update for IMask's value prop
+
+    onDateChange?.(formattedValueForRHF); // Inform RHF
+
+    // Ensure display changes by setting focus state after RHF update
+    // Timeout helps ensure RHF has processed the change before we potentially re-evaluate display
+    setTimeout(() => {
+        setIsFocused(false);
+         if (inputElementRef.current) {
+            // inputElementRef.current.blur(); // Blurring here might be too aggressive or cause issues
+        }
+    }, 0);
+  };
+
+  const defaultCalendarMonth = selectedDate || new Date(Math.max(fromYear, toYear - 7), 0, 1);
+
+  // Determine what to display: formatted date string or the IMaskInput
+  const shouldShowFormattedDisplay = !isFocused && selectedDate && isValid(selectedDate) && !disabled;
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      {/* Label for the date picker */}
       {label && <Label htmlFor={id} className={cn(disabled && "text-muted-foreground")}>{label}</Label>}
       <div className="relative">
-        {/* The main input field */} 
-        <Input
-          id={id}
-          value={inputValue}
-          placeholder="DD/MM/YYYY"
-          className={cn("pr-10", disabled && "cursor-not-allowed opacity-50", inputClassName)}
-          onChange={handleInputChange}
-          onFocus={handleInputFocus}
-          onBlur={handleInputBlur}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          aria-invalid={ariaInvalid}
-        />
-        {/* Popover containing the calendar */}
+        {shouldShowFormattedDisplay ? (
+          <div
+            onClick={() => { if (!disabled) { setIsFocused(true); setTimeout(() => inputElementRef.current?.focus(),0); }}}
+            className={cn(
+              "flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+              "cursor-text", // Make it look clickable
+              inputClassName,
+              ariaInvalid && "border-destructive"
+            )}
+            role="textbox"
+            tabIndex={disabled ? -1 : 0}
+            aria-labelledby={label ? id + "-label" : undefined} // Assuming label has id ending with -label
+            onFocus={() => { if (!disabled) { setIsFocused(true); setTimeout(() => inputElementRef.current?.focus(),0);}}} // Allow keyboard focus
+          >
+            {formatDateForDisplay(selectedDate)}
+          </div>
+        ) : (
+          <IMaskInput
+            {...iMaskOptions}
+            inputRef={(el: HTMLInputElement) => (inputElementRef.current = el)}
+            id={id}
+            name={name} // RHF uses name for registration
+            value={maskedInputValue}
+            onAccept={handleAccept}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            disabled={disabled}
+            aria-invalid={ariaInvalid}
+            placeholder="DD/MM/YYYY"
+            className={cn(
+              "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+              "pr-10", // Space for the calendar icon button
+              inputClassName,
+              ariaInvalid && "border-destructive"
+            )}
+          />
+        )}
         <Popover open={isPickerOpen} onOpenChange={setIsPickerOpen}>
           <PopoverTrigger asChild>
-            {/* Button to open the calendar popover */}
             <Button
               type="button"
               variant="ghost"
@@ -226,41 +234,36 @@ export function CustomDatePicker({
               )}
               aria-label="Pilih tanggal"
               disabled={disabled}
-              // Toggle popover visibility
-              onClick={() => {if (!disabled) setIsPickerOpen((prev) => !prev)}}
+              onClick={() => { if (!disabled) setIsPickerOpen((prev) => !prev); }}
             >
               <CalendarIcon className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="end" sideOffset={5}>
-            {/* The calendar component */}
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={handleCalendarSelect}
               defaultMonth={defaultCalendarMonth}
-              captionLayout="dropdown"
-              
-              
-              disabled={disabled || ((date) =>
-                // Disable dates in the future or before the 'fromYear'
-                date > new Date() || date < new Date(fromYear, 0, 1)
-              )}
-               // Focus the calendar on mount
-              locale={id} // Use Indonesian locale
+              captionLayout="dropdown-buttons"
+              fromYear={fromYear}
+              toYear={toYear}
+              disabled={disabled || ((date) => date > new Date() || date < new Date(fromYear -1 , 11, 31))}
+              locale={localeID}
             />
           </PopoverContent>
         </Popover>
       </div>
-      {/* Optional: Hidden input for form submission with specific format */}
-      {name && (
+      {name && ( // Hidden input for RHF if needed, but RHF should control via field.value
         <input
           type="hidden"
-          name={name}
-          value={formatDateForStorage(selectedDate)}
+          name={name + "-hidden-value-for-debug"} // Differentiate from main field if RHF controls that
+          value={initialValue || ""}
           disabled={disabled}
         />
       )}
     </div>
   );
 }
+
+    
