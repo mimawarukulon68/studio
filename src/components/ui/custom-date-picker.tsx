@@ -17,7 +17,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import type { InputProps } from "@/components/ui/input"; // For styling
 
 function formatDateForDisplay(date: Date | undefined): string {
   if (!date || !isValid(date)) return "";
@@ -245,9 +244,7 @@ export function CustomDatePicker({
               selected={selectedDate}
               onSelect={handleCalendarSelect}
               defaultMonth={defaultCalendarMonth}
-              captionLayout="dropdown-buttons"
-              fromYear={fromYear}
-              toYear={toYear}
+              captionLayout="dropdown"
               disabled={disabled || ((date) => date > new Date() || date < new Date(fromYear -1 , 11, 31))}
               locale={localeID}
             />
