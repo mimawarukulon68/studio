@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { CalendarIcon } from "lucide-react";
-import { format, parse, isValid } from 'date-fns';
+import { format, parse, isValid as isDateValid } from 'date-fns';
 import { id as localeID } from 'date-fns/locale/id';
 import { IMaskInput } from 'react-imask';
 import type IMask from 'imask';
@@ -18,23 +18,17 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-function formatDateForDisplay(dateStr: string | undefined): string {
-  if (!dateStr) return "";
-  const date = parse(dateStr, "dd/MM/yyyy", new Date());
-  if (!isValid(date) || format(date, 'dd/MM/yyyy') !== dateStr) return "";
-  return format(date, "dd MMMM yyyy", { locale: localeID });
-}
-
 function parseInputToDate(input: string | undefined): Date | undefined {
   if (!input) return undefined;
   if (!/^\d{2}\/\d{2}\/\d{4}$/.test(input)) return undefined;
   
   const date = parse(input, "dd/MM/yyyy", new Date());
-  if (isValid(date) && format(date, 'dd/MM/yyyy') === input) {
+  if (isDateValid(date) && format(date, 'dd/MM/yyyy') === input) {
     return date;
   }
   return undefined;
 }
+
 
 interface CustomDatePickerProps {
   id?: string;
@@ -62,7 +56,12 @@ export function CustomDatePicker({
   const [isPickerOpen, setIsPickerOpen] = React.useState(false);
   const [isFocused, setIsFocused] = React.useState(false);
   
-  const iMaskRef = React.useRef<{ maskRef: IMask.MaskedDate }>(null);
+  const [inputValue, setInputValue] = React.useState(value || '');
+
+  React.useEffect(() => {
+    setInputValue(value || '');
+  }, [value]);
+
   const inputElementRef = React.useRef<HTMLInputElement | null>(null);
 
   const selectedDate = React.useMemo(() => parseInputToDate(value), [value]);
@@ -76,7 +75,7 @@ export function CustomDatePicker({
     pattern: 'd{/}m{/}Y',
     lazy: false,
     placeholderChar: '_',
-    format: (date) => format(date, "dd/MM/yyyy", { locale: localeID }),
+    format: (date) => format(date, "dd/MM/yyyy"),
     parse: (str) => parse(str, "dd/MM/yyyy", new Date()),
     blocks: {
       d: { mask: IMask.MaskedRange, from: 1, to: 31, maxLength: 2, autofix: 'pad' },
@@ -84,34 +83,11 @@ export function CustomDatePicker({
       Y: { mask: IMask.MaskedRange, from: fromYear, to: toYear, maxLength: 4 },
     },
   };
-
-  const handleAccept = (acceptedValue: string, maskRef: IMask.Masked<any>) => {
-    // We only want to update the form state when the mask is complete and valid.
-    // handleBlur will take care of final commitment.
-    if (maskRef.isComplete) {
-      const parsed = parseInputToDate(acceptedValue);
-      if (parsed) {
-        if (value !== acceptedValue) {
-          onDateChange?.(acceptedValue);
-        }
-      }
-    }
-  };
-
+  
   const handleBlur = () => {
     setIsFocused(false);
-    const currentValue = iMaskRef.current?.maskRef.value;
-    const parsed = parseInputToDate(currentValue);
-
-    if (parsed) {
-      if (value !== currentValue) {
-        onDateChange?.(currentValue);
-      }
-    } else {
-      if (value) {
-        onDateChange?.(undefined);
-      }
-    }
+    const parsedDate = parseInputToDate(inputValue);
+    onDateChange?.(parsedDate ? format(parsedDate, 'dd/MM/yyyy') : undefined);
   };
 
   const handleCalendarSelect = (dateFromCalendar: Date | undefined) => {
@@ -121,13 +97,12 @@ export function CustomDatePicker({
     inputElementRef.current?.blur();
   };
   
-  const defaultCalendarMonth = selectedDate || new Date(Math.max(fromYear, toYear - 7), 0, 1);
-  const displayValue = formatDateForDisplay(value);
-  const shouldShowFormattedDisplay = !isFocused && displayValue && !disabled;
+  const displayValue = selectedDate ? format(selectedDate, "dd MMMM yyyy", { locale: localeID }) : "";
+  const shouldShowFormattedDisplay = !isFocused && selectedDate && !disabled;
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      {label && <Label htmlFor={id} className={cn(disabled && "text-muted-foreground")}>{label}</Label>}
+      {label && <Label htmlFor={id} className={cn(disabled && "text-muted-foreground", ariaInvalid && "text-destructive")}>{label}</Label>}
       <div className="relative">
         {shouldShowFormattedDisplay ? (
           <div
@@ -140,20 +115,18 @@ export function CustomDatePicker({
             )}
             role="textbox"
             tabIndex={disabled ? -1 : 0}
-            aria-labelledby={label ? id + "-label" : undefined}
             onFocus={() => { if (!disabled) { setIsFocused(true); setTimeout(() => inputElementRef.current?.focus(), 0); }}}
           >
             {displayValue}
           </div>
         ) : (
           <IMaskInput
-            ref={iMaskRef as any}
             inputRef={(el: HTMLInputElement) => (inputElementRef.current = el)}
             {...iMaskOptions}
             id={id}
             name={name}
-            value={value || ''}
-            onAccept={handleAccept}
+            value={inputValue}
+            onAccept={(val) => setInputValue(val as string)}
             onFocus={() => setIsFocused(true)}
             onBlur={handleBlur}
             disabled={disabled}
@@ -187,7 +160,7 @@ export function CustomDatePicker({
               mode="single"
               selected={selectedDate}
               onSelect={handleCalendarSelect}
-              defaultMonth={defaultCalendarMonth}
+              defaultMonth={selectedDate || new Date(Math.max(fromYear, toYear - 7), 0, 1)}
               captionLayout="dropdown"
               disabled={disabled || ((date) => date > new Date() || date < new Date(fromYear -1, 11, 31))}
               locale={localeID}
