@@ -12,7 +12,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch provinces', details: errorText }, { status: response.status });
     }
     const data = await response.json();
-    return NextResponse.json(data);
+    // The external API nests the array in a "data" property. We return only the array.
+    return NextResponse.json(data.data || []);
   } catch (error) {
     console.error('Error in provinces proxy:', error);
     return NextResponse.json({ error: 'Internal server error fetching provinces', details: (error as Error).message }, { status: 500 });

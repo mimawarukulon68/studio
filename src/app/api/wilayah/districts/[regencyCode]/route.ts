@@ -20,7 +20,8 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch districts', details: errorText }, { status: response.status });
     }
     const data = await response.json();
-    return NextResponse.json(data);
+    // The external API nests the array in a "data" property. We return only the array.
+    return NextResponse.json(data.data || []);
   } catch (error) {
     console.error(`Error in districts proxy for regency ${regencyCode}:`, error);
     return NextResponse.json({ error: 'Internal server error fetching districts', details: (error as Error).message }, { status: 500 });

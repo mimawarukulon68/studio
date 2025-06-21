@@ -78,12 +78,11 @@ const stepsData = [
   { num: 5, title: "Kontak", Icon: Phone, fields: ["nomorTeleponAyah", "nomorTeleponIbu", "nomorTeleponWali"] as FieldPath<RegistrationFormData>[] },
 ];
 
-interface WilayahBase {
+interface Wilayah {
   code: string;
   name: string;
 }
-interface Wilayah extends WilayahBase {}
-interface VillageWilayah extends WilayahBase {
+interface VillageWilayah extends Wilayah {
   postal_code: string;
 }
 interface WilayahOption {
@@ -122,11 +121,7 @@ export function RegistrationForm() {
   const [regenciesLoading, setRegenciesLoading] = useState(false);
   const [districtsLoading, setDistrictsLoading] = useState(false);
   const [villagesLoading, setVillagesLoading] = useState(false);
-
-  const [selectedProvinceCode, setSelectedProvinceCode] = useState<string | null>(null);
-  const [selectedRegencyCode, setSelectedRegencyCode] = useState<string | null>(null);
-  const [selectedDistrictCode, setSelectedDistrictCode] = useState<string | null>(null);
-
+  
   const [isKodePosReadOnly, setIsKodePosReadOnly] = useState(false);
   
   const [provincePopoverOpen, setProvincePopoverOpen] = useState(false);
@@ -204,28 +199,42 @@ export function RegistrationForm() {
   const nisnValue = form.watch("nisn");
   const nikValue = form.watch("nikSiswa");
   const rtRwValue = form.watch("rtRw");
+  const selectedProvinceCode = form.watch("provinsi");
+  const selectedRegencyCode = form.watch("kabupaten");
+  const selectedDistrictCode = form.watch("kecamatan");
 
   useEffect(() => {
+    let isMounted = true;
     const fetchProvinces = async () => {
       setProvincesLoading(true);
       try {
         const response = await fetch('/api/wilayah/provinces');
         if (!response.ok) throw new Error('Gagal memuat provinsi. Status: ' + response.status);
-        const jsonResponse = await response.json(); 
+        const jsonResponse = await response.json();
+        if (!isMounted) return;
+
         const data = Array.isArray(jsonResponse) ? jsonResponse : [];
-        setProvinces(data.map(p => ({ value: p.code, label: p.name })));
+        const mappedProvinces = data.map((p: Wilayah) => ({ value: p.code, label: p.name }));
+        setProvinces(mappedProvinces);
+
+        const targetProvince = mappedProvinces.find(p => p.label.toUpperCase() === "JAWA TIMUR");
+        if (targetProvince) {
+          form.setValue("provinsi", targetProvince.value);
+        }
       } catch (error) {
         console.error("Error fetching provinces:", error);
-        toast({ title: "Error", description: `Gagal memuat data provinsi: ${(error as Error).message}`, variant: "destructive" });
+        if (isMounted) toast({ title: "Error", description: `Gagal memuat data provinsi: ${(error as Error).message}`, variant: "destructive" });
         setProvinces([]);
       } finally {
-        setProvincesLoading(false);
+        if (isMounted) setProvincesLoading(false);
       }
     };
     fetchProvinces();
-  }, [toast]);
+    return () => { isMounted = false; };
+  }, [toast, form]);
 
   useEffect(() => {
+    let isMounted = true;
     if (selectedProvinceCode) {
       const fetchRegencies = async () => {
         setRegenciesLoading(true);
@@ -241,14 +250,25 @@ export function RegistrationForm() {
           const response = await fetch(`/api/wilayah/regencies/${selectedProvinceCode}`);
           if (!response.ok) throw new Error('Gagal memuat kabupaten/kota. Status: ' + response.status);
           const jsonResponse = await response.json();
+          if (!isMounted) return;
+
           const data = Array.isArray(jsonResponse) ? jsonResponse : [];
-          setRegencies(data.map(r => ({ value: r.code, label: r.name })));
+          const mappedRegencies = data.map((r: Wilayah) => ({ value: r.code, label: r.name }));
+          setRegencies(mappedRegencies);
+
+          const province = provinces.find(p => p.value === selectedProvinceCode);
+          if (province && province.label.toUpperCase() === "JAWA TIMUR") {
+            const targetRegency = mappedRegencies.find(r => r.label.toUpperCase() === "KAB. LAMONGAN");
+            if (targetRegency) {
+              form.setValue("kabupaten", targetRegency.value);
+            }
+          }
         } catch (error) {
           console.error("Error fetching regencies:", error);
-          toast({ title: "Error", description: `Gagal memuat data kabupaten/kota: ${(error as Error).message}`, variant: "destructive" });
+          if(isMounted) toast({ title: "Error", description: `Gagal memuat data kabupaten/kota: ${(error as Error).message}`, variant: "destructive" });
            setRegencies([]);
         } finally {
-          setRegenciesLoading(false);
+          if(isMounted) setRegenciesLoading(false);
         }
       };
       fetchRegencies();
@@ -257,9 +277,11 @@ export function RegistrationForm() {
       setDistricts([]);
       setVillages([]);
     }
-  }, [selectedProvinceCode, toast, form]);
+    return () => { isMounted = false; };
+  }, [selectedProvinceCode, toast, form, provinces]);
 
   useEffect(() => {
+    let isMounted = true;
     if (selectedRegencyCode) {
       const fetchDistricts = async () => {
         setDistrictsLoading(true);
@@ -273,14 +295,16 @@ export function RegistrationForm() {
           const response = await fetch(`/api/wilayah/districts/${selectedRegencyCode}`);
           if (!response.ok) throw new Error('Gagal memuat kecamatan. Status: ' + response.status);
           const jsonResponse = await response.json();
+          if (!isMounted) return;
+          
           const data = Array.isArray(jsonResponse) ? jsonResponse : [];
-          setDistricts(data.map(d => ({ value: d.code, label: d.name })));
+          setDistricts(data.map((d: Wilayah) => ({ value: d.code, label: d.name })));
         } catch (error) {
           console.error("Error fetching districts:", error);
-          toast({ title: "Error", description: `Gagal memuat data kecamatan: ${(error as Error).message}`, variant: "destructive" });
+          if(isMounted) toast({ title: "Error", description: `Gagal memuat data kecamatan: ${(error as Error).message}`, variant: "destructive" });
           setDistricts([]);
         } finally {
-          setDistrictsLoading(false);
+          if(isMounted) setDistrictsLoading(false);
         }
       };
       fetchDistricts();
@@ -288,9 +312,11 @@ export function RegistrationForm() {
       setDistricts([]);
       setVillages([]);
     }
+    return () => { isMounted = false; };
   }, [selectedRegencyCode, toast, form]);
 
   useEffect(() => {
+    let isMounted = true;
     if (selectedDistrictCode) {
       const fetchVillages = async () => {
         setVillagesLoading(true);
@@ -302,20 +328,23 @@ export function RegistrationForm() {
           const response = await fetch(`/api/wilayah/villages/${selectedDistrictCode}`);
            if (!response.ok) throw new Error('Gagal memuat desa/kelurahan. Status: ' + response.status);
            const jsonResponse = await response.json();
+           if (!isMounted) return;
+
            const data = Array.isArray(jsonResponse) ? jsonResponse : [];
-          setVillages(data.map(v => ({ value: v.code, label: v.name, postalCode: v.postal_code })));
+           setVillages(data.map((v: VillageWilayah) => ({ value: v.code, label: v.name, postalCode: v.postal_code })));
         } catch (error) {
           console.error("Error fetching villages:", error);
-          toast({ title: "Error", description: `Gagal memuat data desa/kelurahan: ${(error as Error).message}`, variant: "destructive" });
+          if(isMounted) toast({ title: "Error", description: `Gagal memuat data desa/kelurahan: ${(error as Error).message}`, variant: "destructive" });
           setVillages([]);
         } finally {
-          setVillagesLoading(false);
+          if(isMounted) setVillagesLoading(false);
         }
       };
       fetchVillages();
     } else {
       setVillages([]);
     }
+    return () => { isMounted = false; };
   }, [selectedDistrictCode, toast, form]);
 
 
@@ -345,18 +374,15 @@ export function RegistrationForm() {
       });
     } else if (stepNumber === 2) { // Ayah
         const ayahData = form.getValues().ayah;
-        // Only validate if 'nama' is filled, otherwise considered optional step (unless submitting)
         const validationResult = requiredParentSchema.safeParse(ayahData);
         isStepValid = validationResult.success;
 
         if(!isStepValid && validationResult.error) {
-            // Set errors manually for RHF to pick up
             validationResult.error.errors.forEach(err => {
                 const path = `ayah.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
                  form.setError(path, { type: 'manual', message: err.message });
             });
         } else if (isStepValid ) {
-            // Clear errors if step becomes valid
             const ayahFields = getFieldsForStep(stepNumber);
             ayahFields.forEach(field => form.clearErrors(field));
         }
@@ -375,7 +401,6 @@ export function RegistrationForm() {
         }
     } else if (stepNumber === 4) { // Wali
         const waliData = form.getValues().wali;
-        // Wali is also validated using requiredParentSchema (nama is mandatory)
         const validationResult = requiredParentSchema.safeParse(waliData);
         isStepValid = validationResult.success;
          if(!isStepValid && validationResult.error) {
@@ -388,21 +413,16 @@ export function RegistrationForm() {
             waliFields.forEach(field => form.clearErrors(field));
         }
     } else if (stepNumber === 5) { // Kontak
-        // This step's validation depends on at least one phone number being present and valid if present
         const contactData = form.getValues();
         const atLeastOnePhone = !!contactData.nomorTeleponAyah || !!contactData.nomorTeleponIbu || !!contactData.nomorTeleponWali;
 
         if (!atLeastOnePhone) {
-            // This error is primarily for submission. For step navigation, don't block.
-            // But for visual feedback, it's invalid if no phone.
             form.setError("nomorTeleponAyah", { type: "manual", message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi." });
             isStepValid = false;
         } else {
-            // Clear the general "at least one phone" error if one is now provided
              if (form.formState.errors.nomorTeleponAyah?.type === 'manual' && form.formState.errors.nomorTeleponAyah?.message?.startsWith("Minimal satu nomor")) {
                 form.clearErrors("nomorTeleponAyah");
             }
-            // Validate individual phone numbers if they are filled
             const phoneFieldsToValidate: FieldPath<RegistrationFormData>[] = [];
             if (contactData.nomorTeleponAyah) phoneFieldsToValidate.push("nomorTeleponAyah");
             if (contactData.nomorTeleponIbu) phoneFieldsToValidate.push("nomorTeleponIbu");
@@ -410,13 +430,9 @@ export function RegistrationForm() {
             
             if (phoneFieldsToValidate.length > 0) {
               await form.trigger(phoneFieldsToValidate);
-              // Check for errors on the triggered fields
               isStepValid = !phoneFieldsToValidate.some(field => !!getFieldError(field, form.formState.errors));
             } else {
-              isStepValid = true; // No phones filled, but at least one was required (this path implies one IS filled but maybe got cleared)
-                                   // This logic path (else part) might need refinement based on exact desired behavior for step 5 when navigating away vs submitting.
-                                   // For submission, the `superRefine` in Zod handles the "at least one phone" globally.
-                                   // For step navigation, if all are empty, it's invalid. If one is filled and valid, it's valid.
+              isStepValid = true; 
             }
         }
     }
@@ -472,7 +488,14 @@ export function RegistrationForm() {
         variant: "destructive",
       });
     } else {
-      const processedData = JSON.parse(JSON.stringify(data));
+      const processedData: any = JSON.parse(JSON.stringify(data));
+
+      // Find labels for wilayah
+      processedData.provinsi = provinces.find(p => p.value === data.provinsi)?.label || data.provinsi;
+      processedData.kabupaten = regencies.find(r => r.value === data.kabupaten)?.label || data.kabupaten;
+      processedData.kecamatan = districts.find(d => d.value === data.kecamatan)?.label || data.kecamatan;
+      processedData.desaKelurahan = villages.find(v => v.value === data.desaKelurahan)?.label || data.desaKelurahan;
+
 
       const processSingleLainnya = (obj: any, mainField: string, otherField: string) => {
         if (obj && obj[mainField] === 'Lainnya' && obj[otherField]) {
@@ -519,7 +542,7 @@ export function RegistrationForm() {
 
   const onFormError = async (errors: FieldErrors<RegistrationFormData>) => {
     if (!isAttemptingSubmit) {
-       return; // Not a true submit attempt
+       return; 
     }
     
     console.log("Form errors on submit (from RHF):", errors);
@@ -789,7 +812,7 @@ export function RegistrationForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onFormSubmit, onFormError)} className="w-full max-w-3xl p-2">
         <div className="sticky top-0 z-30 bg-background shadow-md mb-8">
-           {renderStepIndicators()}
+           <div className="p-1.5">{renderStepIndicators()}</div>
         </div>
 
         <div className="space-y-8">
@@ -939,7 +962,7 @@ export function RegistrationForm() {
                                 className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
                                 disabled={provincesLoading || provinces.length === 0}
                             >
-                                {field.value ? provinces.find(p => p.label === field.value)?.label : (provincesLoading ? "Memuat..." : "Pilih Provinsi")}
+                                {field.value ? provinces.find(p => p.value === field.value)?.label : (provincesLoading ? "Memuat..." : "Pilih Provinsi")}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                             </FormControl>
@@ -952,16 +975,12 @@ export function RegistrationForm() {
                                 <CommandGroup>
                                 {provinces.map((province) => (
                                     <CommandItem
-                                    value={province.label}
+                                    value={province.value}
                                     key={province.value}
                                     onSelect={(currentValue) => {
-                                        const selectedOption = provinces.find(p => p.label.toLowerCase() === currentValue.toLowerCase());
-                                        form.setValue("provinsi", selectedOption ? selectedOption.label : "");
-                                        setSelectedProvinceCode(selectedOption ? selectedOption.value : null);
+                                        form.setValue("provinsi", currentValue === field.value ? "" : currentValue);
                                         form.setValue("kabupaten", "");
-                                        setSelectedRegencyCode(null);
                                         form.setValue("kecamatan", "");
-                                        setSelectedDistrictCode(null);
                                         form.setValue("desaKelurahan", "");
                                         form.setValue("kodePos", "");
                                         setIsKodePosReadOnly(false);
@@ -972,7 +991,7 @@ export function RegistrationForm() {
                                         form.trigger("provinsi");
                                     }}
                                     >
-                                    <CheckIcon className={cn("mr-2 h-4 w-4", province.label === field.value ? "opacity-100" : "opacity-0")} />
+                                    <CheckIcon className={cn("mr-2 h-4 w-4", province.value === field.value ? "opacity-100" : "opacity-0")} />
                                     {province.label}
                                     </CommandItem>
                                 ))}
@@ -1001,7 +1020,7 @@ export function RegistrationForm() {
                                 disabled={!selectedProvinceCode || regenciesLoading || regencies.length === 0}
                                 className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
                             >
-                                {field.value ? regencies.find(r => r.label === field.value)?.label : (regenciesLoading ? "Memuat..." : "Pilih Kabupaten/Kota")}
+                                {field.value ? regencies.find(r => r.value === field.value)?.label : (regenciesLoading ? "Memuat..." : "Pilih Kabupaten/Kota")}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                             </FormControl>
@@ -1014,14 +1033,11 @@ export function RegistrationForm() {
                                 <CommandGroup>
                                 {regencies.map((regency) => (
                                     <CommandItem
-                                    value={regency.label}
+                                    value={regency.value}
                                     key={regency.value}
                                     onSelect={(currentValue) => {
-                                        const selectedOption = regencies.find(r => r.label.toLowerCase() === currentValue.toLowerCase());
-                                        form.setValue("kabupaten", selectedOption ? selectedOption.label : "");
-                                        setSelectedRegencyCode(selectedOption ? selectedOption.value : null);
+                                        form.setValue("kabupaten", currentValue === field.value ? "" : currentValue);
                                         form.setValue("kecamatan", "");
-                                        setSelectedDistrictCode(null);
                                         form.setValue("desaKelurahan", "");
                                         form.setValue("kodePos", "");
                                         setIsKodePosReadOnly(false);
@@ -1031,7 +1047,7 @@ export function RegistrationForm() {
                                         form.trigger("kabupaten");
                                     }}
                                     >
-                                    <CheckIcon className={cn("mr-2 h-4 w-4", regency.label === field.value ? "opacity-100" : "opacity-0")} />
+                                    <CheckIcon className={cn("mr-2 h-4 w-4", regency.value === field.value ? "opacity-100" : "opacity-0")} />
                                     {regency.label}
                                     </CommandItem>
                                 ))}
@@ -1060,7 +1076,7 @@ export function RegistrationForm() {
                                 disabled={!selectedRegencyCode || districtsLoading || districts.length === 0}
                                 className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
                             >
-                                {field.value ? districts.find(d => d.label === field.value)?.label : (districtsLoading ? "Memuat..." : "Pilih Kecamatan")}
+                                {field.value ? districts.find(d => d.value === field.value)?.label : (districtsLoading ? "Memuat..." : "Pilih Kecamatan")}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                             </FormControl>
@@ -1073,12 +1089,10 @@ export function RegistrationForm() {
                                 <CommandGroup>
                                 {districts.map((district) => (
                                     <CommandItem
-                                    value={district.label}
+                                    value={district.value}
                                     key={district.value}
                                     onSelect={(currentValue) => {
-                                        const selectedOption = districts.find(d => d.label.toLowerCase() === currentValue.toLowerCase());
-                                        form.setValue("kecamatan", selectedOption ? selectedOption.label : "");
-                                        setSelectedDistrictCode(selectedOption ? selectedOption.value : null);
+                                        form.setValue("kecamatan", currentValue === field.value ? "" : currentValue);
                                         form.setValue("desaKelurahan", "");
                                         form.setValue("kodePos", "");
                                         setIsKodePosReadOnly(false);
@@ -1087,7 +1101,7 @@ export function RegistrationForm() {
                                         form.trigger("kecamatan");
                                     }}
                                     >
-                                    <CheckIcon className={cn("mr-2 h-4 w-4", district.label === field.value ? "opacity-100" : "opacity-0")} />
+                                    <CheckIcon className={cn("mr-2 h-4 w-4", district.value === field.value ? "opacity-100" : "opacity-0")} />
                                     {district.label}
                                     </CommandItem>
                                 ))}
@@ -1116,7 +1130,7 @@ export function RegistrationForm() {
                                 disabled={!selectedDistrictCode || villagesLoading || villages.length === 0}
                                 className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
                             >
-                                {field.value ? villages.find(v => v.label === field.value)?.label : (villagesLoading ? "Memuat..." : "Pilih Desa/Kelurahan")}
+                                {field.value ? villages.find(v => v.value === field.value)?.label : (villagesLoading ? "Memuat..." : "Pilih Desa/Kelurahan")}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                             </FormControl>
@@ -1129,24 +1143,24 @@ export function RegistrationForm() {
                                 <CommandGroup>
                                 {villages.map((village) => (
                                     <CommandItem
-                                    value={village.label}
+                                    value={village.value}
                                     key={village.value}
                                     onSelect={(currentValue) => {
-                                        const selectedOption = villages.find(v => v.label.toLowerCase() === currentValue.toLowerCase());
-                                        form.setValue("desaKelurahan", selectedOption ? selectedOption.label : "");
+                                        form.setValue("desaKelurahan", currentValue === field.value ? "" : currentValue);
+                                        const selectedOption = villages.find(v => v.value === currentValue);
                                         if (selectedOption && selectedOption.postalCode) {
-                                        form.setValue("kodePos", selectedOption.postalCode);
-                                        setIsKodePosReadOnly(true);
+                                            form.setValue("kodePos", selectedOption.postalCode);
+                                            setIsKodePosReadOnly(true);
                                         } else {
-                                        form.setValue("kodePos", "");
-                                        setIsKodePosReadOnly(false);
+                                            form.setValue("kodePos", "");
+                                            setIsKodePosReadOnly(false);
                                         }
                                         setVillagePopoverOpen(false);
                                         form.trigger("desaKelurahan");
                                         form.trigger("kodePos");
                                     }}
                                     >
-                                    <CheckIcon className={cn("mr-2 h-4 w-4", village.label === field.value ? "opacity-100" : "opacity-0")} />
+                                    <CheckIcon className={cn("mr-2 h-4 w-4", village.value === field.value ? "opacity-100" : "opacity-0")} />
                                     {village.label}
                                     </CommandItem>
                                 ))}

@@ -72,7 +72,6 @@ export const registrationSchema = z.object({
   tanggalLahir: z.string().min(1, "Tanggal lahir wajib diisi")
     .refine((val) => {
       const parsed = parse(val, 'dd/MM/yyyy', new Date());
-      // Checks for valid date and correct format (e.g., rejects 31/02/2024 which becomes 02/03/2024)
       return isValid(parsed) && format(parsed, 'dd/MM/yyyy') === val;
     }, {
       message: "Format tanggal lahir tidak valid (DD/MM/YYYY)",
