@@ -770,7 +770,7 @@ export function RegistrationForm() {
             name={`${namePrefix}.nama` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nama {title} *</FormLabel>
+                <FormLabel>Nama {title} {parentType === 'wali' && !isWaliCurrentlyRequired ? '(Opsional)' : '*'}</FormLabel>
                 <FormControl>
                   <Input
                     placeholder={`Masukkan nama ${title.toLowerCase()}`}
