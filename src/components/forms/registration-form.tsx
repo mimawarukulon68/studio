@@ -6,8 +6,8 @@ import { useForm, type FieldPath, type FieldErrors, type FieldError } from 'reac
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, ArrowRight, Check, UserRound, User as UserIcon, ShieldCheck, Phone, XIcon, ChevronsUpDown, CheckIcon, CalendarIcon } from 'lucide-react';
 import { IMaskInput } from 'react-imask';
-import IMask from 'imask';
-import { format, parse, isValid as isDateValid, getYear, setYear, startOfDay } from 'date-fns';
+import type IMask from 'imask';
+import { format, parse, isValid as isDateValid } from 'date-fns';
 import { id as localeID } from 'date-fns/locale/id';
 
 
@@ -33,7 +33,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input'; // Still needed for general Input styling reference
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import {
   Select,
   SelectContent,
@@ -505,60 +504,60 @@ export function RegistrationForm() {
   
   const renderStepIndicators = () => {
     return (
-      <div className="grid grid-cols-5 gap-1 rounded-md border shadow-sm p-0.5">
-        {stepsData.map((step) => {
-          const isCurrent = currentStep === step.num;
-          const validationState = stepCompletionStatus[step.num];
-          const successfullyValidated = validationState === true;
-          const attemptedAndInvalid = validationState === false; 
-          const StepIcon = step.Icon;
+        <div className="grid grid-cols-5 gap-1 rounded-md border shadow-sm p-0.5">
+            {stepsData.map((step) => {
+            const isCurrent = currentStep === step.num;
+            const validationState = stepCompletionStatus[step.num];
+            const successfullyValidated = validationState === true;
+            const attemptedAndInvalid = validationState === false; 
+            const StepIcon = step.Icon;
 
-          return (
-            <div
-              key={step.num}
-              className={cn(
-                "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-colors text-center relative shadow-sm hover:border-primary/70",
-                isCurrent
-                  ? (attemptedAndInvalid 
-                      ? "bg-primary text-primary-foreground border-destructive ring-2 ring-destructive ring-offset-background"
-                      : "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-primary ring-offset-background") 
-                  : successfullyValidated 
-                  ? "border-green-500 bg-card"
-                  : attemptedAndInvalid 
-                  ? "border-destructive bg-card"
-                  : "border-border bg-card", 
-              )}
-              onClick={() => processStep('jumpTo', step.num)}
-              title={step.title}
-              aria-current={isCurrent ? "step" : undefined}
-            >
-              {(successfullyValidated) && (
-                <Check className="w-4 h-4 absolute top-0.5 right-0.5 text-green-600" strokeWidth={3} />
-              )}
-              {(attemptedAndInvalid) && (
-                <XIcon className="w-4 h-4 absolute top-0.5 right-0.5 text-destructive" strokeWidth={3} />
-              )}
+            return (
+                <div
+                key={step.num}
+                className={cn(
+                    "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-colors text-center relative shadow-sm hover:border-primary/70",
+                    isCurrent
+                    ? (attemptedAndInvalid 
+                        ? "bg-primary text-primary-foreground border-destructive ring-2 ring-destructive ring-offset-background"
+                        : "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-primary ring-offset-background") 
+                    : successfullyValidated 
+                    ? "border-green-500 bg-card"
+                    : attemptedAndInvalid 
+                    ? "border-destructive bg-card"
+                    : "border-border bg-card", 
+                )}
+                onClick={() => processStep('jumpTo', step.num)}
+                title={step.title}
+                aria-current={isCurrent ? "step" : undefined}
+                >
+                {(successfullyValidated) && (
+                    <Check className="w-4 h-4 absolute top-0.5 right-0.5 text-green-600" strokeWidth={3} />
+                )}
+                {(attemptedAndInvalid) && (
+                    <XIcon className="w-4 h-4 absolute top-0.5 right-0.5 text-destructive" strokeWidth={3} />
+                )}
 
-              <StepIcon className={cn(
-                  "w-5 h-5 mb-0.5",
-                  isCurrent ? "text-primary-foreground" : 
-                  attemptedAndInvalid ? "text-destructive" : 
-                  successfullyValidated ? "text-green-600" : 
-                  "text-primary" 
-              )} />
-              <span className={cn(
-                  "text-xs leading-tight font-medium",
-                  isCurrent ? "text-primary-foreground" :
-                  attemptedAndInvalid ? "text-destructive" :
-                  successfullyValidated ? "text-green-700" :
-                  "text-card-foreground"
-              )}>
-                  {step.title}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+                <StepIcon className={cn(
+                    "w-5 h-5 mb-0.5",
+                    isCurrent ? "text-primary-foreground" : 
+                    attemptedAndInvalid ? "text-destructive" : 
+                    successfullyValidated ? "text-green-600" : 
+                    "text-primary" 
+                )} />
+                <span className={cn(
+                    "text-xs leading-tight font-medium",
+                    isCurrent ? "text-primary-foreground" :
+                    attemptedAndInvalid ? "text-destructive" :
+                    successfullyValidated ? "text-green-700" :
+                    "text-card-foreground"
+                )}>
+                    {step.title}
+                </span>
+                </div>
+            );
+            })}
+        </div>
     );
   };
 
@@ -774,12 +773,48 @@ export function RegistrationForm() {
                 <FormField control={form.control} name="jenisKelamin" render={({ field }) => (
                     <FormItem><FormLabel>Jenis Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih jenis kelamin" /></SelectTrigger></FormControl><SelectContent>{jenisKelaminOptions.map(jk => <SelectItem key={jk} value={jk}>{jk}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="nisn" render={({ field }) => (
-                    <FormItem><FormLabel>NISN (Nomor Induk Siswa Nasional)</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={10} placeholder="10 digit NISN" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="nikSiswa" render={({ field }) => (
-                    <FormItem><FormLabel>NIK (Nomor Induk Kependudukan)</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={16} placeholder="16 digit NIK (sesuai Kartu Keluarga)" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-                )} />
+                <FormField
+                    control={form.control}
+                    name="nisn"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>NISN (Nomor Induk Siswa Nasional)</FormLabel>
+                        <FormControl>
+                            <IMaskInput
+                            mask="0000000000"
+                            placeholder="10 digit NISN"
+                            className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('nisn', form.formState.errors) && "border-destructive")}
+                            value={field.value ?? ''}
+                            unmask={true}
+                            onAccept={(value) => field.onChange(value)}
+                            onBlur={field.onBlur}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="nikSiswa"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>NIK (Nomor Induk Kependudukan)</FormLabel>
+                        <FormControl>
+                            <IMaskInput
+                            mask="0000000000000000"
+                            placeholder="16 digit NIK (sesuai Kartu Keluarga)"
+                            className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('nikSiswa', form.formState.errors) && "border-destructive")}
+                            value={field.value ?? ''}
+                            unmask={true}
+                            onAccept={(value) => field.onChange(value)}
+                            onBlur={field.onBlur}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <FormField control={form.control} name="tempatLahir" render={({ field }) => (
                     <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input
                     placeholder="Kota/Kabupaten kelahiran"
@@ -1076,9 +1111,26 @@ export function RegistrationForm() {
                     onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                     /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="rtRw" render={({ field }) => (
-                    <FormItem><FormLabel>RT/RW</FormLabel><FormControl><Input placeholder="Contoh: 001/002" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-                )} />
+                <FormField
+                    control={form.control}
+                    name="rtRw"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>RT/RW</FormLabel>
+                        <FormControl>
+                            <IMaskInput
+                            mask="000/000"
+                            placeholder="Contoh: 001/002"
+                            className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('rtRw', form.formState.errors) && "border-destructive")}
+                            value={field.value ?? ''}
+                            onAccept={(value) => field.onChange(value)}
+                            onBlur={field.onBlur}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <FormField control={form.control} name="alamatJalan" render={({ field }) => (
                     <FormItem><FormLabel>Alamat Jalan</FormLabel><FormControl><Input placeholder="Contoh: Jl. Kenanga No. 27 (Bisa nama jalan saja)" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Kosongkan jika tidak tahu nama jalan.</FormDescription><FormMessage /></FormItem>
                 )} />
@@ -1169,3 +1221,5 @@ export function RegistrationForm() {
     </Form>
   );
 }
+
+    
