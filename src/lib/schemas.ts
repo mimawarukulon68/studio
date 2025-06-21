@@ -50,15 +50,6 @@ export const parentSchema = z.object({
     // We only need to validate 'Lainnya' if the user happens to fill it.
     checkLainnya('pendidikan', 'pendidikanLainnya', "Detail pendidikan lainnya wajib diisi");
     checkLainnya('pekerjaan', 'pekerjaanLainnya', "Detail pekerjaan lainnya wajib diisi");
-    if(data.pekerjaan !== 'Meninggal Dunia' || data.penghasilan !== 'Meninggal Dunia'){
-       if(data.pekerjaan !== 'Meninggal Dunia'){
-          ctx.addIssue({code: 'custom', message: "Pekerjaan harus 'Meninggal Dunia'", path: ['pekerjaan']});
-       }
-       if(data.penghasilan !== 'Meninggal Dunia'){
-          ctx.addIssue({code: 'custom', message: "Penghasilan harus 'Meninggal Dunia'", path: ['penghasilan']});
-       }
-    }
-
   } else {
     // If NOT deceased, all fields below are required.
     if (!data.nik || data.nik.trim().length === 0) {

@@ -805,7 +805,7 @@ export function RegistrationForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Pekerjaan Utama {parentType === 'wali' || isDeceased ? '(Opsional)' : '*'}</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? undefined} disabled={isDeceased}>
+                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih pekerjaan" /></SelectTrigger>
                   </FormControl>
@@ -838,7 +838,7 @@ export function RegistrationForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Penghasilan Bulanan {parentType === 'wali' || isDeceased ? '(Opsional)' : '*'}</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? undefined} disabled={isDeceased}>
+                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih penghasilan" /></SelectTrigger>
                   </FormControl>
@@ -1047,18 +1047,21 @@ export function RegistrationForm() {
                                     <CommandItem
                                     value={province.label}
                                     key={province.value}
-                                    onSelect={() => {
-                                        form.setValue("provinsi", province.value);
-                                        form.setValue("kabupaten", "");
-                                        form.setValue("kecamatan", "");
-                                        form.setValue("desaKelurahan", "");
-                                        form.setValue("kodePos", "");
-                                        setIsKodePosReadOnly(false);
-                                        setRegencies([]);
-                                        setDistricts([]);
-                                        setVillages([]);
+                                    onSelect={(currentValue) => {
+                                        const selectedValue = provinces.find(p => p.label.toLowerCase() === currentValue.toLowerCase())?.value;
+                                        if (selectedValue !== field.value) {
+                                            form.setValue("provinsi", selectedValue || "");
+                                            form.setValue("kabupaten", "");
+                                            form.setValue("kecamatan", "");
+                                            form.setValue("desaKelurahan", "");
+                                            form.setValue("kodePos", "");
+                                            setIsKodePosReadOnly(false);
+                                            setRegencies([]);
+                                            setDistricts([]);
+                                            setVillages([]);
+                                            form.trigger("provinsi");
+                                        }
                                         setProvincePopoverOpen(false);
-                                        form.trigger("provinsi");
                                     }}
                                     >
                                     <CheckIcon className={cn("mr-2 h-4 w-4", province.value === field.value ? "opacity-100" : "opacity-0")} />
@@ -1105,16 +1108,19 @@ export function RegistrationForm() {
                                     <CommandItem
                                     value={regency.label}
                                     key={regency.value}
-                                    onSelect={() => {
-                                        form.setValue("kabupaten", regency.value);
-                                        form.setValue("kecamatan", "");
-                                        form.setValue("desaKelurahan", "");
-                                        form.setValue("kodePos", "");
-                                        setIsKodePosReadOnly(false);
-                                        setDistricts([]);
-                                        setVillages([]);
+                                    onSelect={(currentValue) => {
+                                        const selectedValue = regencies.find(r => r.label.toLowerCase() === currentValue.toLowerCase())?.value;
+                                        if (selectedValue !== field.value) {
+                                            form.setValue("kabupaten", selectedValue || "");
+                                            form.setValue("kecamatan", "");
+                                            form.setValue("desaKelurahan", "");
+                                            form.setValue("kodePos", "");
+                                            setIsKodePosReadOnly(false);
+                                            setDistricts([]);
+                                            setVillages([]);
+                                            form.trigger("kabupaten");
+                                        }
                                         setRegencyPopoverOpen(false);
-                                        form.trigger("kabupaten");
                                     }}
                                     >
                                     <CheckIcon className={cn("mr-2 h-4 w-4", regency.value === field.value ? "opacity-100" : "opacity-0")} />
@@ -1161,14 +1167,17 @@ export function RegistrationForm() {
                                     <CommandItem
                                     value={district.label}
                                     key={district.value}
-                                    onSelect={() => {
-                                        form.setValue("kecamatan", district.value);
-                                        form.setValue("desaKelurahan", "");
-                                        form.setValue("kodePos", "");
-                                        setIsKodePosReadOnly(false);
-                                        setVillages([]);
+                                    onSelect={(currentValue) => {
+                                        const selectedValue = districts.find(d => d.label.toLowerCase() === currentValue.toLowerCase())?.value;
+                                        if (selectedValue !== field.value) {
+                                            form.setValue("kecamatan", selectedValue || "");
+                                            form.setValue("desaKelurahan", "");
+                                            form.setValue("kodePos", "");
+                                            setIsKodePosReadOnly(false);
+                                            setVillages([]);
+                                            form.trigger("kecamatan");
+                                        }
                                         setDistrictPopoverOpen(false);
-                                        form.trigger("kecamatan");
                                     }}
                                     >
                                     <CheckIcon className={cn("mr-2 h-4 w-4", district.value === field.value ? "opacity-100" : "opacity-0")} />
@@ -1215,18 +1224,21 @@ export function RegistrationForm() {
                                     <CommandItem
                                     value={village.label}
                                     key={village.value}
-                                    onSelect={() => {
-                                        form.setValue("desaKelurahan", village.value);
-                                        if (village && village.postalCode) {
-                                            form.setValue("kodePos", village.postalCode);
-                                            setIsKodePosReadOnly(true);
-                                        } else {
-                                            form.setValue("kodePos", "");
-                                            setIsKodePosReadOnly(false);
+                                    onSelect={(currentValue) => {
+                                        const selectedVillage = villages.find(v => v.label.toLowerCase() === currentValue.toLowerCase());
+                                        if (selectedVillage && selectedVillage.value !== field.value) {
+                                            form.setValue("desaKelurahan", selectedVillage.value);
+                                            if (selectedVillage.postalCode) {
+                                                form.setValue("kodePos", selectedVillage.postalCode);
+                                                setIsKodePosReadOnly(true);
+                                            } else {
+                                                form.setValue("kodePos", "");
+                                                setIsKodePosReadOnly(false);
+                                            }
+                                            form.trigger("desaKelurahan");
+                                            form.trigger("kodePos");
                                         }
                                         setVillagePopoverOpen(false);
-                                        form.trigger("desaKelurahan");
-                                        form.trigger("kodePos");
                                     }}
                                     >
                                     <CheckIcon className={cn("mr-2 h-4 w-4", village.value === field.value ? "opacity-100" : "opacity-0")} />
