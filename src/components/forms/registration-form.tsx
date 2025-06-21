@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, type FieldPath, type FieldErrors, type FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, ArrowRight, Check, UserRound, User as UserIcon, ShieldCheck, Phone, XIcon, ChevronsUpDown, CheckIcon, CalendarIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, UserRound, User as UserIcon, ShieldCheck, Phone, XIcon, ChevronsUpDown, CheckIcon, CalendarIcon, AlertCircle } from 'lucide-react';
 import { IMaskInput } from 'react-imask';
 import type IMask from 'imask';
 import { format, parse, isValid as isDateValid } from 'date-fns';
@@ -14,6 +14,7 @@ import { id as localeID } from 'date-fns/locale/id';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Command,
   CommandEmpty,
@@ -53,7 +54,8 @@ import {
   pekerjaanOptionsList,
   penghasilanOptionsList,
   waliSchema,
-  parentSchema
+  parentSchema,
+  hubunganWaliOptionsList,
 } from '@/lib/schemas';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
@@ -74,7 +76,7 @@ const stepsData = [
     "ibu.isDeceased", "ibu.nama", "ibu.nik", "ibu.tahunLahir", "ibu.pendidikan", "ibu.pekerjaan", "ibu.penghasilan", "ibu.pendidikanLainnya", "ibu.pekerjaanLainnya"
   ] as FieldPath<RegistrationFormData>[] },
   { num: 4, title: "Data Wali", Icon: ShieldCheck, fields: [
-     "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan", "wali.pekerjaan", "wali.penghasilan", "wali.pendidikanLainnya", "wali.pekerjaanLainnya"
+     "wali.hubungan", "wali.hubunganLainnya", "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan", "wali.pekerjaan", "wali.penghasilan", "wali.pendidikanLainnya", "wali.pekerjaanLainnya"
   ] as FieldPath<RegistrationFormData>[] },
   { num: 5, title: "Kontak", Icon: Phone, fields: ["nomorTeleponAyah", "nomorTeleponIbu", "nomorTeleponWali"] as FieldPath<RegistrationFormData>[] },
 ];
@@ -184,6 +186,8 @@ export function RegistrationForm() {
         penghasilan: undefined,
       },
       wali: {
+        hubungan: undefined,
+        hubunganLainnya: '',
         nama: '',
         nik: '',
         tahunLahir: undefined,
@@ -201,6 +205,7 @@ export function RegistrationForm() {
   
   const isAyahDeceased = form.watch('ayah.isDeceased');
   const isIbuDeceased = form.watch('ibu.isDeceased');
+  const isWaliRequired = isAyahDeceased && isIbuDeceased;
 
   useEffect(() => {
     if (isAyahDeceased) {
@@ -233,6 +238,14 @@ export function RegistrationForm() {
       }
     }
   }, [isIbuDeceased, form]);
+
+  useEffect(() => {
+    if (isWaliRequired) {
+      // Trigger validation for the entire wali step when it becomes required
+      const waliFields = getFieldsForStep(4);
+      form.trigger(waliFields);
+    }
+  }, [isWaliRequired, form]);
 
 
   const nisnValue = form.watch("nisn");
@@ -440,16 +453,24 @@ export function RegistrationForm() {
         }
     } else if (stepNumber === 4) { // Wali
         const waliData = form.getValues().wali;
-        const validationResult = waliSchema.safeParse(waliData);
-        isStepValid = validationResult.success;
-         if(!isStepValid && validationResult.error) {
-            validationResult.error.errors.forEach(err => {
-                const path = `wali.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
-                form.setError(path, { type: 'manual', message: err.message });
-            });
-        } else if (isStepValid) {
-            const waliFields = getFieldsForStep(stepNumber);
-            waliFields.forEach(field => form.clearErrors(field));
+        const isRequired = form.getValues('ayah.isDeceased') && form.getValues('ibu.isDeceased');
+        
+        // This is a bit tricky. We rely on the global schema validation.
+        // We trigger, then check if any of the wali fields have errors.
+        await form.trigger(getFieldsForStep(4));
+        const waliFieldsHaveErrors = getFieldsForStep(4).some(field => getFieldError(field, form.formState.errors));
+        isStepValid = !waliFieldsHaveErrors;
+
+        // Clean up errors if it becomes optional again and is empty
+        if (!isRequired) {
+            const hasWaliInput = Object.values(waliData).some(v => v !== '' && v !== undefined && v !== null);
+            if (!hasWaliInput) {
+                getFieldsForStep(4).forEach(field => form.clearErrors(field));
+                isStepValid = true;
+            } else {
+                 const validationResult = waliSchema.safeParse(waliData);
+                 isStepValid = validationResult.success;
+            }
         }
     } else if (stepNumber === 5) { // Kontak
         const contactData = form.getValues();
@@ -549,7 +570,12 @@ export function RegistrationForm() {
         if (!parentObj) return;
         processSingleLainnya(parentObj, 'pendidikan', 'pendidikanLainnya');
         processSingleLainnya(parentObj, 'pekerjaan', 'pekerjaanLainnya');
-        delete parentObj.isDeceased;
+        if ('isDeceased' in parentObj) {
+           delete parentObj.isDeceased;
+        }
+        if ('hubungan' in parentObj) {
+            processSingleLainnya(parentObj, 'hubungan', 'hubunganLainnya');
+        }
       };
       
       processSingleLainnya(processedData, 'agama', 'agamaLainnya');
@@ -674,12 +700,13 @@ export function RegistrationForm() {
     const title = parentType === 'ayah' ? 'Ayah Kandung' : parentType === 'ibu' ? 'Ibu Kandung' : 'Wali';
     const namePrefix = parentType;
     const isDeceased = parentType === 'ayah' ? isAyahDeceased : parentType === 'ibu' ? isIbuDeceased : false;
+    const isWaliCurrentlyRequired = form.watch('ayah.isDeceased') && form.watch('ibu.isDeceased');
 
     const pekerjaanOptions = isDeceased ? [...pekerjaanOptionsList, "Meninggal Dunia"] : pekerjaanOptionsList;
     const penghasilanOptions = isDeceased ? [...penghasilanOptionsList, "Meninggal Dunia"] : penghasilanOptionsList;
 
 
-    const description = "Wali adalah pihak yang turut bertanggung jawab atas siswa, seperti Ayah/Ibu kandung, kakek, nenek, paman, bibi, orang tua tiri, atau pihak lain yang dianggap sebagai wali.  Jika kedua orang tua telah tiada, data wali wajib diisi. Jika salah satu orang tua masih hidup dan menjadi pendamping utama, bagian ini boleh dilewati. Namun, Anda juga tetap boleh mengisi data wali meskipun orang tua masih ada, jika ada pihak lain yang turut mendampingi siswa.";
+    const description = "Wali adalah pihak yang turut bertanggung jawab atas siswa, seperti Ayah/Ibu kandung, kakek, nenek, paman, bibi, orang tua tiri, atau pihak lain yang dianggap sebagai wali. Jika kedua orang tua telah tiada, data wali wajib diisi. Jika salah satu orang tua masih hidup dan menjadi pendamping utama, bagian ini boleh dilewati. Namun, Anda juga tetap boleh mengisi data wali meskipun orang tua masih ada, jika ada pihak lain yang turut mendampingi siswa.";
 
 
     return (
@@ -693,11 +720,14 @@ export function RegistrationForm() {
           )}
         </CardHeader>
         <CardContent className="space-y-6">
-          {parentType === 'wali' && (
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 justify-center">
-              <Button type="button" variant="outline" onClick={() => copyParentData('ayah')}>Salin dari Ayah</Button>
-              <Button type="button" variant="outline" onClick={() => copyParentData('ibu')}>Salin dari Ibu</Button>
-            </div>
+           {parentType === 'wali' && isWaliCurrentlyRequired && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Perhatian</AlertTitle>
+              <AlertDescription>
+                Karena kedua orang tua telah meninggal, maka data wali wajib diisi sebagai pihak yang saat ini mendampingi siswa.
+              </AlertDescription>
+            </Alert>
           )}
 
           {(parentType === 'ayah' || parentType === 'ibu') && (
@@ -722,12 +752,49 @@ export function RegistrationForm() {
             />
           )}
 
+          {parentType === 'wali' && (
+             <FormField
+                control={form.control}
+                name="wali.hubungan"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hubungan dengan Siswa {isWaliCurrentlyRequired ? '*' : '(Opsional)'}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                      <FormControl>
+                        <SelectTrigger><SelectValue placeholder="Pilih hubungan" /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {hubunganWaliOptionsList.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+          )}
+          {parentType === 'wali' && form.watch('wali.hubungan') === 'Lainnya (tuliskan)' && (
+            <FormField
+              control={form.control}
+              name="wali.hubunganLainnya"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Detail Hubungan Lainnya *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Sebutkan hubungan lainnya" {...field} value={field.value ?? ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+
           <FormField
             control={form.control}
             name={`${namePrefix}.nama` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{`Nama ${title}`} *</FormLabel>
+                <FormLabel>Nama {title} *</FormLabel>
                 <FormControl>
                   <Input
                     placeholder={`Masukkan nama ${title.toLowerCase()}`}
@@ -745,7 +812,7 @@ export function RegistrationForm() {
             name={`${namePrefix}.nik` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{`NIK ${title}`} {parentType === 'wali' || isDeceased ? '(Opsional)' : '*'}</FormLabel>
+                <FormLabel>NIK {title} { parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*') }</FormLabel>
                 <FormControl>
                   <Input type="text" inputMode="numeric" maxLength={16} placeholder={`Masukkan NIK ${title.toLowerCase()}`} {...field} value={field.value ?? ''} />
                 </FormControl>
@@ -758,7 +825,7 @@ export function RegistrationForm() {
             name={`${namePrefix}.tahunLahir` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tahun Lahir {parentType === 'wali' || isDeceased ? '(Opsional)' : '*'}</FormLabel>
+                <FormLabel>Tahun Lahir { parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*') }</FormLabel>
                 <FormControl>
                   <Input type="number" placeholder="Contoh: 1980" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
                 </FormControl>
@@ -771,7 +838,7 @@ export function RegistrationForm() {
             name={`${namePrefix}.pendidikan` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Pendidikan Terakhir {parentType === 'wali' || isDeceased ? '(Opsional)' : '*'}</FormLabel>
+                <FormLabel>Pendidikan Terakhir { parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*') }</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih pendidikan" /></SelectTrigger>
@@ -804,8 +871,12 @@ export function RegistrationForm() {
             name={`${namePrefix}.pekerjaan` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Pekerjaan Utama {parentType === 'wali' || isDeceased ? '(Opsional)' : '*'}</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                <FormLabel>Pekerjaan Utama { parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*') }</FormLabel>
+                <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value ?? undefined}
+                    disabled={parentType !== 'wali' && isDeceased && !field.value}
+                >
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih pekerjaan" /></SelectTrigger>
                   </FormControl>
@@ -837,8 +908,12 @@ export function RegistrationForm() {
             name={`${namePrefix}.penghasilan` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Penghasilan Bulanan {parentType === 'wali' || isDeceased ? '(Opsional)' : '*'}</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                <FormLabel>Penghasilan Bulanan { parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*') }</FormLabel>
+                <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value ?? undefined}
+                    disabled={parentType !== 'wali' && isDeceased && !field.value}
+                >
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih penghasilan" /></SelectTrigger>
                   </FormControl>
@@ -853,29 +928,6 @@ export function RegistrationForm() {
         </CardContent>
       </Card>
     );
-  };
-
-  const copyParentData = (sourceParent: 'ayah' | 'ibu') => {
-    const sourceData = form.getValues(sourceParent);
-    if (sourceData) {
-      form.setValue('wali.nama', sourceData.nama || '');
-      form.setValue('wali.nik', sourceData.nik || '');
-      form.setValue('wali.tahunLahir', sourceData.tahunLahir);
-      form.setValue('wali.pendidikan', sourceData.pendidikan || undefined);
-      form.setValue('wali.pendidikanLainnya', sourceData.pendidikanLainnya || '');
-      form.setValue('wali.pekerjaan', sourceData.pekerjaan === 'Meninggal Dunia' ? undefined : sourceData.pekerjaan || undefined);
-      form.setValue('wali.pekerjaanLainnya', sourceData.pekerjaanLainnya || '');
-      form.setValue('wali.penghasilan', sourceData.penghasilan === 'Meninggal Dunia' ? undefined : sourceData.penghasilan || undefined);
-
-
-      const waliFieldsToTrigger: FieldPath<RegistrationFormData>[] = [
-        "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan",
-        "wali.pekerjaan", "wali.penghasilan"
-      ];
-      if(sourceData.pendidikan === "Lainnya") waliFieldsToTrigger.push("wali.pendidikanLainnya");
-      if(sourceData.pekerjaan === "Lainnya") waliFieldsToTrigger.push("wali.pekerjaanLainnya");
-      form.trigger(waliFieldsToTrigger);
-    }
   };
 
   return (

@@ -6,6 +6,7 @@ import { format, isValid, parse } from 'date-fns';
 export const pendidikanOptionsList = ["Tidak sekolah", "Putus SD", "SD Sederajat", "SMP Sederajat", "SMA Sederajat", "D1", "D2", "D3", "D4/S1", "S2", "S3", "Lainnya"] as const;
 export const pekerjaanOptionsList = ["Tidak bekerja", "Nelayan", "Petani", "Peternak", "PNS/TNI/POLRI", "Karyawan Swasta", "Pedagang Kecil", "Pedagang Besar", "Wiraswasta", "Wirausaha", "Buruh", "Pensiunan", "Lainnya"] as const;
 export const penghasilanOptionsList = ["Kurang dari 500.000", "500.000 - 999.999", "1.000.000 - 1.999.999", "2.000.000 - 4.999.999", "5.000.000 - 20.000.000", "Lebih dari 20.000.000", "Tidak Berpenghasilan"] as const;
+export const hubunganWaliOptionsList = ["Ayah Kandung", "Ibu Kandung", "Ayah Tiri", "Ibu Tiri", "Kakek", "Nenek", "Paman", "Bibi", "Orang Tua Asuh", "Kerabat Lainnya", "Lainnya (tuliskan)"] as const;
 
 
 const numberPreprocess = (val: unknown) => {
@@ -46,10 +47,11 @@ export const parentSchema = z.object({
   };
 
   if (data.isDeceased) {
-    // If deceased, only 'nama' is required. Other fields are optional.
-    // We only need to validate 'Lainnya' if the user happens to fill it.
-    checkLainnya('pendidikan', 'pendidikanLainnya', "Detail pendidikan lainnya wajib diisi");
-    checkLainnya('pekerjaan', 'pekerjaanLainnya', "Detail pekerjaan lainnya wajib diisi");
+    if(data.pekerjaan === "Meninggal Dunia" || data.penghasilan === "Meninggal Dunia") {
+      // These are valid states, just check for 'Lainnya' if needed
+       checkLainnya('pendidikan', 'pendidikanLainnya', "Detail pendidikan lainnya wajib diisi");
+       checkLainnya('pekerjaan', 'pekerjaanLainnya', "Detail pekerjaan lainnya wajib diisi");
+    }
   } else {
     // If NOT deceased, all fields below are required.
     if (!data.nik || data.nik.trim().length === 0) {
@@ -68,24 +70,36 @@ export const parentSchema = z.object({
   }
 });
 
-// Schema for Wali, where most fields are optional.
+// Schema for Wali, fields are mostly optional unless both parents are deceased.
 export const waliSchema = z.object({
-  nama: z.string().min(1, "Nama wajib diisi"),
+  nama: z.string().optional(),
+  hubungan: z.enum(hubunganWaliOptionsList).optional().nullable(),
+  hubunganLainnya: z.string().optional(),
   ...parentBaseFields,
 }).superRefine((data, ctx) => {
-  if (data.pendidikan === "Lainnya" && (!data.pendidikanLainnya || data.pendidikanLainnya.trim() === "")) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Detail pendidikan lainnya wajib diisi jika memilih 'Lainnya'",
-      path: ["pendidikanLainnya"],
-    });
-  }
-  if (data.pekerjaan === "Lainnya" && (!data.pekerjaanLainnya || data.pekerjaanLainnya.trim() === "")) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Detail pekerjaan lainnya wajib diisi jika memilih 'Lainnya'",
-      path: ["pekerjaanLainnya"],
-    });
+  // This refinement is for when the user fills wali data optionally
+  if (data.nama) { // Only validate if a name is entered
+      if (data.pendidikan === "Lainnya" && (!data.pendidikanLainnya || data.pendidikanLainnya.trim() === "")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Detail pendidikan lainnya wajib diisi jika memilih 'Lainnya'",
+          path: ["pendidikanLainnya"],
+        });
+      }
+      if (data.pekerjaan === "Lainnya" && (!data.pekerjaanLainnya || data.pekerjaanLainnya.trim() === "")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Detail pekerjaan lainnya wajib diisi jika memilih 'Lainnya'",
+          path: ["pekerjaanLainnya"],
+        });
+      }
+       if (data.hubungan === "Lainnya (tuliskan)" && (!data.hubunganLainnya || data.hubunganLainnya.trim() === "")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Detail hubungan lainnya wajib diisi",
+          path: ["hubunganLainnya"],
+        });
+      }
   }
 });
 
@@ -163,6 +177,21 @@ export const registrationSchema = z.object({
       path: ["nomorTeleponAyah"], 
     });
   }
+  
+  // Conditional validation for Wali data
+  if (data.ayah.isDeceased && data.ibu.isDeceased) {
+    if (!data.wali.nama?.trim()) ctx.addIssue({ path: ["wali", "nama"], message: "Nama Wali wajib diisi", code: 'custom' });
+    if (!data.wali.hubungan) ctx.addIssue({ path: ["wali", "hubungan"], message: "Hubungan dengan siswa wajib diisi", code: 'custom' });
+    if (data.wali.hubungan === "Lainnya (tuliskan)" && !data.wali.hubunganLainnya?.trim()) ctx.addIssue({ path: ["wali", "hubunganLainnya"], message: "Detail hubungan lainnya wajib diisi", code: 'custom' });
+    if (!data.wali.nik || !/^\d{16}$/.test(data.wali.nik)) ctx.addIssue({ path: ["wali", "nik"], message: "NIK Wali wajib diisi dan harus 16 digit", code: 'custom' });
+    if (!data.wali.tahunLahir) ctx.addIssue({ path: ["wali", "tahunLahir"], message: "Tahun lahir Wali wajib diisi", code: 'custom' });
+    if (!data.wali.pendidikan) ctx.addIssue({ path: ["wali", "pendidikan"], message: "Pendidikan Wali wajib diisi", code: 'custom' });
+    if (data.wali.pendidikan === "Lainnya" && !data.wali.pendidikanLainnya?.trim()) ctx.addIssue({ path: ["wali", "pendidikanLainnya"], message: "Detail pendidikan lainnya wajib diisi", code: 'custom' });
+    if (!data.wali.pekerjaan) ctx.addIssue({ path: ["wali", "pekerjaan"], message: "Pekerjaan Wali wajib diisi", code: 'custom' });
+    if (data.wali.pekerjaan === "Lainnya" && !data.wali.pekerjaanLainnya?.trim()) ctx.addIssue({ path: ["wali", "pekerjaanLainnya"], message: "Detail pekerjaan lainnya wajib diisi", code: 'custom' });
+    if (!data.wali.penghasilan) ctx.addIssue({ path: ["wali", "penghasilan"], message: "Penghasilan Wali wajib diisi", code: 'custom' });
+  }
+
 });
 
 export type RegistrationFormData = z.infer<typeof registrationSchema>;
