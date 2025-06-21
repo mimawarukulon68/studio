@@ -679,7 +679,7 @@ export function RegistrationForm() {
     const penghasilanOptions = isDeceased ? [...penghasilanOptionsList, "Meninggal Dunia"] : penghasilanOptionsList;
 
 
-    const description = "Data Wali wajib diisi. Jika Ayah/Ibu adalah penanggung jawab, salin datanya. Jika diasuh kerabat lain (kakek, nenek, paman, bibi, dsb), isikan data wali yang sebenarnya.";
+    const description = "Wali adalah pihak yang turut bertanggung jawab atas siswa, seperti Ayah/Ibu kandung, kakek, nenek, paman, bibi, orang tua tiri, atau pihak lain yang dianggap sebagai wali.  Jika kedua orang tua telah tiada, data wali wajib diisi. Jika salah satu orang tua masih hidup dan menjadi pendamping utama, bagian ini boleh dilewati. Namun, Anda juga tetap boleh mengisi data wali meskipun orang tua masih ada, jika ada pihak lain yang turut mendampingi siswa.";
 
 
     return (
@@ -1047,10 +1047,9 @@ export function RegistrationForm() {
                                     <CommandItem
                                     value={province.label}
                                     key={province.value}
-                                    onSelect={(currentValue) => {
-                                        const selectedValue = provinces.find(p => p.label.toLowerCase() === currentValue.toLowerCase())?.value;
-                                        if (selectedValue !== field.value) {
-                                            form.setValue("provinsi", selectedValue || "");
+                                    onSelect={() => {
+                                        if (province.value !== field.value) {
+                                            form.setValue("provinsi", province.value);
                                             form.setValue("kabupaten", "");
                                             form.setValue("kecamatan", "");
                                             form.setValue("desaKelurahan", "");
@@ -1108,10 +1107,9 @@ export function RegistrationForm() {
                                     <CommandItem
                                     value={regency.label}
                                     key={regency.value}
-                                    onSelect={(currentValue) => {
-                                        const selectedValue = regencies.find(r => r.label.toLowerCase() === currentValue.toLowerCase())?.value;
-                                        if (selectedValue !== field.value) {
-                                            form.setValue("kabupaten", selectedValue || "");
+                                    onSelect={() => {
+                                        if (regency.value !== field.value) {
+                                            form.setValue("kabupaten", regency.value);
                                             form.setValue("kecamatan", "");
                                             form.setValue("desaKelurahan", "");
                                             form.setValue("kodePos", "");
@@ -1167,10 +1165,9 @@ export function RegistrationForm() {
                                     <CommandItem
                                     value={district.label}
                                     key={district.value}
-                                    onSelect={(currentValue) => {
-                                        const selectedValue = districts.find(d => d.label.toLowerCase() === currentValue.toLowerCase())?.value;
-                                        if (selectedValue !== field.value) {
-                                            form.setValue("kecamatan", selectedValue || "");
+                                    onSelect={() => {
+                                        if (district.value !== field.value) {
+                                            form.setValue("kecamatan", district.value);
                                             form.setValue("desaKelurahan", "");
                                             form.setValue("kodePos", "");
                                             setIsKodePosReadOnly(false);
@@ -1224,12 +1221,11 @@ export function RegistrationForm() {
                                     <CommandItem
                                     value={village.label}
                                     key={village.value}
-                                    onSelect={(currentValue) => {
-                                        const selectedVillage = villages.find(v => v.label.toLowerCase() === currentValue.toLowerCase());
-                                        if (selectedVillage && selectedVillage.value !== field.value) {
-                                            form.setValue("desaKelurahan", selectedVillage.value);
-                                            if (selectedVillage.postalCode) {
-                                                form.setValue("kodePos", selectedVillage.postalCode);
+                                    onSelect={() => {
+                                        if (village.value !== field.value) {
+                                            form.setValue("desaKelurahan", village.value);
+                                            if (village.postalCode) {
+                                                form.setValue("kodePos", village.postalCode);
                                                 setIsKodePosReadOnly(true);
                                             } else {
                                                 form.setValue("kodePos", "");
