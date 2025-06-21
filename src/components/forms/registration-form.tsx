@@ -55,7 +55,7 @@ import {
   requiredParentSchema,
 } from '@/lib/schemas';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '../ui/separator';
+import { Separator } from '@/components/ui/separator';
 
 const TOTAL_STEPS = 5;
 
@@ -1125,6 +1125,7 @@ export function RegistrationForm() {
                             placeholder="Contoh: 001/002"
                             className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('rtRw', form.formState.errors) && "border-destructive")}
                             value={field.value ?? ''}
+                            unmask={true}
                             onAccept={(value) => field.onChange(value)}
                             onBlur={field.onBlur}
                             inputRef={field.ref}
@@ -1177,7 +1178,7 @@ export function RegistrationForm() {
                 <CardHeader>
                 <CardTitle className="font-headline text-xl text-center">Kontak yang Bisa Dihubungi</CardTitle>
                 <CardDescription className="text-center pt-1">Minimal isi salah satu nomor telepon. Awali nomor dengan +62 (contoh: +6281234567890).</CardDescription>
-                </Header>
+                </CardHeader>
                 <CardContent className="space-y-6">
                 <FormField control={form.control} name="nomorTeleponAyah" render={({ field }) => (
                     <FormItem><FormLabel>Nomor Telepon Ayah</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
