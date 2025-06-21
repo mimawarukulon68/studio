@@ -52,7 +52,8 @@ import {
   pendidikanOptionsList,
   pekerjaanOptionsList,
   penghasilanOptionsList,
-  requiredParentSchema,
+  waliSchema,
+  parentSchema
 } from '@/lib/schemas';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
@@ -67,10 +68,10 @@ const stepsData = [
     "modaTransportasi", "agamaLainnya", "tempatTinggalLainnya", "modaTransportasiLainnya"
   ] as FieldPath<RegistrationFormData>[] },
   { num: 2, title: "Data Ayah", Icon: UserIcon, fields: [
-    "ayah.nama", "ayah.nik", "ayah.tahunLahir", "ayah.pendidikan", "ayah.pekerjaan", "ayah.penghasilan", "ayah.pendidikanLainnya", "ayah.pekerjaanLainnya"
+    "ayah.isDeceased", "ayah.nama", "ayah.nik", "ayah.tahunLahir", "ayah.pendidikan", "ayah.pekerjaan", "ayah.penghasilan", "ayah.pendidikanLainnya", "ayah.pekerjaanLainnya"
   ] as FieldPath<RegistrationFormData>[] },
   { num: 3, title: "Data Ibu", Icon: UserIcon, fields: [
-    "ibu.nama", "ibu.nik", "ibu.tahunLahir", "ibu.pendidikan", "ibu.pekerjaan", "ibu.penghasilan", "ibu.pendidikanLainnya", "ibu.pekerjaanLainnya"
+    "ibu.isDeceased", "ibu.nama", "ibu.nik", "ibu.tahunLahir", "ibu.pendidikan", "ibu.pekerjaan", "ibu.penghasilan", "ibu.pendidikanLainnya", "ibu.pekerjaanLainnya"
   ] as FieldPath<RegistrationFormData>[] },
   { num: 4, title: "Data Wali", Icon: ShieldCheck, fields: [
      "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan", "wali.pekerjaan", "wali.penghasilan", "wali.pendidikanLainnya", "wali.pekerjaanLainnya"
@@ -161,6 +162,7 @@ export function RegistrationForm() {
       modaTransportasi: [],
       modaTransportasiLainnya: '',
       ayah: {
+        isDeceased: false,
         nama: '',
         nik: '',
         tahunLahir: undefined,
@@ -171,6 +173,7 @@ export function RegistrationForm() {
         penghasilan: undefined,
       },
       ibu: {
+        isDeceased: false,
         nama: '',
         nik: '',
         tahunLahir: undefined,
@@ -195,6 +198,42 @@ export function RegistrationForm() {
       nomorTeleponWali: '',
     },
   });
+  
+  const isAyahDeceased = form.watch('ayah.isDeceased');
+  const isIbuDeceased = form.watch('ibu.isDeceased');
+
+  useEffect(() => {
+    if (isAyahDeceased) {
+      form.setValue('ayah.pekerjaan', 'Meninggal Dunia', { shouldValidate: true });
+      form.setValue('ayah.penghasilan', 'Meninggal Dunia', { shouldValidate: true });
+      const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ayah.nik', 'ayah.tahunLahir', 'ayah.pendidikan', 'ayah.pendidikanLainnya', 'ayah.pekerjaanLainnya'];
+      fieldsToClear.forEach(field => form.clearErrors(field));
+    } else {
+      if (form.getValues('ayah.pekerjaan') === 'Meninggal Dunia') {
+        form.setValue('ayah.pekerjaan', undefined, { shouldValidate: true });
+      }
+      if (form.getValues('ayah.penghasilan') === 'Meninggal Dunia') {
+        form.setValue('ayah.penghasilan', undefined, { shouldValidate: true });
+      }
+    }
+  }, [isAyahDeceased, form]);
+
+  useEffect(() => {
+    if (isIbuDeceased) {
+      form.setValue('ibu.pekerjaan', 'Meninggal Dunia', { shouldValidate: true });
+      form.setValue('ibu.penghasilan', 'Meninggal Dunia', { shouldValidate: true });
+       const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ibu.nik', 'ibu.tahunLahir', 'ibu.pendidikan', 'ibu.pendidikanLainnya', 'ibu.pekerjaanLainnya'];
+       fieldsToClear.forEach(field => form.clearErrors(field));
+    } else {
+      if (form.getValues('ibu.pekerjaan') === 'Meninggal Dunia') {
+        form.setValue('ibu.pekerjaan', undefined, { shouldValidate: true });
+      }
+      if (form.getValues('ibu.penghasilan') === 'Meninggal Dunia') {
+        form.setValue('ibu.penghasilan', undefined, { shouldValidate: true });
+      }
+    }
+  }, [isIbuDeceased, form]);
+
 
   const nisnValue = form.watch("nisn");
   const nikValue = form.watch("nikSiswa");
@@ -360,48 +399,48 @@ export function RegistrationForm() {
     await form.trigger(fieldsToValidate);
 
     let isStepValid = true;
-    // Custom logic for step 1 if needed, otherwise general check
+    
+    const hasError = fieldsToValidate.some(field => getFieldError(field, form.formState.errors));
+    if (hasError) return false;
+
+    // Special logic for conditional fields that might not be caught by RHF's default trigger
     if (stepNumber === 1) {
-      isStepValid = !fieldsToValidate.some(field => {
-          const error = getFieldError(field, form.formState.errors);
-          // Special conditions for conditional fields
-          if (field === "agamaLainnya" && form.getValues("agama") !== "Lainnya") return false;
-          if (field === "tempatTinggalLainnya" && form.getValues("tempatTinggal") !== "Lainnya") return false;
-          if (field === "modaTransportasiLainnya" && !form.getValues("modaTransportasi").includes("lainnya")) return false;
-          if (field === "alamatJalan") return false; // alamatJalan is optional
-          if (field === "dusun") return false; // dusun is optional
-          return !!error;
-      });
+        isStepValid = !fieldsToValidate.some(field => {
+            const error = getFieldError(field, form.formState.errors);
+            if (field === "agamaLainnya" && form.getValues("agama") !== "Lainnya") return false;
+            if (field === "tempatTinggalLainnya" && form.getValues("tempatTinggal") !== "Lainnya") return false;
+            if (field === "modaTransportasiLainnya" && !form.getValues("modaTransportasi").includes("lainnya")) return false;
+            if (field === "dusun") return false;
+            if (field === "alamatJalan") return false; 
+            return !!error;
+        });
     } else if (stepNumber === 2) { // Ayah
         const ayahData = form.getValues().ayah;
-        const validationResult = requiredParentSchema.safeParse(ayahData);
+        const validationResult = parentSchema.safeParse(ayahData);
         isStepValid = validationResult.success;
-
-        if(!isStepValid && validationResult.error) {
+        if (!isStepValid && validationResult.error) {
             validationResult.error.errors.forEach(err => {
                 const path = `ayah.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
-                 form.setError(path, { type: 'manual', message: err.message });
+                form.setError(path, { type: 'manual', message: err.message });
             });
-        } else if (isStepValid ) {
-            const ayahFields = getFieldsForStep(stepNumber);
-            ayahFields.forEach(field => form.clearErrors(field));
+        } else if (isStepValid) {
+            getFieldsForStep(2).forEach(field => form.clearErrors(field));
         }
     } else if (stepNumber === 3) { // Ibu
         const ibuData = form.getValues().ibu;
-        const validationResult = requiredParentSchema.safeParse(ibuData);
+        const validationResult = parentSchema.safeParse(ibuData);
         isStepValid = validationResult.success;
-         if(!isStepValid && validationResult.error) {
+        if (!isStepValid && validationResult.error) {
             validationResult.error.errors.forEach(err => {
                 const path = `ibu.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
                 form.setError(path, { type: 'manual', message: err.message });
             });
         } else if (isStepValid) {
-            const ibuFields = getFieldsForStep(stepNumber);
-            ibuFields.forEach(field => form.clearErrors(field));
+            getFieldsForStep(3).forEach(field => form.clearErrors(field));
         }
     } else if (stepNumber === 4) { // Wali
         const waliData = form.getValues().wali;
-        const validationResult = requiredParentSchema.safeParse(waliData);
+        const validationResult = waliSchema.safeParse(waliData);
         isStepValid = validationResult.success;
          if(!isStepValid && validationResult.error) {
             validationResult.error.errors.forEach(err => {
@@ -510,6 +549,7 @@ export function RegistrationForm() {
         if (!parentObj) return;
         processSingleLainnya(parentObj, 'pendidikan', 'pendidikanLainnya');
         processSingleLainnya(parentObj, 'pekerjaan', 'pekerjaanLainnya');
+        delete parentObj.isDeceased;
       };
       
       processSingleLainnya(processedData, 'agama', 'agamaLainnya');
@@ -633,6 +673,12 @@ export function RegistrationForm() {
   const renderParentFields = (parentType: 'ayah' | 'ibu' | 'wali') => {
     const title = parentType === 'ayah' ? 'Ayah Kandung' : parentType === 'ibu' ? 'Ibu Kandung' : 'Wali';
     const namePrefix = parentType;
+    const isDeceased = parentType === 'ayah' ? isAyahDeceased : parentType === 'ibu' ? isIbuDeceased : false;
+
+    const pekerjaanOptions = isDeceased ? [...pekerjaanOptionsList, "Meninggal Dunia"] : pekerjaanOptionsList;
+    const penghasilanOptions = isDeceased ? [...penghasilanOptionsList, "Meninggal Dunia"] : penghasilanOptionsList;
+
+
     const description = "Data Wali wajib diisi. Jika Ayah/Ibu adalah penanggung jawab, salin datanya. Jika diasuh kerabat lain (kakek, nenek, paman, bibi, dsb), isikan data wali yang sebenarnya.";
 
 
@@ -653,6 +699,29 @@ export function RegistrationForm() {
               <Button type="button" variant="outline" onClick={() => copyParentData('ibu')}>Salin dari Ibu</Button>
             </div>
           )}
+
+          {(parentType === 'ayah' || parentType === 'ibu') && (
+            <FormField
+              control={form.control}
+              name={`${namePrefix}.isDeceased` as FieldPath<RegistrationFormData>}
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      {title} sudah meninggal dunia
+                    </FormLabel>
+                  </div>
+                </FormItem>
+              )}
+            />
+          )}
+
           <FormField
             control={form.control}
             name={`${namePrefix}.nama` as FieldPath<RegistrationFormData>}
@@ -676,7 +745,7 @@ export function RegistrationForm() {
             name={`${namePrefix}.nik` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{`NIK ${title}`} (Opsional)</FormLabel>
+                <FormLabel>{`NIK ${title}`} {parentType === 'wali' || isDeceased ? '(Opsional)' : '*'}</FormLabel>
                 <FormControl>
                   <Input type="text" inputMode="numeric" maxLength={16} placeholder={`Masukkan NIK ${title.toLowerCase()}`} {...field} value={field.value ?? ''} />
                 </FormControl>
@@ -689,7 +758,7 @@ export function RegistrationForm() {
             name={`${namePrefix}.tahunLahir` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tahun Lahir (Opsional)</FormLabel>
+                <FormLabel>Tahun Lahir {parentType === 'wali' || isDeceased ? '(Opsional)' : '*'}</FormLabel>
                 <FormControl>
                   <Input type="number" placeholder="Contoh: 1980" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
                 </FormControl>
@@ -702,7 +771,7 @@ export function RegistrationForm() {
             name={`${namePrefix}.pendidikan` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Pendidikan Terakhir (Opsional)</FormLabel>
+                <FormLabel>Pendidikan Terakhir {parentType === 'wali' || isDeceased ? '(Opsional)' : '*'}</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih pendidikan" /></SelectTrigger>
@@ -735,13 +804,13 @@ export function RegistrationForm() {
             name={`${namePrefix}.pekerjaan` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Pekerjaan Utama (Opsional)</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                <FormLabel>Pekerjaan Utama {parentType === 'wali' || isDeceased ? '(Opsional)' : '*'}</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value ?? undefined} disabled={isDeceased}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih pekerjaan" /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {pekerjaanOptionsList.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                    {pekerjaanOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -768,13 +837,13 @@ export function RegistrationForm() {
             name={`${namePrefix}.penghasilan` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Penghasilan Bulanan (Opsional)</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                <FormLabel>Penghasilan Bulanan {parentType === 'wali' || isDeceased ? '(Opsional)' : '*'}</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value ?? undefined} disabled={isDeceased}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih penghasilan" /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {penghasilanOptionsList.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                    {penghasilanOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -794,9 +863,10 @@ export function RegistrationForm() {
       form.setValue('wali.tahunLahir', sourceData.tahunLahir);
       form.setValue('wali.pendidikan', sourceData.pendidikan || undefined);
       form.setValue('wali.pendidikanLainnya', sourceData.pendidikanLainnya || '');
-      form.setValue('wali.pekerjaan', sourceData.pekerjaan || undefined);
+      form.setValue('wali.pekerjaan', sourceData.pekerjaan === 'Meninggal Dunia' ? undefined : sourceData.pekerjaan || undefined);
       form.setValue('wali.pekerjaanLainnya', sourceData.pekerjaanLainnya || '');
-      form.setValue('wali.penghasilan', sourceData.penghasilan || undefined);
+      form.setValue('wali.penghasilan', sourceData.penghasilan === 'Meninggal Dunia' ? undefined : sourceData.penghasilan || undefined);
+
 
       const waliFieldsToTrigger: FieldPath<RegistrationFormData>[] = [
         "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan",
@@ -977,10 +1047,8 @@ export function RegistrationForm() {
                                     <CommandItem
                                     value={province.label}
                                     key={province.value}
-                                    onSelect={(currentValue) => {
-                                        const selected = provinces.find(p => p.label.toLowerCase() === currentValue.toLowerCase());
-                                        const codeToSet = selected ? selected.value : "";
-                                        form.setValue("provinsi", codeToSet === field.value ? "" : codeToSet);
+                                    onSelect={() => {
+                                        form.setValue("provinsi", province.value);
                                         form.setValue("kabupaten", "");
                                         form.setValue("kecamatan", "");
                                         form.setValue("desaKelurahan", "");
@@ -1037,10 +1105,8 @@ export function RegistrationForm() {
                                     <CommandItem
                                     value={regency.label}
                                     key={regency.value}
-                                    onSelect={(currentValue) => {
-                                        const selected = regencies.find(r => r.label.toLowerCase() === currentValue.toLowerCase());
-                                        const codeToSet = selected ? selected.value : "";
-                                        form.setValue("kabupaten", codeToSet === field.value ? "" : codeToSet);
+                                    onSelect={() => {
+                                        form.setValue("kabupaten", regency.value);
                                         form.setValue("kecamatan", "");
                                         form.setValue("desaKelurahan", "");
                                         form.setValue("kodePos", "");
@@ -1095,10 +1161,8 @@ export function RegistrationForm() {
                                     <CommandItem
                                     value={district.label}
                                     key={district.value}
-                                    onSelect={(currentValue) => {
-                                        const selected = districts.find(d => d.label.toLowerCase() === currentValue.toLowerCase());
-                                        const codeToSet = selected ? selected.value : "";
-                                        form.setValue("kecamatan", codeToSet === field.value ? "" : codeToSet);
+                                    onSelect={() => {
+                                        form.setValue("kecamatan", district.value);
                                         form.setValue("desaKelurahan", "");
                                         form.setValue("kodePos", "");
                                         setIsKodePosReadOnly(false);
@@ -1151,12 +1215,10 @@ export function RegistrationForm() {
                                     <CommandItem
                                     value={village.label}
                                     key={village.value}
-                                    onSelect={(currentValue) => {
-                                        const selected = villages.find(v => v.label.toLowerCase() === currentValue.toLowerCase());
-                                        const codeToSet = selected ? selected.value : "";
-                                        form.setValue("desaKelurahan", codeToSet === field.value ? "" : codeToSet);
-                                        if (selected && selected.postalCode) {
-                                            form.setValue("kodePos", selected.postalCode);
+                                    onSelect={() => {
+                                        form.setValue("desaKelurahan", village.value);
+                                        if (village && village.postalCode) {
+                                            form.setValue("kodePos", village.postalCode);
                                             setIsKodePosReadOnly(true);
                                         } else {
                                             form.setValue("kodePos", "");
@@ -1306,5 +1368,3 @@ export function RegistrationForm() {
     </Form>
   );
 }
-
-    

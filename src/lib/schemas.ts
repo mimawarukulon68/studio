@@ -4,9 +4,9 @@ import { format, isValid, parse } from 'date-fns';
 
 // Unified pendidikan options, including "Lainnya"
 export const pendidikanOptionsList = ["Tidak sekolah", "Putus SD", "SD Sederajat", "SMP Sederajat", "SMA Sederajat", "D1", "D2", "D3", "D4/S1", "S2", "S3", "Lainnya"] as const;
-
 export const pekerjaanOptionsList = ["Tidak bekerja", "Nelayan", "Petani", "Peternak", "PNS/TNI/POLRI", "Karyawan Swasta", "Pedagang Kecil", "Pedagang Besar", "Wiraswasta", "Wirausaha", "Buruh", "Pensiunan", "Lainnya"] as const;
 export const penghasilanOptionsList = ["Kurang dari 500.000", "500.000 - 999.999", "1.000.000 - 1.999.999", "2.000.000 - 4.999.999", "5.000.000 - 20.000.000", "Lebih dari 20.000.000", "Tidak Berpenghasilan"] as const;
+
 
 const numberPreprocess = (val: unknown) => {
   if (typeof val === 'string') {
@@ -19,14 +19,69 @@ const numberPreprocess = (val: unknown) => {
   return undefined;
 };
 
-type ParentRefinementData = {
-  pendidikan?: (typeof pendidikanOptionsList)[number] | null;
-  pendidikanLainnya?: string;
-  pekerjaan?: (typeof pekerjaanOptionsList)[number] | null;
-  pekerjaanLainnya?: string;
+// Base fields for any parent figure, all optional.
+const parentBaseFields = {
+  nik: z.string().optional(),
+  tahunLahir: z.preprocess(
+    numberPreprocess,
+    z.number({ invalid_type_error: "Tahun lahir harus angka" }).int().min(1900, "Minimal tahun 1900").max(new Date().getFullYear(), `Maksimal tahun ${new Date().getFullYear()}`).optional()
+  ),
+  pendidikan: z.enum(pendidikanOptionsList).optional().nullable(),
+  pendidikanLainnya: z.string().optional(),
+  pekerjaan: z.enum([...pekerjaanOptionsList, "Meninggal Dunia"] as const).optional().nullable(),
+  pekerjaanLainnya: z.string().optional(),
+  penghasilan: z.enum([...penghasilanOptionsList, "Meninggal Dunia"] as const).optional().nullable(),
 };
 
-const parentSharedRefinement = (data: ParentRefinementData, ctx: z.RefinementCtx) => {
+// Schema for Ayah and Ibu with conditional validation
+export const parentSchema = z.object({
+  isDeceased: z.boolean().default(false),
+  nama: z.string().min(1, "Nama wajib diisi"),
+  ...parentBaseFields
+}).superRefine((data, ctx) => {
+  const checkLainnya = (field: 'pendidikan' | 'pekerjaan', lainnyaField: 'pendidikanLainnya' | 'pekerjaanLainnya', message: string) => {
+    if (data[field] === "Lainnya" && !(data[lainnyaField] as string)?.trim()) {
+      ctx.addIssue({ code: 'custom', message, path: [lainnyaField] });
+    }
+  };
+
+  if (data.isDeceased) {
+    // If deceased, only 'nama' is required. Other fields are optional.
+    // We only need to validate 'Lainnya' if the user happens to fill it.
+    checkLainnya('pendidikan', 'pendidikanLainnya', "Detail pendidikan lainnya wajib diisi");
+    checkLainnya('pekerjaan', 'pekerjaanLainnya', "Detail pekerjaan lainnya wajib diisi");
+    if(data.pekerjaan !== 'Meninggal Dunia' || data.penghasilan !== 'Meninggal Dunia'){
+       if(data.pekerjaan !== 'Meninggal Dunia'){
+          ctx.addIssue({code: 'custom', message: "Pekerjaan harus 'Meninggal Dunia'", path: ['pekerjaan']});
+       }
+       if(data.penghasilan !== 'Meninggal Dunia'){
+          ctx.addIssue({code: 'custom', message: "Penghasilan harus 'Meninggal Dunia'", path: ['penghasilan']});
+       }
+    }
+
+  } else {
+    // If NOT deceased, all fields below are required.
+    if (!data.nik || data.nik.trim().length === 0) {
+      ctx.addIssue({ code: 'custom', message: "NIK wajib diisi", path: ['nik'] });
+    } else if (!/^\d{16}$/.test(data.nik)) {
+      ctx.addIssue({ code: 'custom', message: "NIK harus 16 digit angka", path: ['nik'] });
+    }
+
+    if (data.tahunLahir === undefined) ctx.addIssue({ code: 'custom', message: "Tahun lahir wajib diisi", path: ['tahunLahir'] });
+    if (!data.pendidikan) ctx.addIssue({ code: 'custom', message: "Pendidikan terakhir wajib diisi", path: ['pendidikan'] });
+    if (!data.pekerjaan) ctx.addIssue({ code: 'custom', message: "Pekerjaan utama wajib diisi", path: ['pekerjaan'] });
+    if (!data.penghasilan) ctx.addIssue({ code: 'custom', message: "Penghasilan bulanan wajib diisi", path: ['penghasilan'] });
+
+    checkLainnya('pendidikan', 'pendidikanLainnya', "Detail pendidikan lainnya wajib diisi");
+    checkLainnya('pekerjaan', 'pekerjaanLainnya', "Detail pekerjaan lainnya wajib diisi");
+  }
+});
+
+// Schema for Wali, where most fields are optional.
+export const waliSchema = z.object({
+  nama: z.string().min(1, "Nama wajib diisi"),
+  ...parentBaseFields,
+}).superRefine((data, ctx) => {
   if (data.pendidikan === "Lainnya" && (!data.pendidikanLainnya || data.pendidikanLainnya.trim() === "")) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -41,25 +96,7 @@ const parentSharedRefinement = (data: ParentRefinementData, ctx: z.RefinementCtx
       path: ["pekerjaanLainnya"],
     });
   }
-};
-
-const parentSharedFields = {
-  nik: z.string().optional().refine(val => !val || val.length === 16, { message: "NIK harus 16 digit angka" }).refine(val => !val || /^\d+$/.test(val), { message: "NIK harus berupa angka" }),
-  tahunLahir: z.preprocess(
-    numberPreprocess,
-    z.number({ invalid_type_error: "Tahun lahir harus angka" }).int().min(1900, "Minimal tahun 1900").max(new Date().getFullYear(), `Maksimal tahun ${new Date().getFullYear()}`).optional()
-  ),
-  pendidikan: z.enum(pendidikanOptionsList).optional().nullable(),
-  pendidikanLainnya: z.string().optional(),
-  pekerjaan: z.enum(pekerjaanOptionsList).optional().nullable(),
-  pekerjaanLainnya: z.string().optional(),
-  penghasilan: z.enum(penghasilanOptionsList).optional().nullable(),
-};
-
-export const requiredParentSchema = z.object({
-  nama: z.string().min(1, "Nama wajib diisi"),
-  ...parentSharedFields
-}).superRefine(parentSharedRefinement);
+});
 
 
 export const registrationSchema = z.object({
@@ -95,9 +132,9 @@ export const registrationSchema = z.object({
   modaTransportasi: z.array(z.string()).min(1, "Pilih minimal satu moda transportasi"),
   modaTransportasiLainnya: z.string().optional(),
 
-  ayah: requiredParentSchema,
-  ibu: requiredParentSchema,
-  wali: requiredParentSchema,
+  ayah: parentSchema,
+  ibu: parentSchema,
+  wali: waliSchema,
 
   nomorTeleponAyah: z.string().optional()
     .refine(val => !val || (val.startsWith("+62") && val.length >= 11 && val.length <= 15 && /^\+62\d+$/.test(val)), { message: "Format nomor Ayah salah (contoh: +6281234567890)" }),
