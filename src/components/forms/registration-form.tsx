@@ -975,10 +975,12 @@ export function RegistrationForm() {
                                 <CommandGroup>
                                 {provinces.map((province) => (
                                     <CommandItem
-                                    value={province.value}
+                                    value={province.label}
                                     key={province.value}
                                     onSelect={(currentValue) => {
-                                        form.setValue("provinsi", currentValue === field.value ? "" : currentValue);
+                                        const selected = provinces.find(p => p.label.toLowerCase() === currentValue.toLowerCase());
+                                        const codeToSet = selected ? selected.value : "";
+                                        form.setValue("provinsi", codeToSet === field.value ? "" : codeToSet);
                                         form.setValue("kabupaten", "");
                                         form.setValue("kecamatan", "");
                                         form.setValue("desaKelurahan", "");
@@ -1033,10 +1035,12 @@ export function RegistrationForm() {
                                 <CommandGroup>
                                 {regencies.map((regency) => (
                                     <CommandItem
-                                    value={regency.value}
+                                    value={regency.label}
                                     key={regency.value}
                                     onSelect={(currentValue) => {
-                                        form.setValue("kabupaten", currentValue === field.value ? "" : currentValue);
+                                        const selected = regencies.find(r => r.label.toLowerCase() === currentValue.toLowerCase());
+                                        const codeToSet = selected ? selected.value : "";
+                                        form.setValue("kabupaten", codeToSet === field.value ? "" : codeToSet);
                                         form.setValue("kecamatan", "");
                                         form.setValue("desaKelurahan", "");
                                         form.setValue("kodePos", "");
@@ -1089,10 +1093,12 @@ export function RegistrationForm() {
                                 <CommandGroup>
                                 {districts.map((district) => (
                                     <CommandItem
-                                    value={district.value}
+                                    value={district.label}
                                     key={district.value}
                                     onSelect={(currentValue) => {
-                                        form.setValue("kecamatan", currentValue === field.value ? "" : currentValue);
+                                        const selected = districts.find(d => d.label.toLowerCase() === currentValue.toLowerCase());
+                                        const codeToSet = selected ? selected.value : "";
+                                        form.setValue("kecamatan", codeToSet === field.value ? "" : codeToSet);
                                         form.setValue("desaKelurahan", "");
                                         form.setValue("kodePos", "");
                                         setIsKodePosReadOnly(false);
@@ -1143,13 +1149,14 @@ export function RegistrationForm() {
                                 <CommandGroup>
                                 {villages.map((village) => (
                                     <CommandItem
-                                    value={village.value}
+                                    value={village.label}
                                     key={village.value}
                                     onSelect={(currentValue) => {
-                                        form.setValue("desaKelurahan", currentValue === field.value ? "" : currentValue);
-                                        const selectedOption = villages.find(v => v.value === currentValue);
-                                        if (selectedOption && selectedOption.postalCode) {
-                                            form.setValue("kodePos", selectedOption.postalCode);
+                                        const selected = villages.find(v => v.label.toLowerCase() === currentValue.toLowerCase());
+                                        const codeToSet = selected ? selected.value : "";
+                                        form.setValue("desaKelurahan", codeToSet === field.value ? "" : codeToSet);
+                                        if (selected && selected.postalCode) {
+                                            form.setValue("kodePos", selected.postalCode);
                                             setIsKodePosReadOnly(true);
                                         } else {
                                             form.setValue("kodePos", "");
