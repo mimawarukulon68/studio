@@ -211,7 +211,8 @@ export function RegistrationForm() {
       try {
         const response = await fetch('/api/wilayah/provinces');
         if (!response.ok) throw new Error('Gagal memuat provinsi. Status: ' + response.status);
-        const data: Wilayah[] = await response.json(); 
+        const jsonResponse = await response.json(); 
+        const data = Array.isArray(jsonResponse) ? jsonResponse : [];
         setProvinces(data.map(p => ({ value: p.code, label: p.name })));
       } catch (error) {
         console.error("Error fetching provinces:", error);
@@ -239,7 +240,8 @@ export function RegistrationForm() {
         try {
           const response = await fetch(`/api/wilayah/regencies/${selectedProvinceCode}`);
           if (!response.ok) throw new Error('Gagal memuat kabupaten/kota. Status: ' + response.status);
-          const data: Wilayah[] = await response.json();
+          const jsonResponse = await response.json();
+          const data = Array.isArray(jsonResponse) ? jsonResponse : [];
           setRegencies(data.map(r => ({ value: r.code, label: r.name })));
         } catch (error) {
           console.error("Error fetching regencies:", error);
@@ -270,7 +272,8 @@ export function RegistrationForm() {
         try {
           const response = await fetch(`/api/wilayah/districts/${selectedRegencyCode}`);
           if (!response.ok) throw new Error('Gagal memuat kecamatan. Status: ' + response.status);
-          const data: Wilayah[] = await response.json();
+          const jsonResponse = await response.json();
+          const data = Array.isArray(jsonResponse) ? jsonResponse : [];
           setDistricts(data.map(d => ({ value: d.code, label: d.name })));
         } catch (error) {
           console.error("Error fetching districts:", error);
@@ -298,7 +301,8 @@ export function RegistrationForm() {
         try {
           const response = await fetch(`/api/wilayah/villages/${selectedDistrictCode}`);
            if (!response.ok) throw new Error('Gagal memuat desa/kelurahan. Status: ' + response.status);
-           const data: VillageWilayah[] = await response.json();
+           const jsonResponse = await response.json();
+           const data = Array.isArray(jsonResponse) ? jsonResponse : [];
           setVillages(data.map(v => ({ value: v.code, label: v.name, postalCode: v.postal_code })));
         } catch (error) {
           console.error("Error fetching villages:", error);
