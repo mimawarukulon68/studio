@@ -788,6 +788,7 @@ export function RegistrationForm() {
                             unmask={true}
                             onAccept={(value) => field.onChange(value)}
                             onBlur={field.onBlur}
+                            inputRef={field.ref}
                             />
                         </FormControl>
                         <FormMessage />
@@ -809,6 +810,7 @@ export function RegistrationForm() {
                             unmask={true}
                             onAccept={(value) => field.onChange(value)}
                             onBlur={field.onBlur}
+                            inputRef={field.ref}
                             />
                         </FormControl>
                         <FormMessage />
@@ -1125,6 +1127,7 @@ export function RegistrationForm() {
                             value={field.value ?? ''}
                             onAccept={(value) => field.onChange(value)}
                             onBlur={field.onBlur}
+                            inputRef={field.ref}
                             />
                         </FormControl>
                         <FormMessage />
@@ -1174,7 +1177,7 @@ export function RegistrationForm() {
                 <CardHeader>
                 <CardTitle className="font-headline text-xl text-center">Kontak yang Bisa Dihubungi</CardTitle>
                 <CardDescription className="text-center pt-1">Minimal isi salah satu nomor telepon. Awali nomor dengan +62 (contoh: +6281234567890).</CardDescription>
-                </CardHeader>
+                </Header>
                 <CardContent className="space-y-6">
                 <FormField control={form.control} name="nomorTeleponAyah" render={({ field }) => (
                     <FormItem><FormLabel>Nomor Telepon Ayah</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
@@ -1191,8 +1194,7 @@ export function RegistrationForm() {
                 </CardFooter>
             </Card>
             )}
-        </div> {/* End of space-y-8 wrapper */}
-
+        </div>
 
         <CardFooter className="flex justify-between mt-8">
           {currentStep > 1 ? (
@@ -1221,7 +1223,3 @@ export function RegistrationForm() {
     </Form>
   );
 }
-
-    
-
-    
