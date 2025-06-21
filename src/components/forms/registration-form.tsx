@@ -134,9 +134,9 @@ export function RegistrationForm() {
   const [districtPopoverOpen, setDistrictPopoverOpen] = useState(false);
   const [villagePopoverOpen, setVillagePopoverOpen] = useState(false);
   
-  const [nisnKey, setNisnKey] = useState(1);
-  const [nikKey, setNikKey] = useState(1);
-  const [rtRwKey, setRtRwKey] = useState(1);
+  const [nisnIsFocused, setNisnIsFocused] = useState(false);
+  const [nikIsFocused, setNikIsFocused] = useState(false);
+  const [rtRwIsFocused, setRtRwIsFocused] = useState(false);
 
 
   const form = useForm<RegistrationFormData>({
@@ -785,19 +785,17 @@ export function RegistrationForm() {
                         <FormLabel>NISN (Nomor Induk Siswa Nasional)</FormLabel>
                         <FormControl>
                             <IMaskInput
-                            key={nisnKey}
                             mask="0000000000"
-                            lazy={false}
+                            lazy={!nisnIsFocused && !field.value}
                             placeholder="10 digit NISN"
                             className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('nisn', form.formState.errors) && "border-destructive")}
                             value={field.value ?? ''}
                             unmask={true}
                             onAccept={(value) => field.onChange(value)}
+                            onFocus={() => setNisnIsFocused(true)}
                             onBlur={(e) => {
                                 field.onBlur(e);
-                                if (!field.value) {
-                                    setNisnKey(k => k + 1);
-                                }
+                                setNisnIsFocused(false);
                             }}
                             inputRef={field.ref}
                             />
@@ -814,19 +812,17 @@ export function RegistrationForm() {
                         <FormLabel>NIK (Nomor Induk Kependudukan)</FormLabel>
                         <FormControl>
                             <IMaskInput
-                            key={nikKey}
                             mask="0000000000000000"
-                            lazy={false}
+                            lazy={!nikIsFocused && !field.value}
                             placeholder="16 digit NIK (sesuai Kartu Keluarga)"
                             className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('nikSiswa', form.formState.errors) && "border-destructive")}
                             value={field.value ?? ''}
                             unmask={true}
                             onAccept={(value) => field.onChange(value)}
+                            onFocus={() => setNikIsFocused(true)}
                             onBlur={(e) => {
                                 field.onBlur(e);
-                                if (!field.value) {
-                                    setNikKey(k => k + 1);
-                                }
+                                setNikIsFocused(false);
                             }}
                             inputRef={field.ref}
                             />
@@ -1139,19 +1135,17 @@ export function RegistrationForm() {
                         <FormLabel>RT/RW</FormLabel>
                         <FormControl>
                             <IMaskInput
-                            key={rtRwKey}
                             mask="000/000"
-                            lazy={false}
+                            lazy={!rtRwIsFocused && !field.value}
                             placeholder="Contoh: 001/002"
                             className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('rtRw', form.formState.errors) && "border-destructive")}
                             value={field.value ?? ''}
-                            unmask={true}
+                            unmask={false}
                             onAccept={(value) => field.onChange(value)}
+                            onFocus={() => setRtRwIsFocused(true)}
                             onBlur={(e) => {
                                 field.onBlur(e);
-                                if (!field.value) {
-                                    setRtRwKey(k => k + 1);
-                                }
+                                setRtRwIsFocused(false);
                             }}
                             inputRef={field.ref}
                             />
