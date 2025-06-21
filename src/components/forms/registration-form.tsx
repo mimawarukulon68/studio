@@ -782,6 +782,7 @@ export function RegistrationForm() {
                         <FormControl>
                             <IMaskInput
                             mask="0000000000"
+                            lazy={false}
                             placeholder="10 digit NISN"
                             className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('nisn', form.formState.errors) && "border-destructive")}
                             value={field.value ?? ''}
@@ -804,6 +805,7 @@ export function RegistrationForm() {
                         <FormControl>
                             <IMaskInput
                             mask="0000000000000000"
+                            lazy={false}
                             placeholder="16 digit NIK (sesuai Kartu Keluarga)"
                             className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('nikSiswa', form.formState.errors) && "border-destructive")}
                             value={field.value ?? ''}
@@ -1122,6 +1124,7 @@ export function RegistrationForm() {
                         <FormControl>
                             <IMaskInput
                             mask="000/000"
+                            lazy={false}
                             placeholder="Contoh: 001/002"
                             className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('rtRw', form.formState.errors) && "border-destructive")}
                             value={field.value ?? ''}
