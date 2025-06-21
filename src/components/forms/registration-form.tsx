@@ -211,8 +211,7 @@ export function RegistrationForm() {
       try {
         const response = await fetch('/api/wilayah/provinces');
         if (!response.ok) throw new Error('Gagal memuat provinsi. Status: ' + response.status);
-        const responseData = await response.json();
-        const data: Wilayah[] = responseData.data; 
+        const data: Wilayah[] = await response.json(); 
         setProvinces(data.map(p => ({ value: p.code, label: p.name })));
       } catch (error) {
         console.error("Error fetching provinces:", error);
@@ -240,8 +239,7 @@ export function RegistrationForm() {
         try {
           const response = await fetch(`/api/wilayah/regencies/${selectedProvinceCode}`);
           if (!response.ok) throw new Error('Gagal memuat kabupaten/kota. Status: ' + response.status);
-          const responseData = await response.json();
-          const data: Wilayah[] = responseData.data; 
+          const data: Wilayah[] = await response.json();
           setRegencies(data.map(r => ({ value: r.code, label: r.name })));
         } catch (error) {
           console.error("Error fetching regencies:", error);
@@ -272,8 +270,7 @@ export function RegistrationForm() {
         try {
           const response = await fetch(`/api/wilayah/districts/${selectedRegencyCode}`);
           if (!response.ok) throw new Error('Gagal memuat kecamatan. Status: ' + response.status);
-          const responseData = await response.json();
-          const data: Wilayah[] = responseData.data; 
+          const data: Wilayah[] = await response.json();
           setDistricts(data.map(d => ({ value: d.code, label: d.name })));
         } catch (error) {
           console.error("Error fetching districts:", error);
@@ -301,8 +298,7 @@ export function RegistrationForm() {
         try {
           const response = await fetch(`/api/wilayah/villages/${selectedDistrictCode}`);
            if (!response.ok) throw new Error('Gagal memuat desa/kelurahan. Status: ' + response.status);
-          const responseData = await response.json();
-          const data: VillageWilayah[] = responseData.data; 
+           const data: VillageWilayah[] = await response.json();
           setVillages(data.map(v => ({ value: v.code, label: v.name, postalCode: v.postal_code })));
         } catch (error) {
           console.error("Error fetching villages:", error);
@@ -340,6 +336,7 @@ export function RegistrationForm() {
           if (field === "tempatTinggalLainnya" && form.getValues("tempatTinggal") !== "Lainnya") return false;
           if (field === "modaTransportasiLainnya" && !form.getValues("modaTransportasi").includes("lainnya")) return false;
           if (field === "alamatJalan") return false; // alamatJalan is optional
+          if (field === "dusun") return false; // dusun is optional
           return !!error;
       });
     } else if (stepNumber === 2) { // Ayah
@@ -634,7 +631,7 @@ export function RegistrationForm() {
             name={`${namePrefix}.nama` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{`Nama ${title}`}</FormLabel>
+                <FormLabel>{`Nama ${title}`} *</FormLabel>
                 <FormControl>
                   <Input
                     placeholder={`Masukkan nama ${title.toLowerCase()}`}
@@ -652,7 +649,7 @@ export function RegistrationForm() {
             name={`${namePrefix}.nik` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{`NIK ${title}`}</FormLabel>
+                <FormLabel>{`NIK ${title}`} (Opsional)</FormLabel>
                 <FormControl>
                   <Input type="text" inputMode="numeric" maxLength={16} placeholder={`Masukkan NIK ${title.toLowerCase()}`} {...field} value={field.value ?? ''} />
                 </FormControl>
@@ -665,7 +662,7 @@ export function RegistrationForm() {
             name={`${namePrefix}.tahunLahir` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tahun Lahir</FormLabel>
+                <FormLabel>Tahun Lahir (Opsional)</FormLabel>
                 <FormControl>
                   <Input type="number" placeholder="Contoh: 1980" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
                 </FormControl>
@@ -678,7 +675,7 @@ export function RegistrationForm() {
             name={`${namePrefix}.pendidikan` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Pendidikan Terakhir</FormLabel>
+                <FormLabel>Pendidikan Terakhir (Opsional)</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih pendidikan" /></SelectTrigger>
@@ -697,7 +694,7 @@ export function RegistrationForm() {
               name={`${namePrefix}.pendidikanLainnya` as FieldPath<RegistrationFormData>}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Detail Pendidikan Lainnya</FormLabel>
+                  <FormLabel>Detail Pendidikan Lainnya *</FormLabel>
                   <FormControl>
                     <Input placeholder="Sebutkan pendidikan lainnya" {...field} value={field.value ?? ''} />
                   </FormControl>
@@ -711,7 +708,7 @@ export function RegistrationForm() {
             name={`${namePrefix}.pekerjaan` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Pekerjaan Utama</FormLabel>
+                <FormLabel>Pekerjaan Utama (Opsional)</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih pekerjaan" /></SelectTrigger>
@@ -730,7 +727,7 @@ export function RegistrationForm() {
               name={`${namePrefix}.pekerjaanLainnya` as FieldPath<RegistrationFormData>}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Detail Pekerjaan Lainnya</FormLabel>
+                  <FormLabel>Detail Pekerjaan Lainnya *</FormLabel>
                   <FormControl>
                     <Input placeholder="Sebutkan pekerjaan lainnya" {...field} value={field.value ?? ''} />
                   </FormControl>
@@ -744,7 +741,7 @@ export function RegistrationForm() {
             name={`${namePrefix}.penghasilan` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Penghasilan Bulanan</FormLabel>
+                <FormLabel>Penghasilan Bulanan (Opsional)</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih penghasilan" /></SelectTrigger>
@@ -799,7 +796,7 @@ export function RegistrationForm() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                 <FormField control={form.control} name="namaLengkap" render={({ field }) => (
-                    <FormItem><FormLabel>Nama Lengkap</FormLabel><FormControl><Input
+                    <FormItem><FormLabel>Nama Lengkap *</FormLabel><FormControl><Input
                     placeholder="Sesuai Akta Kelahiran"
                     {...field}
                     value={field.value ?? ''}
@@ -807,7 +804,7 @@ export function RegistrationForm() {
                     /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="namaPanggilan" render={({ field }) => (
-                    <FormItem><FormLabel>Nama Panggilan</FormLabel><FormControl><Input
+                    <FormItem><FormLabel>Nama Panggilan *</FormLabel><FormControl><Input
                     placeholder="Nama panggilan anda"
                     {...field}
                     value={field.value ?? ''}
@@ -815,14 +812,14 @@ export function RegistrationForm() {
                     /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="jenisKelamin" render={({ field }) => (
-                    <FormItem><FormLabel>Jenis Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih jenis kelamin" /></SelectTrigger></FormControl><SelectContent>{jenisKelaminOptions.map(jk => <SelectItem key={jk} value={jk}>{jk}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Jenis Kelamin *</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih jenis kelamin" /></SelectTrigger></FormControl><SelectContent>{jenisKelaminOptions.map(jk => <SelectItem key={jk} value={jk}>{jk}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
                 <FormField
                     control={form.control}
                     name="nisn"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>NISN (Nomor Induk Siswa Nasional)</FormLabel>
+                        <FormLabel>NISN (Nomor Induk Siswa Nasional) *</FormLabel>
                         <FormControl>
                             <IMaskInput
                                 mask="0000000000"
@@ -849,7 +846,7 @@ export function RegistrationForm() {
                     name="nikSiswa"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>NIK (Nomor Induk Kependudukan)</FormLabel>
+                        <FormLabel>NIK (Nomor Induk Kependudukan) *</FormLabel>
                         <FormControl>
                              <IMaskInput
                                 mask="0000000000000000"
@@ -872,7 +869,7 @@ export function RegistrationForm() {
                     )}
                 />
                 <FormField control={form.control} name="tempatLahir" render={({ field }) => (
-                    <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input
+                    <FormItem><FormLabel>Tempat Lahir *</FormLabel><FormControl><Input
                     placeholder="Kota/Kabupaten kelahiran"
                     {...field}
                     value={field.value ?? ''}
@@ -886,7 +883,7 @@ export function RegistrationForm() {
                     <FormItem className="flex flex-col">
                         <CustomDatePicker
                             id="tanggalLahir"
-                            label="Tanggal Lahir"
+                            label="Tanggal Lahir *"
                             value={field.value}
                             onDateChange={(dateStr) => field.onChange(dateStr)}
                             ariaInvalid={!!fieldState.error}
@@ -897,29 +894,29 @@ export function RegistrationForm() {
                     )}
                 />
                 <FormField control={form.control} name="agama" render={({ field }) => (
-                    <FormItem><FormLabel>Agama</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih agama" /></SelectTrigger></FormControl><SelectContent>{agamaOptionsList.map(ag => <SelectItem key={ag} value={ag}>{ag}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Agama *</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih agama" /></SelectTrigger></FormControl><SelectContent>{agamaOptionsList.map(ag => <SelectItem key={ag} value={ag}>{ag}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
                 {form.watch('agama') === 'Lainnya' && (
                     <FormField control={form.control} name="agamaLainnya" render={({ field }) => (
-                        <FormItem><FormLabel>Detail Agama Lainnya</FormLabel><FormControl><Input placeholder="Sebutkan agama lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Detail Agama Lainnya *</FormLabel><FormControl><Input placeholder="Sebutkan agama lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                 )}
                 <FormField control={form.control} name="anakKe" render={({ field }) => (
-                    <FormItem><FormLabel>Anak Keberapa</FormLabel><FormControl><Input type="number" min="1" placeholder="Contoh: 1" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Anak Keberapa *</FormLabel><FormControl><Input type="number" min="1" placeholder="Contoh: 1" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="jumlahSaudaraKandung" render={({ field }) => (
-                    <FormItem><FormLabel>Jumlah Saudara Kandung</FormLabel><FormControl><Input type="number" min="0" placeholder="Isi 0 jika tidak punya" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Jumlah Saudara Kandung *</FormLabel><FormControl><Input type="number" min="0" placeholder="Isi 0 jika tidak punya" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
                 )} />
                 
                 <Separator className="my-4" />
                 <p className="font-medium text-center">Alamat Tempat Tinggal</p>
 
                 <FormField control={form.control} name="tempatTinggal" render={({ field }) => (
-                    <FormItem><FormLabel>Tempat Tinggal Saat Ini</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih tempat tinggal" /></SelectTrigger></FormControl><SelectContent>{tempatTinggalOptionsList.map(tt => <SelectItem key={tt} value={tt}>{tt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Tempat Tinggal Saat Ini *</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih tempat tinggal" /></SelectTrigger></FormControl><SelectContent>{tempatTinggalOptionsList.map(tt => <SelectItem key={tt} value={tt}>{tt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
                 {form.watch('tempatTinggal') === 'Lainnya' && (
                     <FormField control={form.control} name="tempatTinggalLainnya" render={({ field }) => (
-                        <FormItem><FormLabel>Detail Tempat Tinggal Lainnya</FormLabel><FormControl><Input placeholder="Sebutkan tempat tinggal lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Detail Tempat Tinggal Lainnya *</FormLabel><FormControl><Input placeholder="Sebutkan tempat tinggal lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                 )}
                 
@@ -928,7 +925,7 @@ export function RegistrationForm() {
                     name="provinsi"
                     render={({ field }) => (
                     <FormItem className="flex flex-col">
-                        <FormLabel>Provinsi</FormLabel>
+                        <FormLabel>Provinsi *</FormLabel>
                         <Popover open={provincePopoverOpen} onOpenChange={setProvincePopoverOpen}>
                         <PopoverTrigger asChild>
                             <FormControl>
@@ -990,7 +987,7 @@ export function RegistrationForm() {
                     name="kabupaten"
                     render={({ field }) => (
                     <FormItem className="flex flex-col">
-                        <FormLabel>Kabupaten/Kota</FormLabel>
+                        <FormLabel>Kabupaten/Kota *</FormLabel>
                         <Popover open={regencyPopoverOpen} onOpenChange={setRegencyPopoverOpen}>
                         <PopoverTrigger asChild>
                             <FormControl>
@@ -1049,7 +1046,7 @@ export function RegistrationForm() {
                     name="kecamatan"
                     render={({ field }) => (
                     <FormItem className="flex flex-col">
-                        <FormLabel>Kecamatan</FormLabel>
+                        <FormLabel>Kecamatan *</FormLabel>
                         <Popover open={districtPopoverOpen} onOpenChange={setDistrictPopoverOpen}>
                         <PopoverTrigger asChild>
                             <FormControl>
@@ -1105,7 +1102,7 @@ export function RegistrationForm() {
                     name="desaKelurahan"
                     render={({ field }) => (
                     <FormItem className="flex flex-col">
-                        <FormLabel>Desa/Kelurahan</FormLabel>
+                        <FormLabel>Desa/Kelurahan *</FormLabel>
                         <Popover open={villagePopoverOpen} onOpenChange={setVillagePopoverOpen}>
                         <PopoverTrigger asChild>
                             <FormControl>
@@ -1160,7 +1157,7 @@ export function RegistrationForm() {
                 />
 
                 <FormField control={form.control} name="dusun" render={({ field }) => (
-                    <FormItem><FormLabel>Dusun</FormLabel><FormControl><Input
+                    <FormItem><FormLabel>Dusun (Opsional)</FormLabel><FormControl><Input
                     placeholder="Nama dusun/dukuh"
                     {...field}
                     value={field.value ?? ''}
@@ -1172,7 +1169,7 @@ export function RegistrationForm() {
                     name="rtRw"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>RT/RW</FormLabel>
+                        <FormLabel>RT/RW *</FormLabel>
                         <FormControl>
                             <IMaskInput
                                 mask="000/000"
@@ -1195,14 +1192,14 @@ export function RegistrationForm() {
                     )}
                 />
                 <FormField control={form.control} name="alamatJalan" render={({ field }) => (
-                    <FormItem><FormLabel>Alamat Jalan</FormLabel><FormControl><Input placeholder="Contoh: Jl. Kenanga No. 27 (Bisa nama jalan saja)" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Kosongkan jika tidak tahu nama jalan.</FormDescription><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Alamat Jalan (Opsional)</FormLabel><FormControl><Input placeholder="Contoh: Jl. Kenanga No. 27 (Bisa nama jalan saja)" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Kosongkan jika tidak tahu nama jalan.</FormDescription><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="kodePos" render={({ field }) => (
-                    <FormItem><FormLabel>Kode Pos</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={5} placeholder="5 digit kode pos" {...field} value={field.value ?? ''} readOnly={isKodePosReadOnly} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Kode Pos *</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={5} placeholder="5 digit kode pos" {...field} value={field.value ?? ''} readOnly={isKodePosReadOnly} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <Separator className="my-4" />
                 <FormField control={form.control} name="modaTransportasi" render={() => (
-                    <FormItem><FormLabel>Moda Transportasi ke Sekolah</FormLabel>
+                    <FormItem><FormLabel>Moda Transportasi ke Sekolah *</FormLabel>
                     <div className="space-y-2">
                     {modaTransportasiOptions.map((option) => (
                         <FormField key={option.id} control={form.control} name="modaTransportasi"
@@ -1221,7 +1218,7 @@ export function RegistrationForm() {
                 )} />
                 {form.watch('modaTransportasi', []).includes('lainnya') && (
                     <FormField control={form.control} name="modaTransportasiLainnya" render={({ field }) => (
-                    <FormItem><FormLabel>Detail Moda Transportasi Lainnya</FormLabel><FormControl><Input placeholder="Sebutkan moda transportasi lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Detail Moda Transportasi Lainnya *</FormLabel><FormControl><Input placeholder="Sebutkan moda transportasi lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                 )}
                 </CardContent>
@@ -1240,13 +1237,13 @@ export function RegistrationForm() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                 <FormField control={form.control} name="nomorTeleponAyah" render={({ field }) => (
-                    <FormItem><FormLabel>Nomor Telepon Ayah</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Nomor Telepon Ayah (Opsional)</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="nomorTeleponIbu" render={({ field }) => (
-                    <FormItem><FormLabel>Nomor Telepon Ibu</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Nomor Telepon Ibu (Opsional)</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="nomorTeleponWali" render={({ field }) => (
-                    <FormItem><FormLabel>Nomor Telepon Wali</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Nomor Telepon Wali (Opsional)</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                 </CardContent>
                 <CardFooter>

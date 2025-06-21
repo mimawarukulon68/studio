@@ -88,7 +88,7 @@ export const registrationSchema = z.object({
   kabupaten: z.string().min(1, "Kabupaten/Kota wajib diisi"),
   kecamatan: z.string().min(1, "Kecamatan wajib diisi"),
   desaKelurahan: z.string().min(1, "Desa/Kelurahan wajib diisi"),
-  dusun: z.string().min(1, "Dusun wajib diisi"),
+  dusun: z.string().optional(),
   rtRw: z.string().min(1, "RT/RW wajib diisi").regex(/^\d{1,3}\/\d{1,3}$/, "Format RT/RW salah (contoh: 001/002)"),
   alamatJalan: z.string().optional(),
   kodePos: z.string().min(1, "Kode pos wajib diisi").length(5, "Kode pos harus 5 digit").regex(/^\d{5}$/, "Kode Pos harus 5 digit angka"),
