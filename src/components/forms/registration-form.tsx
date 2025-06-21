@@ -796,7 +796,7 @@ export function RegistrationForm() {
                         <CustomDatePicker
                             id="tanggalLahir"
                             label="Tanggal Lahir"
-                            initialValue={field.value}
+                            value={field.value}
                             onDateChange={(dateStr) => field.onChange(dateStr)}
                             ariaInvalid={!!fieldState.error}
                             disabled={field.disabled}
@@ -1169,5 +1169,3 @@ export function RegistrationForm() {
     </Form>
   );
 }
-
-    

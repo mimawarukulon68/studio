@@ -1,5 +1,6 @@
 
 import { z } from 'zod';
+import { format, isValid, parse } from 'date-fns';
 
 // Unified pendidikan options, including "Lainnya"
 export const pendidikanOptionsList = ["Tidak sekolah", "Putus SD", "SD Sederajat", "SMP Sederajat", "SMA Sederajat", "D1", "D2", "D3", "D4/S1", "S2", "S3", "Lainnya"] as const;
@@ -68,7 +69,14 @@ export const registrationSchema = z.object({
   nisn: z.string().min(1, "NISN wajib diisi").length(10, { message: "NISN harus 10 digit angka" }).regex(/^\d+$/, { message: "NISN harus berupa angka" }),
   nikSiswa: z.string().min(1, "NIK wajib diisi").length(16, { message: "NIK harus 16 digit angka" }).regex(/^\d+$/, { message: "NIK harus berupa angka" }),
   tempatLahir: z.string().min(1, "Tempat lahir wajib diisi"),
-  tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi", invalid_type_error: "Format tanggal lahir tidak valid" }),
+  tanggalLahir: z.string().min(1, "Tanggal lahir wajib diisi")
+    .refine((val) => {
+      const parsed = parse(val, 'dd/MM/yyyy', new Date());
+      // Checks for valid date and correct format (e.g., rejects 31/02/2024 which becomes 02/03/2024)
+      return isValid(parsed) && format(parsed, 'dd/MM/yyyy') === val;
+    }, {
+      message: "Format tanggal lahir tidak valid (DD/MM/YYYY)",
+    }),
   agama: z.enum(["Islam", "Kristen/Protestan", "Katolik", "Hindu", "Budha", "Khonghucu", "Lainnya"], { required_error: "Agama wajib dipilih" }),
   agamaLainnya: z.string().optional(),
   anakKe: z.preprocess(numberPreprocess, z.number({ required_error: "Anak keberapa wajib diisi", invalid_type_error: "Anak keberapa harus angka" }).int().min(1, "Anak keberapa minimal 1")),

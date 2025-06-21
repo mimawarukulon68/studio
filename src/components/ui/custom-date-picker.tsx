@@ -18,35 +18,28 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-function formatDateForDisplay(date: Date | undefined): string {
-  if (!date || !isValid(date)) return "";
+function formatDateForDisplay(dateStr: string | undefined): string {
+  if (!dateStr) return "";
+  const date = parse(dateStr, "dd/MM/yyyy", new Date());
+  if (!isValid(date) || format(date, 'dd/MM/yyyy') !== dateStr) return "";
   return format(date, "dd MMMM yyyy", { locale: localeID });
-}
-
-function formatDateForInput(date: Date | undefined): string {
-  if (!date || !isValid(date)) return "";
-  return format(date, "dd/MM/yyyy", { locale: localeID });
 }
 
 function parseInputToDate(input: string | undefined): Date | undefined {
   if (!input) return undefined;
   if (!/^\d{2}\/\d{2}\/\d{4}$/.test(input)) return undefined;
   
-  const [day, month, year] = input.split('/').map(Number);
-  const parsedDate = parse(input, "dd/MM/yyyy", new Date());
-
-  // Check for date rollover issues (e.g., 31/02/2024 -> 02/03/2024)
-  if (!isValid(parsedDate) || parsedDate.getDate() !== day || parsedDate.getMonth() !== month - 1 || parsedDate.getFullYear() !== year) {
-    return undefined;
+  const date = parse(input, "dd/MM/yyyy", new Date());
+  if (isValid(date) && format(date, 'dd/MM/yyyy') === input) {
+    return date;
   }
-  
-  return parsedDate;
+  return undefined;
 }
 
 interface CustomDatePickerProps {
   id?: string;
   label?: string;
-  initialValue?: string; // DD/MM/YYYY from RHF
+  value?: string; // DD/MM/YYYY from RHF
   onDateChange?: (dateStr: string | undefined) => void; // To RHF
   name?: string;
   className?: string;
@@ -58,7 +51,7 @@ interface CustomDatePickerProps {
 export function CustomDatePicker({
   id = "custom-date",
   label,
-  initialValue,
+  value,
   onDateChange,
   name,
   className,
@@ -66,21 +59,17 @@ export function CustomDatePicker({
   disabled = false,
   ariaInvalid = false,
 }: CustomDatePickerProps) {
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(() => parseInputToDate(initialValue));
   const [isPickerOpen, setIsPickerOpen] = React.useState(false);
   const [isFocused, setIsFocused] = React.useState(false);
   
   const iMaskRef = React.useRef<{ maskRef: IMask.MaskedDate }>(null);
   const inputElementRef = React.useRef<HTMLInputElement | null>(null);
 
+  const selectedDate = React.useMemo(() => parseInputToDate(value), [value]);
+
   const currentYear = new Date().getFullYear();
   const fromYear = currentYear - 120;
   const toYear = currentYear;
-
-  // Sync internal selectedDate state when the value from RHF changes.
-  React.useEffect(() => {
-    setSelectedDate(parseInputToDate(initialValue));
-  }, [initialValue]);
 
   const iMaskOptions: IMask.MaskedDateOptions = {
     mask: Date,
@@ -96,30 +85,45 @@ export function CustomDatePicker({
     },
   };
 
-  const handleAccept = (value: string, maskRef: IMask.Masked<any>) => {
-    if (initialValue !== value) {
-      onDateChange?.(value);
+  const handleAccept = (acceptedValue: string, maskRef: IMask.Masked<any>) => {
+    // We only want to update the form state when the mask is complete and valid.
+    // handleBlur will take care of final commitment.
+    if (maskRef.isComplete) {
+      const parsed = parseInputToDate(acceptedValue);
+      if (parsed) {
+        if (value !== acceptedValue) {
+          onDateChange?.(acceptedValue);
+        }
+      }
     }
   };
 
   const handleBlur = () => {
     setIsFocused(false);
     const currentValue = iMaskRef.current?.maskRef.value;
-    if (initialValue !== currentValue) {
+    const parsed = parseInputToDate(currentValue);
+
+    if (parsed) {
+      if (value !== currentValue) {
         onDateChange?.(currentValue);
+      }
+    } else {
+      if (value) {
+        onDateChange?.(undefined);
+      }
     }
   };
 
   const handleCalendarSelect = (dateFromCalendar: Date | undefined) => {
     setIsPickerOpen(false);
-    const formattedValueForRHF = dateFromCalendar ? formatDateForInput(dateFromCalendar) : undefined;
+    const formattedValueForRHF = dateFromCalendar ? format(dateFromCalendar, "dd/MM/yyyy") : undefined;
     onDateChange?.(formattedValueForRHF);
-    inputElementRef.current?.blur(); // Unfocus the text input
+    inputElementRef.current?.blur();
   };
   
   const defaultCalendarMonth = selectedDate || new Date(Math.max(fromYear, toYear - 7), 0, 1);
-
-  const shouldShowFormattedDisplay = !isFocused && selectedDate && isValid(selectedDate) && !disabled;
+  const displayValue = formatDateForDisplay(value);
+  const shouldShowFormattedDisplay = !isFocused && displayValue && !disabled;
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
@@ -139,7 +143,7 @@ export function CustomDatePicker({
             aria-labelledby={label ? id + "-label" : undefined}
             onFocus={() => { if (!disabled) { setIsFocused(true); setTimeout(() => inputElementRef.current?.focus(), 0); }}}
           >
-            {formatDateForDisplay(selectedDate)}
+            {displayValue}
           </div>
         ) : (
           <IMaskInput
@@ -148,7 +152,7 @@ export function CustomDatePicker({
             {...iMaskOptions}
             id={id}
             name={name}
-            value={initialValue || ''}
+            value={value || ''}
             onAccept={handleAccept}
             onFocus={() => setIsFocused(true)}
             onBlur={handleBlur}
