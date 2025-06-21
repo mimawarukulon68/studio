@@ -20,7 +20,8 @@ import { cn } from "@/lib/utils";
 
 function parseInputToDate(input: string | undefined): Date | undefined {
   if (!input) return undefined;
-  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(input)) return undefined;
+  // This regex allows for partial input during typing, but we only care about the final valid date
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(input)) return undefined; 
   
   const date = parse(input, "dd/MM/yyyy", new Date());
   if (isDateValid(date) && format(date, 'dd/MM/yyyy') === input) {
@@ -56,8 +57,10 @@ export function CustomDatePicker({
   const [isPickerOpen, setIsPickerOpen] = React.useState(false);
   const [isFocused, setIsFocused] = React.useState(false);
   
+  // This state tracks the raw text in the input field
   const [inputValue, setInputValue] = React.useState(value || '');
 
+  // Keep inputValue in sync with the value from react-hook-form
   React.useEffect(() => {
     setInputValue(value || '');
   }, [value]);
@@ -73,7 +76,7 @@ export function CustomDatePicker({
   const iMaskOptions: IMask.MaskedDateOptions = {
     mask: Date,
     pattern: 'd{/}m{/}Y',
-    lazy: false,
+    lazy: !isFocused && !value,
     placeholderChar: '_',
     format: (date) => format(date, "dd/MM/yyyy"),
     parse: (str) => parse(str, "dd/MM/yyyy", new Date()),
@@ -94,6 +97,7 @@ export function CustomDatePicker({
     setIsPickerOpen(false);
     const formattedValueForRHF = dateFromCalendar ? format(dateFromCalendar, "dd/MM/yyyy") : undefined;
     onDateChange?.(formattedValueForRHF);
+    // Directly blur the input after selection to trigger correct display state
     inputElementRef.current?.blur();
   };
   
