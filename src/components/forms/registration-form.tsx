@@ -548,7 +548,7 @@ export function RegistrationForm() {
   
   const renderStepIndicators = () => {
     return (
-        <div className="grid grid-cols-5 gap-1 rounded-md border shadow-sm p-0.5">
+        <div className="grid grid-cols-5 gap-1 rounded-md border shadow-sm p-1.5">
             {stepsData.map((step) => {
             const isCurrent = currentStep === step.num;
             const validationState = stepCompletionStatus[step.num];
@@ -786,8 +786,8 @@ export function RegistrationForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onFormSubmit, onFormError)} className="w-full max-w-3xl p-4 md:p-0">
-        <div className="sticky top-0 z-30 bg-background py-4 shadow-md mb-8">
+      <form onSubmit={form.handleSubmit(onFormSubmit, onFormError)} className="w-full max-w-3xl p-2">
+        <div className="sticky top-0 z-30 bg-background shadow-md mb-8">
            {renderStepIndicators()}
         </div>
 
@@ -935,7 +935,7 @@ export function RegistrationForm() {
                             <Button
                                 variant="outline"
                                 role="combobox"
-                                className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                                className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
                                 disabled={provincesLoading || provinces.length === 0}
                             >
                                 {field.value ? provinces.find(p => p.label === field.value)?.label : (provincesLoading ? "Memuat..." : "Pilih Provinsi")}
@@ -998,7 +998,7 @@ export function RegistrationForm() {
                                 variant="outline"
                                 role="combobox"
                                 disabled={!selectedProvinceCode || regenciesLoading || regencies.length === 0}
-                                className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                                className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
                             >
                                 {field.value ? regencies.find(r => r.label === field.value)?.label : (regenciesLoading ? "Memuat..." : "Pilih Kabupaten/Kota")}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -1057,7 +1057,7 @@ export function RegistrationForm() {
                                 variant="outline"
                                 role="combobox"
                                 disabled={!selectedRegencyCode || districtsLoading || districts.length === 0}
-                                className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                                className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
                             >
                                 {field.value ? districts.find(d => d.label === field.value)?.label : (districtsLoading ? "Memuat..." : "Pilih Kecamatan")}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -1113,7 +1113,7 @@ export function RegistrationForm() {
                                 variant="outline"
                                 role="combobox"
                                 disabled={!selectedDistrictCode || villagesLoading || villages.length === 0}
-                                className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                                className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
                             >
                                 {field.value ? villages.find(v => v.label === field.value)?.label : (villagesLoading ? "Memuat..." : "Pilih Desa/Kelurahan")}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -1258,23 +1258,24 @@ export function RegistrationForm() {
 
         <CardFooter className="flex justify-between mt-8">
           {currentStep > 1 ? (
-            <Button type="button" variant="outline" onClick={() => processStep('prev')} disabled={form.formState.isSubmitting}>
-              <ArrowLeft className="mr-2 h-4 w-4" /> Sebelumnya
+            <Button type="button" variant="outline" onClick={() => processStep('prev')} disabled={form.formState.isSubmitting} className="gap-0">
+              <ArrowLeft className="h-4 w-4" /> Sebelumnya
             </Button>
           ) : ( <div />
           )}
 
           {currentStep < TOTAL_STEPS ? (
-            <Button type="button" onClick={() => processStep('next')} disabled={form.formState.isSubmitting} className="ml-auto">
-              Berikutnya <ArrowRight className="ml-2 h-4 w-4" />
+            <Button type="button" onClick={() => processStep('next')} disabled={form.formState.isSubmitting} className="ml-auto gap-0">
+              Berikutnya <ArrowRight className="h-4 w-4" />
             </Button>
           ) : (
             <Button 
               type="submit" 
               onClick={() => setIsAttemptingSubmit(true)} 
-              className="w-full md:w-auto text-lg py-6 ml-auto" 
+              className="ml-auto gap-0" 
               disabled={form.formState.isSubmitting || form.formState.isSubmitSuccessful}
             >
+              <Check className="h-4 w-4" />
               {form.formState.isSubmitting ? 'Mengirim...' : 'Kirim Pendaftaran'}
             </Button>
           )}
