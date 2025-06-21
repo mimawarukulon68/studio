@@ -32,6 +32,8 @@ const parentBaseFields = {
   pekerjaan: z.enum([...pekerjaanOptionsList, "Meninggal Dunia"] as const).optional().nullable(),
   pekerjaanLainnya: z.string().optional(),
   penghasilan: z.enum([...penghasilanOptionsList, "Meninggal Dunia"] as const).optional().nullable(),
+  nomorTelepon: z.string().optional()
+    .refine(val => !val || (val.startsWith("+62") && val.length >= 11 && val.length <= 15 && /^\+62\d+$/.test(val)), { message: "Format nomor salah (contoh: +6281234567890)" }),
 };
 
 // Schema for Ayah and Ibu with conditional validation
@@ -141,13 +143,6 @@ export const registrationSchema = z.object({
   ibu: parentSchema,
   wali: waliSchema,
 
-  nomorTeleponAyah: z.string().optional()
-    .refine(val => !val || (val.startsWith("+62") && val.length >= 11 && val.length <= 15 && /^\+62\d+$/.test(val)), { message: "Format nomor Ayah salah (contoh: +6281234567890)" }),
-  nomorTeleponIbu: z.string().optional()
-    .refine(val => !val || (val.startsWith("+62") && val.length >= 11 && val.length <= 15 && /^\+62\d+$/.test(val)), { message: "Format nomor Ibu salah (contoh: +6281234567890)" }),
-  nomorTeleponWali: z.string().optional()
-    .refine(val => !val || (val.startsWith("+62") && val.length >= 11 && val.length <= 15 && /^\+62\d+$/.test(val)), { message: "Format nomor Wali salah (contoh: +6281234567890)" }),
-
 }).superRefine((data, ctx) => {
   if (data.agama === "Lainnya" && (!data.agamaLainnya || data.agamaLainnya.trim() === "")) {
     ctx.addIssue({
@@ -170,11 +165,11 @@ export const registrationSchema = z.object({
       path: ["modaTransportasiLainnya"],
     });
   }
-  if (!data.nomorTeleponAyah && !data.nomorTeleponIbu && !data.nomorTeleponWali) {
+  if (!data.ayah.nomorTelepon && !data.ibu.nomorTelepon && !data.wali.nomorTelepon) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi.",
-      path: ["nomorTeleponAyah"], 
+      path: ["ayah", "nomorTelepon"], 
     });
   }
   

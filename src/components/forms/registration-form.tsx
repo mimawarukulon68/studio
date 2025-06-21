@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, type FieldPath, type FieldErrors, type FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, ArrowRight, Check, UserRound, User as UserIcon, ShieldCheck, Phone, XIcon, ChevronsUpDown, CheckIcon, CalendarIcon, AlertCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, UserRound, User as UserIcon, ShieldCheck, XIcon, ChevronsUpDown, CheckIcon, CalendarIcon, AlertCircle } from 'lucide-react';
 import { IMaskInput } from 'react-imask';
 import type IMask from 'imask';
 import { format, parse, isValid as isDateValid } from 'date-fns';
@@ -60,7 +60,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 4;
 
 const stepsData = [
   { num: 1, title: "Identitas Siswa", Icon: UserRound, fields: [
@@ -70,15 +70,14 @@ const stepsData = [
     "modaTransportasi", "agamaLainnya", "tempatTinggalLainnya", "modaTransportasiLainnya"
   ] as FieldPath<RegistrationFormData>[] },
   { num: 2, title: "Data Ayah", Icon: UserIcon, fields: [
-    "ayah.isDeceased", "ayah.nama", "ayah.nik", "ayah.tahunLahir", "ayah.pendidikan", "ayah.pekerjaan", "ayah.penghasilan", "ayah.pendidikanLainnya", "ayah.pekerjaanLainnya"
+    "ayah.isDeceased", "ayah.nama", "ayah.nik", "ayah.tahunLahir", "ayah.pendidikan", "ayah.pekerjaan", "ayah.penghasilan", "ayah.pendidikanLainnya", "ayah.pekerjaanLainnya", "ayah.nomorTelepon"
   ] as FieldPath<RegistrationFormData>[] },
   { num: 3, title: "Data Ibu", Icon: UserIcon, fields: [
-    "ibu.isDeceased", "ibu.nama", "ibu.nik", "ibu.tahunLahir", "ibu.pendidikan", "ibu.pekerjaan", "ibu.penghasilan", "ibu.pendidikanLainnya", "ibu.pekerjaanLainnya"
+    "ibu.isDeceased", "ibu.nama", "ibu.nik", "ibu.tahunLahir", "ibu.pendidikan", "ibu.pekerjaan", "ibu.penghasilan", "ibu.pendidikanLainnya", "ibu.pekerjaanLainnya", "ibu.nomorTelepon"
   ] as FieldPath<RegistrationFormData>[] },
   { num: 4, title: "Data Wali", Icon: ShieldCheck, fields: [
-     "wali.hubungan", "wali.hubunganLainnya", "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan", "wali.pekerjaan", "wali.penghasilan", "wali.pendidikanLainnya", "wali.pekerjaanLainnya"
+     "wali.hubungan", "wali.hubunganLainnya", "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan", "wali.pekerjaan", "wali.penghasilan", "wali.pendidikanLainnya", "wali.pekerjaanLainnya", "wali.nomorTelepon"
   ] as FieldPath<RegistrationFormData>[] },
-  { num: 5, title: "Kontak", Icon: Phone, fields: ["nomorTeleponAyah", "nomorTeleponIbu", "nomorTeleponWali"] as FieldPath<RegistrationFormData>[] },
 ];
 
 interface Wilayah {
@@ -173,6 +172,7 @@ export function RegistrationForm() {
         pekerjaan: undefined,
         pekerjaanLainnya: '',
         penghasilan: undefined,
+        nomorTelepon: '',
       },
       ibu: {
         isDeceased: false,
@@ -184,6 +184,7 @@ export function RegistrationForm() {
         pekerjaan: undefined,
         pekerjaanLainnya: '',
         penghasilan: undefined,
+        nomorTelepon: '',
       },
       wali: {
         hubungan: undefined,
@@ -196,10 +197,8 @@ export function RegistrationForm() {
         pekerjaan: undefined,
         pekerjaanLainnya: '',
         penghasilan: undefined,
+        nomorTelepon: '',
       },
-      nomorTeleponAyah: '',
-      nomorTeleponIbu: '',
-      nomorTeleponWali: '',
     },
   });
   
@@ -472,29 +471,6 @@ export function RegistrationForm() {
                  isStepValid = validationResult.success;
             }
         }
-    } else if (stepNumber === 5) { // Kontak
-        const contactData = form.getValues();
-        const atLeastOnePhone = !!contactData.nomorTeleponAyah || !!contactData.nomorTeleponIbu || !!contactData.nomorTeleponWali;
-
-        if (!atLeastOnePhone) {
-            form.setError("nomorTeleponAyah", { type: "manual", message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi." });
-            isStepValid = false;
-        } else {
-             if (form.formState.errors.nomorTeleponAyah?.type === 'manual' && form.formState.errors.nomorTeleponAyah?.message?.startsWith("Minimal satu nomor")) {
-                form.clearErrors("nomorTeleponAyah");
-            }
-            const phoneFieldsToValidate: FieldPath<RegistrationFormData>[] = [];
-            if (contactData.nomorTeleponAyah) phoneFieldsToValidate.push("nomorTeleponAyah");
-            if (contactData.nomorTeleponIbu) phoneFieldsToValidate.push("nomorTeleponIbu");
-            if (contactData.nomorTeleponWali) phoneFieldsToValidate.push("nomorTeleponWali");
-            
-            if (phoneFieldsToValidate.length > 0) {
-              await form.trigger(phoneFieldsToValidate);
-              isStepValid = !phoneFieldsToValidate.some(field => !!getFieldError(field, form.formState.errors));
-            } else {
-              isStepValid = true; 
-            }
-        }
     }
     return isStepValid;
   };
@@ -638,7 +614,7 @@ export function RegistrationForm() {
   
   const renderStepIndicators = () => {
     return (
-        <div className="grid grid-cols-5 gap-1 rounded-md border shadow-sm p-1.5">
+        <div className="grid grid-cols-4 gap-1 rounded-md border shadow-sm p-1.5">
             {stepsData.map((step) => {
             const isCurrent = currentStep === step.num;
             const validationState = stepCompletionStatus[step.num];
@@ -875,7 +851,6 @@ export function RegistrationForm() {
                 <Select 
                     onValueChange={field.onChange} 
                     value={field.value ?? undefined}
-                    disabled={parentType !== 'wali' && isDeceased && !field.value}
                 >
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih pekerjaan" /></SelectTrigger>
@@ -912,7 +887,6 @@ export function RegistrationForm() {
                 <Select 
                     onValueChange={field.onChange} 
                     value={field.value ?? undefined}
-                    disabled={parentType !== 'wali' && isDeceased && !field.value}
                 >
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih penghasilan" /></SelectTrigger>
@@ -921,6 +895,20 @@ export function RegistrationForm() {
                     {penghasilanOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name={`${namePrefix}.nomorTelepon` as FieldPath<RegistrationFormData>}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nomor HP (Whatsapp Aktif) (Opsional)</FormLabel>
+                <FormControl>
+                  <Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} />
+                </FormControl>
+                 <FormDescription>Minimal salah satu nomor (Ayah/Ibu/Wali) wajib diisi.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -1376,28 +1364,6 @@ export function RegistrationForm() {
             {currentStep === 3 && renderParentFields('ibu')}
             {currentStep === 4 && renderParentFields('wali')}
 
-            {currentStep === 5 && (
-            <Card className="w-full shadow-lg">
-                <CardHeader>
-                <CardTitle className="font-headline text-xl text-center">Kontak yang Bisa Dihubungi</CardTitle>
-                <CardDescription className="text-center pt-1">Minimal isi salah satu nomor telepon. Awali nomor dengan +62 (contoh: +6281234567890).</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                <FormField control={form.control} name="nomorTeleponAyah" render={({ field }) => (
-                    <FormItem><FormLabel>Nomor Telepon Ayah (Opsional)</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="nomorTeleponIbu" render={({ field }) => (
-                    <FormItem><FormLabel>Nomor Telepon Ibu (Opsional)</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="nomorTeleponWali" render={({ field }) => (
-                    <FormItem><FormLabel>Nomor Telepon Wali (Opsional)</FormLabel><FormControl><Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-                )} />
-                </CardContent>
-                <CardFooter>
-                    <FormMessage>{form.formState.errors.nomorTeleponAyah?.message && form.formState.errors.nomorTeleponAyah.type === 'manual' ? form.formState.errors.nomorTeleponAyah.message : ""}</FormMessage>
-                </CardFooter>
-            </Card>
-            )}
         </div>
 
         <CardFooter className="flex justify-between mt-8">
