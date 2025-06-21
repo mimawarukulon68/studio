@@ -133,6 +133,10 @@ export function RegistrationForm() {
   const [regencyPopoverOpen, setRegencyPopoverOpen] = useState(false);
   const [districtPopoverOpen, setDistrictPopoverOpen] = useState(false);
   const [villagePopoverOpen, setVillagePopoverOpen] = useState(false);
+  
+  const [nisnKey, setNisnKey] = useState(1);
+  const [nikKey, setNikKey] = useState(1);
+  const [rtRwKey, setRtRwKey] = useState(1);
 
 
   const form = useForm<RegistrationFormData>({
@@ -781,6 +785,7 @@ export function RegistrationForm() {
                         <FormLabel>NISN (Nomor Induk Siswa Nasional)</FormLabel>
                         <FormControl>
                             <IMaskInput
+                            key={nisnKey}
                             mask="0000000000"
                             lazy={false}
                             placeholder="10 digit NISN"
@@ -788,7 +793,12 @@ export function RegistrationForm() {
                             value={field.value ?? ''}
                             unmask={true}
                             onAccept={(value) => field.onChange(value)}
-                            onBlur={field.onBlur}
+                            onBlur={(e) => {
+                                field.onBlur(e);
+                                if (!field.value) {
+                                    setNisnKey(k => k + 1);
+                                }
+                            }}
                             inputRef={field.ref}
                             />
                         </FormControl>
@@ -804,6 +814,7 @@ export function RegistrationForm() {
                         <FormLabel>NIK (Nomor Induk Kependudukan)</FormLabel>
                         <FormControl>
                             <IMaskInput
+                            key={nikKey}
                             mask="0000000000000000"
                             lazy={false}
                             placeholder="16 digit NIK (sesuai Kartu Keluarga)"
@@ -811,7 +822,12 @@ export function RegistrationForm() {
                             value={field.value ?? ''}
                             unmask={true}
                             onAccept={(value) => field.onChange(value)}
-                            onBlur={field.onBlur}
+                            onBlur={(e) => {
+                                field.onBlur(e);
+                                if (!field.value) {
+                                    setNikKey(k => k + 1);
+                                }
+                            }}
                             inputRef={field.ref}
                             />
                         </FormControl>
@@ -1123,6 +1139,7 @@ export function RegistrationForm() {
                         <FormLabel>RT/RW</FormLabel>
                         <FormControl>
                             <IMaskInput
+                            key={rtRwKey}
                             mask="000/000"
                             lazy={false}
                             placeholder="Contoh: 001/002"
@@ -1130,7 +1147,12 @@ export function RegistrationForm() {
                             value={field.value ?? ''}
                             unmask={true}
                             onAccept={(value) => field.onChange(value)}
-                            onBlur={field.onBlur}
+                            onBlur={(e) => {
+                                field.onBlur(e);
+                                if (!field.value) {
+                                    setRtRwKey(k => k + 1);
+                                }
+                            }}
                             inputRef={field.ref}
                             />
                         </FormControl>
