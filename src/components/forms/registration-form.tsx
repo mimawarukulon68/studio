@@ -134,6 +134,9 @@ export function RegistrationForm() {
   const [nisnIsFocused, setNisnIsFocused] = useState(false);
   const [nikIsFocused, setNikIsFocused] = useState(false);
   const [rtRwIsFocused, setRtRwIsFocused] = useState(false);
+  const [ayahNikIsFocused, setAyahNikIsFocused] = useState(false);
+  const [ibuNikIsFocused, setIbuNikIsFocused] = useState(false);
+  const [waliNikIsFocused, setWaliNikIsFocused] = useState(false);
 
 
   const form = useForm<RegistrationFormData>({
@@ -249,6 +252,9 @@ export function RegistrationForm() {
 
   const nisnValue = form.watch("nisn");
   const nikValue = form.watch("nikSiswa");
+  const ayahNikValue = form.watch("ayah.nik");
+  const ibuNikValue = form.watch("ibu.nik");
+  const waliNikValue = form.watch("wali.nik");
   const rtRwValue = form.watch("rtRw");
   const selectedProvinceCode = form.watch("provinsi");
   const selectedRegencyCode = form.watch("kabupaten");
@@ -704,6 +710,10 @@ export function RegistrationForm() {
     const pekerjaanOptions = isDeceased ? [...pekerjaanOptionsList, "Meninggal Dunia"] : pekerjaanOptionsList;
     const penghasilanOptions = isDeceased ? [...penghasilanOptionsList, "Meninggal Dunia"] : penghasilanOptionsList;
 
+    const nikIsFocused = parentType === 'ayah' ? ayahNikIsFocused : parentType === 'ibu' ? ibuNikIsFocused : waliNikIsFocused;
+    const setNikIsFocused = parentType === 'ayah' ? setAyahNikIsFocused : parentType === 'ibu' ? setIbuNikIsFocused : setWaliNikIsFocused;
+    const nikValue = parentType === 'ayah' ? ayahNikValue : parentType === 'ibu' ? ibuNikValue : waliNikValue;
+
 
     const description = "Wali adalah pihak yang turut bertanggung jawab atas siswa, seperti Ayah/Ibu kandung, kakek, nenek, paman, bibi, orang tua tiri, atau pihak lain yang dianggap sebagai wali. Jika kedua orang tua telah tiada, data wali wajib diisi. Jika salah satu orang tua masih hidup dan menjadi pendamping utama, bagian ini boleh dilewati. Namun, Anda juga tetap boleh mengisi data wali meskipun orang tua masih ada, jika ada pihak lain yang turut mendampingi siswa.";
 
@@ -813,7 +823,21 @@ export function RegistrationForm() {
               <FormItem>
                 <FormLabel>NIK {title} { parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*') }</FormLabel>
                 <FormControl>
-                  <Input type="text" inputMode="numeric" maxLength={16} placeholder={`Masukkan NIK ${title.toLowerCase()}`} {...field} value={field.value ?? ''} />
+                  <IMaskInput
+                    mask="0000000000000000"
+                    lazy={!nikIsFocused && !nikValue}
+                    placeholder="16 digit NIK"
+                    className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError(`${namePrefix}.nik`, form.formState.errors) && "border-destructive")}
+                    value={field.value ?? ''}
+                    unmask={true}
+                    onAccept={(value) => field.onChange(value)}
+                    onFocus={() => setNikIsFocused(true)}
+                    onBlur={(e) => {
+                        field.onBlur(e);
+                        setNikIsFocused(false);
+                    }}
+                    inputRef={field.ref}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
