@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, type FieldPath, type FieldErrors, type FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, ArrowRight, Check, Send, UserRound, User as UserIcon, ShieldCheck, XIcon, ChevronsUpDown, CheckIcon, CalendarIcon, AlertCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Send, UserRound, User as UserIcon, ShieldCheck, XIcon, ChevronsUpDown, CheckIcon, CalendarIcon, AlertCircle, FileCheck2 } from 'lucide-react';
 import { IMaskInput } from 'react-imask';
 import type IMask from 'imask';
 import { format, parse, isValid as isDateValid } from 'date-fns';
@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   Command,
   CommandEmpty,
@@ -60,7 +61,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 const stepsData = [
   { num: 1, title: "Identitas Siswa", Icon: UserRound, fields: [
@@ -78,6 +79,7 @@ const stepsData = [
   { num: 4, title: "Data Wali", Icon: ShieldCheck, fields: [
      "wali.hubungan", "wali.hubunganLainnya", "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan", "wali.pekerjaan", "wali.penghasilan", "wali.pendidikanLainnya", "wali.pekerjaanLainnya", "wali.nomorTelepon"
   ] as FieldPath<RegistrationFormData>[] },
+  { num: 5, title: "Konfirmasi", Icon: FileCheck2, fields: [] },
 ];
 
 interface Wilayah {
@@ -113,6 +115,7 @@ export function RegistrationForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [stepCompletionStatus, setStepCompletionStatus] = useState<Record<number, boolean | undefined>>({});
   const [isAttemptingSubmit, setIsAttemptingSubmit] = useState(false);
+  const [isSubmittedSuccessfully, setIsSubmittedSuccessfully] = useState(false);
 
   const [provinces, setProvinces] = useState<WilayahOption[]>([]);
   const [regencies, setRegencies] = useState<WilayahOption[]>([]);
@@ -440,19 +443,20 @@ export function RegistrationForm() {
   };
 
   const validateStep = async (step: number): Promise<boolean> => {
+    // Step 5 (Review) doesn't have fields to validate, it's always "valid" to proceed TO it.
+    if (step === 5) return true;
+
     const fieldsToValidate = getFieldsForStep(step);
     if (fieldsToValidate.length === 0) return true;
 
     await form.trigger(fieldsToValidate);
 
-    let isStepValid = true;
-    
     const hasError = fieldsToValidate.some(field => getFieldError(field, form.formState.errors));
     if (hasError) return false;
 
     // Special logic for conditional fields that might not be caught by RHF's default trigger
     if (step === 1) {
-        isStepValid = !fieldsToValidate.some(field => {
+        const isStepValid = !fieldsToValidate.some(field => {
             const error = getFieldError(field, form.formState.errors);
             if (field === "siswa.agamaLainnya" && form.getValues("siswa.agama") !== "Lainnya") return false;
             if (field === "siswa.tempatTinggalLainnya" && form.getValues("siswa.tempatTinggal") !== "Lainnya") return false;
@@ -461,53 +465,47 @@ export function RegistrationForm() {
             if (field === "siswa.alamatJalan") return false; 
             return !!error;
         });
+        return isStepValid;
     } else if (step === 2) { // Ayah
         const ayahData = form.getValues().ayah;
         const validationResult = parentSchema.safeParse(ayahData);
-        isStepValid = validationResult.success;
-        if (!isStepValid && validationResult.error) {
+        if (!validationResult.success) {
             validationResult.error.errors.forEach(err => {
                 const path = `ayah.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
                 form.setError(path, { type: 'manual', message: err.message });
             });
-        } else if (isStepValid) {
-            getFieldsForStep(2).forEach(field => form.clearErrors(field));
         }
+        return validationResult.success;
     } else if (step === 3) { // Ibu
         const ibuData = form.getValues().ibu;
         const validationResult = parentSchema.safeParse(ibuData);
-        isStepValid = validationResult.success;
-        if (!isStepValid && validationResult.error) {
+         if (!validationResult.success) {
             validationResult.error.errors.forEach(err => {
                 const path = `ibu.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
                 form.setError(path, { type: 'manual', message: err.message });
             });
-        } else if (isStepValid) {
-            getFieldsForStep(3).forEach(field => form.clearErrors(field));
         }
+        return validationResult.success;
     } else if (step === 4) { // Wali
         const waliData = form.getValues().wali;
         const isRequired = form.getValues('ayah.isDeceased') && form.getValues('ibu.isDeceased');
         
-        // This is a bit tricky. We rely on the global schema validation.
-        // We trigger, then check if any of the wali fields have errors.
         await form.trigger(getFieldsForStep(4));
         const waliFieldsHaveErrors = getFieldsForStep(4).some(field => getFieldError(field, form.formState.errors));
-        isStepValid = !waliFieldsHaveErrors;
+        if (waliFieldsHaveErrors) return false;
 
-        // Clean up errors if it becomes optional again and is empty
         if (!isRequired) {
             const hasWaliInput = Object.values(waliData).some(v => v !== '' && v !== undefined && v !== null);
             if (!hasWaliInput) {
                 getFieldsForStep(4).forEach(field => form.clearErrors(field));
-                isStepValid = true;
+                return true;
             } else {
                  const validationResult = waliSchema.safeParse(waliData);
-                 isStepValid = validationResult.success;
+                 return validationResult.success;
             }
         }
     }
-    return isStepValid;
+    return true;
   };
 
 
@@ -519,14 +517,26 @@ export function RegistrationForm() {
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
 
     if (action === 'next') {
-      if (currentStep < TOTAL_STEPS) {
-        setCurrentStep(prev => prev + 1);
-      }
+        if (!isStepBeingLeftValid) return; // Don't proceed if current step is invalid
+        if (currentStep < TOTAL_STEPS) {
+            setCurrentStep(prev => prev + 1);
+        }
     } else if (action === 'prev') {
       if (currentStep > 1) {
         setCurrentStep(prev => prev - 1);
       }
     } else if (action === 'jumpTo' && targetStep !== undefined) {
+        // If jumping forward, validate intermediate steps
+        if (targetStep > currentStep) {
+            for (let i = currentStep; i < targetStep; i++) {
+                const isIntermediateStepValid = await validateStep(i);
+                 setStepCompletionStatus(prev => ({ ...prev, [i]: isIntermediateStepValid }));
+                if (!isIntermediateStepValid) {
+                    setCurrentStep(i); // Stop at the first invalid step
+                    return;
+                }
+            }
+        }
         setCurrentStep(targetStep);
     }
   };
@@ -539,7 +549,7 @@ export function RegistrationForm() {
 
     let allStepsValid = true;
     const newCompletionStatus: Record<number, boolean | undefined> = {};
-    for (let i = 1; i <= TOTAL_STEPS; i++) {
+    for (let i = 1; i < TOTAL_STEPS; i++) { // Validate steps 1 to 4
       const isValid = await validateStep(i);
       newCompletionStatus[i] = isValid;
       if (!isValid) {
@@ -561,26 +571,20 @@ export function RegistrationForm() {
       setIsAttemptingSubmit(false); 
       return;
     }
-
-    // Manual validation for phone numbers on final submit
+    
+    // Final check for phone number before submission
     if (!data.ayah.nomorTelepon && !data.ibu.nomorTelepon && !data.wali.nomorTelepon) {
         toast({
             title: "Nomor Telepon Belum Diisi",
             description: "Mohon isi minimal salah satu nomor telepon (Ayah, Ibu, atau Wali).",
             variant: "destructive",
         });
-        
-        form.setError("ayah.nomorTelepon", { 
-            type: "manual", 
-            message: "Minimal satu dari tiga nomor telepon (Ayah, Ibu, Wali) harus diisi." 
-        });
-
+        form.setError("ayah.nomorTelepon", { type: "manual", message: "Minimal satu nomor telepon wajib diisi." });
         setStepCompletionStatus(prev => ({ ...prev, 2: false }));
         setCurrentStep(2);
         setIsAttemptingSubmit(false);
         return;
     }
-
 
     const processedData: any = JSON.parse(JSON.stringify(data));
 
@@ -637,6 +641,7 @@ export function RegistrationForm() {
       description: "Data Anda telah berhasil direkam.",
     });
     
+    setIsSubmittedSuccessfully(true);
     setIsAttemptingSubmit(false); 
   };
 
@@ -672,7 +677,7 @@ export function RegistrationForm() {
   
   const renderStepIndicators = () => {
     return (
-        <div className="grid grid-cols-4 gap-1 rounded-md border shadow-sm p-1.5">
+        <div className="grid grid-cols-5 gap-1 rounded-md border shadow-sm p-1.5">
             {stepsData.map((step) => {
             const isCurrent = currentStep === step.num;
             const validationState = stepCompletionStatus[step.num];
@@ -699,7 +704,7 @@ export function RegistrationForm() {
                 title={step.title}
                 aria-current={isCurrent ? "step" : undefined}
                 >
-                {(successfullyValidated) && (
+                {(successfullyValidated && step.num < TOTAL_STEPS) && (
                     <Check className="w-4 h-4 absolute top-0.5 right-0.5 text-green-600" strokeWidth={3} />
                 )}
                 {(attemptedAndInvalid) && (
@@ -728,7 +733,6 @@ export function RegistrationForm() {
         </div>
     );
   };
-
 
   const renderParentFields = (parentType: 'ayah' | 'ibu' | 'wali') => {
     const title = parentType === 'ayah' ? 'Ayah Kandung' : parentType === 'ibu' ? 'Ibu Kandung' : 'Wali';
@@ -1004,6 +1008,123 @@ export function RegistrationForm() {
       </Card>
     );
   };
+  
+    const renderReviewStep = () => {
+    const formData = form.getValues();
+
+    const renderValue = (value: any): string => {
+        if (typeof value === 'boolean') return value ? 'Ya' : 'Tidak';
+        if (Array.isArray(value)) {
+            const transportationMap = new Map(modaTransportasiOptions.map(opt => [opt.id, opt.label]));
+             const labels = value.map((id: string) => {
+                if (id === 'lainnya') {
+                    return formData.siswa.modaTransportasiLainnya ? `Lainnya: ${formData.siswa.modaTransportasiLainnya}` : 'Lainnya';
+                }
+                return transportationMap.get(id) || id;
+            });
+            return labels.join(', ');
+        }
+        if (!value) return '-';
+        return String(value);
+    };
+
+    const displayLabels: Record<string, string> = {
+        'namaLengkap': 'Nama Lengkap',
+        'namaPanggilan': 'Nama Panggilan',
+        'jenisKelamin': 'Jenis Kelamin',
+        'nisn': 'NISN',
+        'nikSiswa': 'NIK Siswa',
+        'tempatLahir': 'Tempat Lahir',
+        'tanggalLahir': 'Tanggal Lahir',
+        'agama': 'Agama',
+        'anakKe': 'Anak Ke-',
+        'jumlahSaudaraKandung': 'Jumlah Saudara Kandung',
+        'tempatTinggal': 'Tempat Tinggal Saat Ini',
+        'provinsi': 'Provinsi',
+        'kabupaten': 'Kabupaten/Kota',
+        'kecamatan': 'Kecamatan',
+        'desaKelurahan': 'Desa/Kelurahan',
+        'dusun': 'Dusun',
+        'rtRw': 'RT/RW',
+        'alamatJalan': 'Alamat Jalan',
+        'kodePos': 'Kode Pos',
+        'modaTransportasi': 'Moda Transportasi',
+        'isDeceased': 'Sudah Meninggal',
+        'nama': 'Nama',
+        'nik': 'NIK',
+        'tahunLahir': 'Tahun Lahir',
+        'pendidikan': 'Pendidikan',
+        'pekerjaan': 'Pekerjaan',
+        'penghasilan': 'Penghasilan',
+        'nomorTelepon': 'Nomor HP',
+        'hubungan': 'Hubungan dengan Siswa',
+    };
+
+    const renderSectionData = (data: Record<string, any>, sectionName: string) => {
+        return (
+             <dl className="space-y-2">
+                {Object.entries(data).map(([key, value]) => {
+                    if (key.endsWith('Lainnya') || value === undefined || value === '' || value === null) return null;
+                    
+                    let displayValue = value;
+                    if (key === 'agama' && value === 'Lainnya') displayValue = `Lainnya: ${data.agamaLainnya}`;
+                    if (key === 'tempatTinggal' && value === 'Lainnya') displayValue = `Lainnya: ${data.tempatTinggalLainnya}`;
+                    if (key === 'pendidikan' && value === 'Lainnya') displayValue = `Lainnya: ${data.pendidikanLainnya}`;
+                    if (key === 'pekerjaan' && value === 'Lainnya') displayValue = `Lainnya: ${data.pekerjaanLainnya}`;
+                    if (key === 'hubungan' && value === 'Lainnya (tuliskan)') displayValue = `Lainnya: ${data.hubunganLainnya}`;
+                    if (key === 'provinsi') displayValue = provinces.find(p => p.value === value)?.label || value;
+                    if (key === 'kabupaten') displayValue = regencies.find(r => r.value === value)?.label || value;
+                    if (key === 'kecamatan') displayValue = districts.find(d => d.value === value)?.label || value;
+                    if (key === 'desaKelurahan') displayValue = villages.find(v => v.value === value)?.label || value;
+
+                    return (
+                        <div key={`${sectionName}-${key}`} className="flex justify-between items-start py-2 border-b border-dashed">
+                            <dt className="text-sm text-muted-foreground pr-2">{displayLabels[key] || key}</dt>
+                            <dd className="text-sm font-medium text-right break-words">{renderValue(displayValue)}</dd>
+                        </div>
+                    );
+                })}
+            </dl>
+        );
+    };
+
+    return (
+        <Card className="w-full shadow-lg">
+            <CardHeader>
+                <CardTitle className="font-headline text-xl text-center">Konfirmasi Data Pendaftaran</CardTitle>
+                <CardDescription className="text-center pt-1">
+                    Pastikan semua data yang Anda masukkan sudah benar sebelum mengirim.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Accordion type="multiple" defaultValue={['siswa', 'ayah', 'ibu', 'wali']} className="w-full">
+                    <AccordionItem value="siswa">
+                        <AccordionTrigger className="font-semibold">Data Identitas Siswa</AccordionTrigger>
+                        <AccordionContent>{renderSectionData(formData.siswa, 'siswa')}</AccordionContent>
+                    </AccordionItem>
+                    <AccordionItem value="ayah">
+                        <AccordionTrigger className="font-semibold">Data Ayah</AccordionTrigger>
+                        <AccordionContent>{renderSectionData(formData.ayah, 'ayah')}</AccordionContent>
+                    </AccordionItem>
+                    <AccordionItem value="ibu">
+                        <AccordionTrigger className="font-semibold">Data Ibu</AccordionTrigger>
+                        <AccordionContent>{renderSectionData(formData.ibu, 'ibu')}</AccordionContent>
+                    </AccordionItem>
+                     <AccordionItem value="wali">
+                        <AccordionTrigger className="font-semibold">Data Wali</AccordionTrigger>
+                        <AccordionContent>
+                           {Object.values(formData.wali).every(v => v === '' || v === undefined || v === null) 
+                                ? <p className="text-sm text-muted-foreground italic">Data wali tidak diisi.</p>
+                                : renderSectionData(formData.wali, 'wali')
+                            }
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
+            </CardContent>
+        </Card>
+    );
+  };
+
 
   return (
     <Form {...form}>
@@ -1450,12 +1571,13 @@ export function RegistrationForm() {
             {currentStep === 2 && renderParentFields('ayah')}
             {currentStep === 3 && renderParentFields('ibu')}
             {currentStep === 4 && renderParentFields('wali')}
+            {currentStep === 5 && renderReviewStep()}
 
         </div>
 
         <CardFooter className="flex justify-between mt-8">
           {currentStep > 1 ? (
-            <Button type="button" variant="outline" onClick={() => processStep('prev')} disabled={form.formState.isSubmitting} className="gap-0">
+            <Button type="button" variant="outline" onClick={() => processStep('prev')} disabled={form.formState.isSubmitting || isSubmittedSuccessfully} className="gap-0">
               <ArrowLeft className="h-4 w-4" /> Sebelumnya
             </Button>
           ) : ( <div />
@@ -1470,9 +1592,9 @@ export function RegistrationForm() {
               type="submit" 
               onClick={() => setIsAttemptingSubmit(true)} 
               className="ml-auto gap-2" 
-              disabled={form.formState.isSubmitting}
+              disabled={form.formState.isSubmitting || isSubmittedSuccessfully}
             >
-              {form.formState.isSubmitting ? 'Mengirim...' : 'Kirim Pendaftaran'}
+              {form.formState.isSubmitting ? 'Mengirim...' : isSubmittedSuccessfully ? 'Terkirim' : 'Kirim Pendaftaran'}
               <Send className="h-4 w-4" />
             </Button>
           )}
@@ -1481,5 +1603,7 @@ export function RegistrationForm() {
     </Form>
   );
 }
+
+    
 
     
