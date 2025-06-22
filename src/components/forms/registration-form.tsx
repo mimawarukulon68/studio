@@ -523,62 +523,85 @@ export function RegistrationForm() {
         description: "Mohon periksa kembali isian Anda pada langkah yang ditandai.",
         variant: "destructive",
       });
-    } else {
-      const processedData: any = JSON.parse(JSON.stringify(data));
-
-      // Find labels for wilayah
-      processedData.provinsi = provinces.find(p => p.value === data.provinsi)?.label || data.provinsi;
-      processedData.kabupaten = regencies.find(r => r.value === data.kabupaten)?.label || data.kabupaten;
-      processedData.kecamatan = districts.find(d => d.value === data.kecamatan)?.label || data.kecamatan;
-      processedData.desaKelurahan = villages.find(v => v.value === data.desaKelurahan)?.label || data.desaKelurahan;
-
-
-      const processSingleLainnya = (obj: any, mainField: string, otherField: string) => {
-        if (obj && obj[mainField] === 'Lainnya' && obj[otherField]) {
-          obj[mainField] = `Lainnya: ${obj[otherField]}`;
-        }
-        if (obj) {
-          delete obj[otherField];
-        }
-      };
-      
-      const processParentLainnya = (parentObj: any) => {
-        if (!parentObj) return;
-        processSingleLainnya(parentObj, 'pendidikan', 'pendidikanLainnya');
-        processSingleLainnya(parentObj, 'pekerjaan', 'pekerjaanLainnya');
-        if ('isDeceased' in parentObj) {
-           delete parentObj.isDeceased;
-        }
-        if ('hubungan' in parentObj) {
-            processSingleLainnya(parentObj, 'hubungan', 'hubunganLainnya');
-        }
-      };
-      
-      processSingleLainnya(processedData, 'agama', 'agamaLainnya');
-      processSingleLainnya(processedData, 'tempatTinggal', 'tempatTinggalLainnya');
-      
-      processParentLainnya(processedData.ayah);
-      processParentLainnya(processedData.ibu);
-      processParentLainnya(processedData.wali);
-      
-      if (processedData.modaTransportasi) {
-        const transportationMap = new Map(modaTransportasiOptions.map(opt => [opt.id, opt.label]));
-        const transportationLabels = processedData.modaTransportasi.map((id: string) => {
-            if (id === 'lainnya') {
-                return processedData.modaTransportasiLainnya ? `Lainnya: ${processedData.modaTransportasiLainnya}` : 'Lainnya';
-            }
-            return transportationMap.get(id) || id;
-        });
-        processedData.modaTransportasi = transportationLabels;
-        delete processedData.modaTransportasiLainnya;
-      }
-
-      console.log("Form submitted successfully:", processedData);
-      toast({
-        title: "Pendaftaran Terkirim!",
-        description: "Data Anda telah berhasil direkam.",
-      });
+      setIsAttemptingSubmit(false); 
+      return;
     }
+
+    // Manual validation for phone numbers on final submit
+    if (!data.ayah.nomorTelepon && !data.ibu.nomorTelepon && !data.wali.nomorTelepon) {
+        toast({
+            title: "Nomor Telepon Belum Diisi",
+            description: "Mohon isi minimal salah satu nomor telepon (Ayah, Ibu, atau Wali).",
+            variant: "destructive",
+        });
+        
+        form.setError("ayah.nomorTelepon", { 
+            type: "manual", 
+            message: "Minimal satu dari tiga nomor telepon (Ayah, Ibu, Wali) harus diisi." 
+        });
+
+        setStepCompletionStatus(prev => ({ ...prev, 2: false }));
+        setCurrentStep(2);
+        setIsAttemptingSubmit(false);
+        return;
+    }
+
+
+    const processedData: any = JSON.parse(JSON.stringify(data));
+
+    // Find labels for wilayah
+    processedData.provinsi = provinces.find(p => p.value === data.provinsi)?.label || data.provinsi;
+    processedData.kabupaten = regencies.find(r => r.value === data.kabupaten)?.label || data.kabupaten;
+    processedData.kecamatan = districts.find(d => d.value === data.kecamatan)?.label || data.kecamatan;
+    processedData.desaKelurahan = villages.find(v => v.value === data.desaKelurahan)?.label || data.desaKelurahan;
+
+
+    const processSingleLainnya = (obj: any, mainField: string, otherField: string) => {
+      if (obj && obj[mainField] === 'Lainnya' && obj[otherField]) {
+        obj[mainField] = `Lainnya: ${obj[otherField]}`;
+      }
+      if (obj) {
+        delete obj[otherField];
+      }
+    };
+    
+    const processParentLainnya = (parentObj: any) => {
+      if (!parentObj) return;
+      processSingleLainnya(parentObj, 'pendidikan', 'pendidikanLainnya');
+      processSingleLainnya(parentObj, 'pekerjaan', 'pekerjaanLainnya');
+      if ('isDeceased' in parentObj) {
+          delete parentObj.isDeceased;
+      }
+      if ('hubungan' in parentObj) {
+          processSingleLainnya(parentObj, 'hubungan', 'hubunganLainnya');
+      }
+    };
+    
+    processSingleLainnya(processedData, 'agama', 'agamaLainnya');
+    processSingleLainnya(processedData, 'tempatTinggal', 'tempatTinggalLainnya');
+    
+    processParentLainnya(processedData.ayah);
+    processParentLainnya(processedData.ibu);
+    processParentLainnya(processedData.wali);
+    
+    if (processedData.modaTransportasi) {
+      const transportationMap = new Map(modaTransportasiOptions.map(opt => [opt.id, opt.label]));
+      const transportationLabels = processedData.modaTransportasi.map((id: string) => {
+          if (id === 'lainnya') {
+              return processedData.modaTransportasiLainnya ? `Lainnya: ${processedData.modaTransportasiLainnya}` : 'Lainnya';
+          }
+          return transportationMap.get(id) || id;
+      });
+      processedData.modaTransportasi = transportationLabels;
+      delete processedData.modaTransportasiLainnya;
+    }
+
+    console.log("Form submitted successfully:", processedData);
+    toast({
+      title: "Pendaftaran Terkirim!",
+      description: "Data Anda telah berhasil direkam.",
+    });
+    
     setIsAttemptingSubmit(false); 
   };
 

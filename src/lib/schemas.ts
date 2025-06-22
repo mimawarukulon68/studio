@@ -165,13 +165,6 @@ export const registrationSchema = z.object({
       path: ["modaTransportasiLainnya"],
     });
   }
-  if (!data.ayah.nomorTelepon && !data.ibu.nomorTelepon && !data.wali.nomorTelepon) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi.",
-      path: ["ayah", "nomorTelepon"], 
-    });
-  }
   
   // Conditional validation for Wali data
   if (data.ayah.isDeceased && data.ibu.isDeceased) {
