@@ -213,7 +213,8 @@ export function RegistrationForm() {
     if (isAyahDeceased) {
       form.setValue('ayah.pekerjaan', 'Meninggal Dunia', { shouldValidate: true });
       form.setValue('ayah.penghasilan', 'Meninggal Dunia', { shouldValidate: true });
-      const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ayah.nik', 'ayah.tahunLahir', 'ayah.pendidikan', 'ayah.pendidikanLainnya', 'ayah.pekerjaanLainnya'];
+      form.setValue('ayah.nomorTelepon', '', { shouldValidate: true });
+      const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ayah.nik', 'ayah.tahunLahir', 'ayah.pendidikan', 'ayah.pendidikanLainnya', 'ayah.pekerjaanLainnya', 'ayah.nomorTelepon'];
       fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
       if (form.getValues('ayah.pekerjaan') === 'Meninggal Dunia') {
@@ -229,7 +230,8 @@ export function RegistrationForm() {
     if (isIbuDeceased) {
       form.setValue('ibu.pekerjaan', 'Meninggal Dunia', { shouldValidate: true });
       form.setValue('ibu.penghasilan', 'Meninggal Dunia', { shouldValidate: true });
-       const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ibu.nik', 'ibu.tahunLahir', 'ibu.pendidikan', 'ibu.pendidikanLainnya', 'ibu.pekerjaanLainnya'];
+      form.setValue('ibu.nomorTelepon', '', { shouldValidate: true });
+       const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ibu.nik', 'ibu.tahunLahir', 'ibu.pendidikan', 'ibu.pendidikanLainnya', 'ibu.pekerjaanLainnya', 'ibu.nomorTelepon'];
        fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
       if (form.getValues('ibu.pekerjaan') === 'Meninggal Dunia') {
@@ -259,6 +261,31 @@ export function RegistrationForm() {
   const selectedProvinceCode = form.watch("provinsi");
   const selectedRegencyCode = form.watch("kabupaten");
   const selectedDistrictCode = form.watch("kecamatan");
+
+  const hubunganWali = form.watch('wali.hubungan');
+
+  useEffect(() => {
+    const copyParentDataToWali = (parentType: 'ayah' | 'ibu') => {
+        const parentData = form.getValues(parentType);
+        // Do not copy 'isDeceased' status
+        form.setValue('wali.nama', parentData.nama || '', { shouldValidate: true });
+        form.setValue('wali.nik', parentData.nik || '', { shouldValidate: true });
+        form.setValue('wali.tahunLahir', parentData.tahunLahir, { shouldValidate: true });
+        form.setValue('wali.pendidikan', parentData.pendidikan, { shouldValidate: true });
+        form.setValue('wali.pendidikanLainnya', parentData.pendidikanLainnya || '', { shouldValidate: true });
+        form.setValue('wali.pekerjaan', parentData.pekerjaan, { shouldValidate: true });
+        form.setValue('wali.pekerjaanLainnya', parentData.pekerjaanLainnya || '', { shouldValidate: true });
+        form.setValue('wali.penghasilan', parentData.penghasilan, { shouldValidate: true });
+        form.setValue('wali.nomorTelepon', parentData.nomorTelepon || '', { shouldValidate: true });
+    }
+
+    if (hubunganWali === 'Ayah Kandung') {
+        copyParentDataToWali('ayah');
+    } else if (hubunganWali === 'Ibu Kandung') {
+        copyParentDataToWali('ibu');
+    }
+  }, [hubunganWali, form]);
+
 
   useEffect(() => {
     let isMounted = true;
@@ -410,8 +437,8 @@ export function RegistrationForm() {
     return stepData?.fields || [];
   };
 
-  const validateStep = async (stepNumber: number): Promise<boolean> => {
-    const fieldsToValidate = getFieldsForStep(stepNumber);
+  const validateStep = async (step: number): Promise<boolean> => {
+    const fieldsToValidate = getFieldsForStep(step);
     if (fieldsToValidate.length === 0) return true;
 
     await form.trigger(fieldsToValidate);
@@ -953,9 +980,20 @@ export function RegistrationForm() {
               <FormItem>
                 <FormLabel>Nomor HP (Whatsapp Aktif) (Opsional)</FormLabel>
                 <FormControl>
-                  <Input type="tel" placeholder="+6281234567890" {...field} value={field.value ?? ''} />
+                  <Input 
+                    type="tel" 
+                    placeholder="+6281234567890" 
+                    {...field} 
+                    value={field.value ?? ''}
+                    disabled={parentType !== 'wali' && isDeceased}
+                  />
                 </FormControl>
-                 <FormDescription>Minimal salah satu nomor (Ayah/Ibu/Wali) wajib diisi.</FormDescription>
+                 <FormDescription>
+                  {parentType !== 'wali' && isDeceased
+                      ? "Nomor HP tidak dapat diisi karena yang bersangkutan telah meninggal."
+                      : "Minimal salah satu nomor (Ayah/Ibu/Wali) wajib diisi."
+                  }
+                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -1441,3 +1479,5 @@ export function RegistrationForm() {
     </Form>
   );
 }
+
+    
