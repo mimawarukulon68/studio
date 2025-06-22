@@ -29,9 +29,9 @@ const parentBaseFields = {
   ),
   pendidikan: z.enum(pendidikanOptionsList).optional().nullable(),
   pendidikanLainnya: z.string().optional(),
-  pekerjaan: z.enum([...pekerjaanOptionsList, "Meninggal Dunia"] as const).optional().nullable(),
+  pekerjaan: z.union([z.enum([...pekerjaanOptionsList, "Meninggal Dunia"] as const), z.literal('')]).optional().nullable(),
   pekerjaanLainnya: z.string().optional(),
-  penghasilan: z.enum([...penghasilanOptionsList, "Meninggal Dunia"] as const).optional().nullable(),
+  penghasilan: z.union([z.enum([...penghasilanOptionsList, "Meninggal Dunia"] as const), z.literal('')]).optional().nullable(),
   nomorTelepon: z.string().optional()
     .refine(val => !val || (val.startsWith("+62") && val.length >= 11 && val.length <= 15 && /^\+62\d+$/.test(val)), { message: "Format nomor salah (contoh: +6281234567890)" }),
 };
