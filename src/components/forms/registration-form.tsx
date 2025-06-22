@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, type FieldPath, type FieldErrors, type FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, ArrowRight, Check, UserRound, User as UserIcon, ShieldCheck, XIcon, ChevronsUpDown, CheckIcon, CalendarIcon, AlertCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Send, UserRound, User as UserIcon, ShieldCheck, XIcon, ChevronsUpDown, CheckIcon, CalendarIcon, AlertCircle } from 'lucide-react';
 import { IMaskInput } from 'react-imask';
 import type IMask from 'imask';
 import { format, parse, isValid as isDateValid } from 'date-fns';
@@ -1467,11 +1467,11 @@ export function RegistrationForm() {
             <Button 
               type="submit" 
               onClick={() => setIsAttemptingSubmit(true)} 
-              className="ml-auto gap-0" 
-              disabled={form.formState.isSubmitting || form.formState.isSubmitSuccessful}
+              className="ml-auto gap-2" 
+              disabled={form.formState.isSubmitting}
             >
-              <Check className="h-4 w-4" />
               {form.formState.isSubmitting ? 'Mengirim...' : 'Kirim Pendaftaran'}
+              <Send className="h-4 w-4" />
             </Button>
           )}
         </CardFooter>
