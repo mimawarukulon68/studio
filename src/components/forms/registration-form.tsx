@@ -449,7 +449,7 @@ export function RegistrationForm() {
     if (hasError) return false;
 
     // Special logic for conditional fields that might not be caught by RHF's default trigger
-    if (stepNumber === 1) {
+    if (step === 1) {
         isStepValid = !fieldsToValidate.some(field => {
             const error = getFieldError(field, form.formState.errors);
             if (field === "agamaLainnya" && form.getValues("agama") !== "Lainnya") return false;
@@ -459,7 +459,7 @@ export function RegistrationForm() {
             if (field === "alamatJalan") return false; 
             return !!error;
         });
-    } else if (stepNumber === 2) { // Ayah
+    } else if (step === 2) { // Ayah
         const ayahData = form.getValues().ayah;
         const validationResult = parentSchema.safeParse(ayahData);
         isStepValid = validationResult.success;
@@ -471,7 +471,7 @@ export function RegistrationForm() {
         } else if (isStepValid) {
             getFieldsForStep(2).forEach(field => form.clearErrors(field));
         }
-    } else if (stepNumber === 3) { // Ibu
+    } else if (step === 3) { // Ibu
         const ibuData = form.getValues().ibu;
         const validationResult = parentSchema.safeParse(ibuData);
         isStepValid = validationResult.success;
@@ -483,7 +483,7 @@ export function RegistrationForm() {
         } else if (isStepValid) {
             getFieldsForStep(3).forEach(field => form.clearErrors(field));
         }
-    } else if (stepNumber === 4) { // Wali
+    } else if (step === 4) { // Wali
         const waliData = form.getValues().wali;
         const isRequired = form.getValues('ayah.isDeceased') && form.getValues('ibu.isDeceased');
         
