@@ -64,10 +64,10 @@ const TOTAL_STEPS = 4;
 
 const stepsData = [
   { num: 1, title: "Identitas Siswa", Icon: UserRound, fields: [
-    "namaLengkap", "namaPanggilan", "jenisKelamin", "nisn", "nikSiswa",
-    "tempatLahir", "tanggalLahir", "agama", "anakKe", "jumlahSaudaraKandung",
-    "tempatTinggal", "provinsi", "kabupaten", "kecamatan", "desaKelurahan", "dusun", "rtRw", "alamatJalan", "kodePos",
-    "modaTransportasi", "agamaLainnya", "tempatTinggalLainnya", "modaTransportasiLainnya"
+    "siswa.namaLengkap", "siswa.namaPanggilan", "siswa.jenisKelamin", "siswa.nisn", "siswa.nikSiswa",
+    "siswa.tempatLahir", "siswa.tanggalLahir", "siswa.agama", "siswa.anakKe", "siswa.jumlahSaudaraKandung",
+    "siswa.tempatTinggal", "siswa.provinsi", "siswa.kabupaten", "siswa.kecamatan", "siswa.desaKelurahan", "siswa.dusun", "siswa.rtRw", "siswa.alamatJalan", "siswa.kodePos",
+    "siswa.modaTransportasi", "siswa.agamaLainnya", "siswa.tempatTinggalLainnya", "siswa.modaTransportasiLainnya"
   ] as FieldPath<RegistrationFormData>[] },
   { num: 2, title: "Data Ayah", Icon: UserIcon, fields: [
     "ayah.isDeceased", "ayah.nama", "ayah.nik", "ayah.tahunLahir", "ayah.pendidikan", "ayah.pekerjaan", "ayah.penghasilan", "ayah.pendidikanLainnya", "ayah.pekerjaanLainnya", "ayah.nomorTelepon"
@@ -143,28 +143,30 @@ export function RegistrationForm() {
     resolver: zodResolver(registrationSchema),
     mode: 'onBlur', 
     defaultValues: {
-      namaLengkap: '',
-      namaPanggilan: '',
-      nisn: '',
-      nikSiswa: '',
-      tempatLahir: '',
-      tanggalLahir: undefined,
-      agama: undefined,
-      agamaLainnya: '',
-      anakKe: undefined,
-      jumlahSaudaraKandung: undefined,
-      tempatTinggal: undefined,
-      tempatTinggalLainnya: '',
-      provinsi: '',
-      kabupaten: '',
-      kecamatan: '',
-      desaKelurahan: '',
-      dusun: '',
-      rtRw: '',
-      alamatJalan: '',
-      kodePos: '',
-      modaTransportasi: [],
-      modaTransportasiLainnya: '',
+      siswa: {
+        namaLengkap: '',
+        namaPanggilan: '',
+        nisn: '',
+        nikSiswa: '',
+        tempatLahir: '',
+        tanggalLahir: undefined,
+        agama: undefined,
+        agamaLainnya: '',
+        anakKe: undefined,
+        jumlahSaudaraKandung: undefined,
+        tempatTinggal: undefined,
+        tempatTinggalLainnya: '',
+        provinsi: '',
+        kabupaten: '',
+        kecamatan: '',
+        desaKelurahan: '',
+        dusun: '',
+        rtRw: '',
+        alamatJalan: '',
+        kodePos: '',
+        modaTransportasi: [],
+        modaTransportasiLainnya: '',
+      },
       ayah: {
         isDeceased: false,
         nama: '',
@@ -252,15 +254,15 @@ export function RegistrationForm() {
   }, [isWaliRequired, form]);
 
 
-  const nisnValue = form.watch("nisn");
-  const nikValue = form.watch("nikSiswa");
+  const nisnValue = form.watch("siswa.nisn");
+  const nikValue = form.watch("siswa.nikSiswa");
   const ayahNikValue = form.watch("ayah.nik");
   const ibuNikValue = form.watch("ibu.nik");
   const waliNikValue = form.watch("wali.nik");
-  const rtRwValue = form.watch("rtRw");
-  const selectedProvinceCode = form.watch("provinsi");
-  const selectedRegencyCode = form.watch("kabupaten");
-  const selectedDistrictCode = form.watch("kecamatan");
+  const rtRwValue = form.watch("siswa.rtRw");
+  const selectedProvinceCode = form.watch("siswa.provinsi");
+  const selectedRegencyCode = form.watch("siswa.kabupaten");
+  const selectedDistrictCode = form.watch("siswa.kecamatan");
 
   const hubunganWali = form.watch('wali.hubungan');
 
@@ -303,7 +305,7 @@ export function RegistrationForm() {
 
         const targetProvince = mappedProvinces.find(p => p.label.toUpperCase() === "JAWA TIMUR");
         if (targetProvince) {
-          form.setValue("provinsi", targetProvince.value);
+          form.setValue("siswa.provinsi", targetProvince.value);
         }
       } catch (error) {
         console.error("Error fetching provinces:", error);
@@ -325,10 +327,10 @@ export function RegistrationForm() {
         setRegencies([]);
         setDistricts([]);
         setVillages([]);
-        form.setValue("kabupaten", "");
-        form.setValue("kecamatan", "");
-        form.setValue("desaKelurahan", "");
-        form.setValue("kodePos", "");
+        form.setValue("siswa.kabupaten", "");
+        form.setValue("siswa.kecamatan", "");
+        form.setValue("siswa.desaKelurahan", "");
+        form.setValue("siswa.kodePos", "");
         setIsKodePosReadOnly(false);
         try {
           const response = await fetch(`/api/wilayah/regencies/${selectedProvinceCode}`);
@@ -344,7 +346,7 @@ export function RegistrationForm() {
           if (province && province.label.toUpperCase() === "JAWA TIMUR") {
             const targetRegency = mappedRegencies.find(r => r.label.toUpperCase() === "KAB. LAMONGAN");
             if (targetRegency) {
-              form.setValue("kabupaten", targetRegency.value);
+              form.setValue("siswa.kabupaten", targetRegency.value);
             }
           }
         } catch (error) {
@@ -371,9 +373,9 @@ export function RegistrationForm() {
         setDistrictsLoading(true);
         setDistricts([]);
         setVillages([]);
-        form.setValue("kecamatan", "");
-        form.setValue("desaKelurahan", "");
-        form.setValue("kodePos", "");
+        form.setValue("siswa.kecamatan", "");
+        form.setValue("siswa.desaKelurahan", "");
+        form.setValue("siswa.kodePos", "");
         setIsKodePosReadOnly(false);
         try {
           const response = await fetch(`/api/wilayah/districts/${selectedRegencyCode}`);
@@ -405,8 +407,8 @@ export function RegistrationForm() {
       const fetchVillages = async () => {
         setVillagesLoading(true);
         setVillages([]);
-        form.setValue("desaKelurahan", "");
-        form.setValue("kodePos", "");
+        form.setValue("siswa.desaKelurahan", "");
+        form.setValue("siswa.kodePos", "");
         setIsKodePosReadOnly(false);
         try {
           const response = await fetch(`/api/wilayah/villages/${selectedDistrictCode}`);
@@ -452,11 +454,11 @@ export function RegistrationForm() {
     if (step === 1) {
         isStepValid = !fieldsToValidate.some(field => {
             const error = getFieldError(field, form.formState.errors);
-            if (field === "agamaLainnya" && form.getValues("agama") !== "Lainnya") return false;
-            if (field === "tempatTinggalLainnya" && form.getValues("tempatTinggal") !== "Lainnya") return false;
-            if (field === "modaTransportasiLainnya" && !form.getValues("modaTransportasi").includes("lainnya")) return false;
-            if (field === "dusun") return false;
-            if (field === "alamatJalan") return false; 
+            if (field === "siswa.agamaLainnya" && form.getValues("siswa.agama") !== "Lainnya") return false;
+            if (field === "siswa.tempatTinggalLainnya" && form.getValues("siswa.tempatTinggal") !== "Lainnya") return false;
+            if (field === "siswa.modaTransportasiLainnya" && !form.getValues("siswa.modaTransportasi").includes("lainnya")) return false;
+            if (field === "siswa.dusun") return false;
+            if (field === "siswa.alamatJalan") return false; 
             return !!error;
         });
     } else if (step === 2) { // Ayah
@@ -582,11 +584,11 @@ export function RegistrationForm() {
 
     const processedData: any = JSON.parse(JSON.stringify(data));
 
-    // Find labels for wilayah
-    processedData.provinsi = provinces.find(p => p.value === data.provinsi)?.label || data.provinsi;
-    processedData.kabupaten = regencies.find(r => r.value === data.kabupaten)?.label || data.kabupaten;
-    processedData.kecamatan = districts.find(d => d.value === data.kecamatan)?.label || data.kecamatan;
-    processedData.desaKelurahan = villages.find(v => v.value === data.desaKelurahan)?.label || data.desaKelurahan;
+    // Find labels for wilayah inside the 'siswa' object
+    processedData.siswa.provinsi = provinces.find(p => p.value === data.siswa.provinsi)?.label || data.siswa.provinsi;
+    processedData.siswa.kabupaten = regencies.find(r => r.value === data.siswa.kabupaten)?.label || data.siswa.kabupaten;
+    processedData.siswa.kecamatan = districts.find(d => d.value === data.siswa.kecamatan)?.label || data.siswa.kecamatan;
+    processedData.siswa.desaKelurahan = villages.find(v => v.value === data.siswa.desaKelurahan)?.label || data.siswa.desaKelurahan;
 
 
     const processSingleLainnya = (obj: any, mainField: string, otherField: string) => {
@@ -610,23 +612,23 @@ export function RegistrationForm() {
       }
     };
     
-    processSingleLainnya(processedData, 'agama', 'agamaLainnya');
-    processSingleLainnya(processedData, 'tempatTinggal', 'tempatTinggalLainnya');
+    processSingleLainnya(processedData.siswa, 'agama', 'agamaLainnya');
+    processSingleLainnya(processedData.siswa, 'tempatTinggal', 'tempatTinggalLainnya');
     
     processParentLainnya(processedData.ayah);
     processParentLainnya(processedData.ibu);
     processParentLainnya(processedData.wali);
     
-    if (processedData.modaTransportasi) {
+    if (processedData.siswa.modaTransportasi) {
       const transportationMap = new Map(modaTransportasiOptions.map(opt => [opt.id, opt.label]));
-      const transportationLabels = processedData.modaTransportasi.map((id: string) => {
+      const transportationLabels = processedData.siswa.modaTransportasi.map((id: string) => {
           if (id === 'lainnya') {
-              return processedData.modaTransportasiLainnya ? `Lainnya: ${processedData.modaTransportasiLainnya}` : 'Lainnya';
+              return processedData.siswa.modaTransportasiLainnya ? `Lainnya: ${processedData.siswa.modaTransportasiLainnya}` : 'Lainnya';
           }
           return transportationMap.get(id) || id;
       });
-      processedData.modaTransportasi = transportationLabels;
-      delete processedData.modaTransportasiLainnya;
+      processedData.siswa.modaTransportasi = transportationLabels;
+      delete processedData.siswa.modaTransportasiLainnya;
     }
 
     console.log("Form submitted successfully:", processedData);
@@ -1017,7 +1019,7 @@ export function RegistrationForm() {
                 <CardTitle className="font-headline text-xl text-center">Identitas Peserta Didik</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                <FormField control={form.control} name="namaLengkap" render={({ field }) => (
+                <FormField control={form.control} name="siswa.namaLengkap" render={({ field }) => (
                     <FormItem><FormLabel>Nama Lengkap *</FormLabel><FormControl><Input
                     placeholder="Sesuai Akta Kelahiran"
                     {...field}
@@ -1025,7 +1027,7 @@ export function RegistrationForm() {
                     onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                     /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="namaPanggilan" render={({ field }) => (
+                <FormField control={form.control} name="siswa.namaPanggilan" render={({ field }) => (
                     <FormItem><FormLabel>Nama Panggilan *</FormLabel><FormControl><Input
                     placeholder="Nama panggilan anda"
                     {...field}
@@ -1033,12 +1035,12 @@ export function RegistrationForm() {
                     onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                     /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="jenisKelamin" render={({ field }) => (
+                <FormField control={form.control} name="siswa.jenisKelamin" render={({ field }) => (
                     <FormItem><FormLabel>Jenis Kelamin *</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih jenis kelamin" /></SelectTrigger></FormControl><SelectContent>{jenisKelaminOptions.map(jk => <SelectItem key={jk} value={jk}>{jk}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
                 <FormField
                     control={form.control}
-                    name="nisn"
+                    name="siswa.nisn"
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>NISN (Nomor Induk Siswa Nasional) *</FormLabel>
@@ -1047,7 +1049,7 @@ export function RegistrationForm() {
                                 mask="0000000000"
                                 lazy={!nisnIsFocused && !nisnValue}
                                 placeholder="10 digit NISN"
-                                className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('nisn', form.formState.errors) && "border-destructive")}
+                                className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('siswa.nisn', form.formState.errors) && "border-destructive")}
                                 value={field.value ?? ''}
                                 unmask={true}
                                 onAccept={(value) => field.onChange(value)}
@@ -1065,7 +1067,7 @@ export function RegistrationForm() {
                 />
                 <FormField
                     control={form.control}
-                    name="nikSiswa"
+                    name="siswa.nikSiswa"
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>NIK (Nomor Induk Kependudukan) *</FormLabel>
@@ -1074,7 +1076,7 @@ export function RegistrationForm() {
                                 mask="0000000000000000"
                                 lazy={!nikIsFocused && !nikValue}
                                 placeholder="16 digit NIK (sesuai Kartu Keluarga)"
-                                className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('nikSiswa', form.formState.errors) && "border-destructive")}
+                                className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('siswa.nikSiswa', form.formState.errors) && "border-destructive")}
                                 value={field.value ?? ''}
                                 unmask={true}
                                 onAccept={(value) => field.onChange(value)}
@@ -1090,7 +1092,7 @@ export function RegistrationForm() {
                         </FormItem>
                     )}
                 />
-                <FormField control={form.control} name="tempatLahir" render={({ field }) => (
+                <FormField control={form.control} name="siswa.tempatLahir" render={({ field }) => (
                     <FormItem><FormLabel>Tempat Lahir *</FormLabel><FormControl><Input
                     placeholder="Kota/Kabupaten kelahiran"
                     {...field}
@@ -1100,7 +1102,7 @@ export function RegistrationForm() {
                 )} />
                 <FormField
                     control={form.control}
-                    name="tanggalLahir"
+                    name="siswa.tanggalLahir"
                     render={({ field, fieldState }) => (
                     <FormItem className="flex flex-col">
                         <CustomDatePicker
@@ -1115,36 +1117,36 @@ export function RegistrationForm() {
                     </FormItem>
                     )}
                 />
-                <FormField control={form.control} name="agama" render={({ field }) => (
+                <FormField control={form.control} name="siswa.agama" render={({ field }) => (
                     <FormItem><FormLabel>Agama *</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih agama" /></SelectTrigger></FormControl><SelectContent>{agamaOptionsList.map(ag => <SelectItem key={ag} value={ag}>{ag}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
-                {form.watch('agama') === 'Lainnya' && (
-                    <FormField control={form.control} name="agamaLainnya" render={({ field }) => (
+                {form.watch('siswa.agama') === 'Lainnya' && (
+                    <FormField control={form.control} name="siswa.agamaLainnya" render={({ field }) => (
                         <FormItem><FormLabel>Detail Agama Lainnya *</FormLabel><FormControl><Input placeholder="Sebutkan agama lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                 )}
-                <FormField control={form.control} name="anakKe" render={({ field }) => (
+                <FormField control={form.control} name="siswa.anakKe" render={({ field }) => (
                     <FormItem><FormLabel>Anak Keberapa *</FormLabel><FormControl><Input type="number" min="1" placeholder="Contoh: 1" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="jumlahSaudaraKandung" render={({ field }) => (
+                <FormField control={form.control} name="siswa.jumlahSaudaraKandung" render={({ field }) => (
                     <FormItem><FormLabel>Jumlah Saudara Kandung *</FormLabel><FormControl><Input type="number" min="0" placeholder="Isi 0 jika tidak punya" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
                 )} />
                 
                 <Separator className="my-4" />
                 <p className="font-medium text-center">Alamat Tempat Tinggal</p>
 
-                <FormField control={form.control} name="tempatTinggal" render={({ field }) => (
+                <FormField control={form.control} name="siswa.tempatTinggal" render={({ field }) => (
                     <FormItem><FormLabel>Tempat Tinggal Saat Ini *</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih tempat tinggal" /></SelectTrigger></FormControl><SelectContent>{tempatTinggalOptionsList.map(tt => <SelectItem key={tt} value={tt}>{tt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
-                {form.watch('tempatTinggal') === 'Lainnya' && (
-                    <FormField control={form.control} name="tempatTinggalLainnya" render={({ field }) => (
+                {form.watch('siswa.tempatTinggal') === 'Lainnya' && (
+                    <FormField control={form.control} name="siswa.tempatTinggalLainnya" render={({ field }) => (
                         <FormItem><FormLabel>Detail Tempat Tinggal Lainnya *</FormLabel><FormControl><Input placeholder="Sebutkan tempat tinggal lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                 )}
                 
                 <FormField
                     control={form.control}
-                    name="provinsi"
+                    name="siswa.provinsi"
                     render={({ field }) => (
                     <FormItem className="flex flex-col">
                         <FormLabel>Provinsi *</FormLabel>
@@ -1174,16 +1176,16 @@ export function RegistrationForm() {
                                     key={province.value}
                                     onSelect={() => {
                                         if (province.value !== field.value) {
-                                            form.setValue("provinsi", province.value);
-                                            form.setValue("kabupaten", "");
-                                            form.setValue("kecamatan", "");
-                                            form.setValue("desaKelurahan", "");
-                                            form.setValue("kodePos", "");
+                                            form.setValue("siswa.provinsi", province.value);
+                                            form.setValue("siswa.kabupaten", "");
+                                            form.setValue("siswa.kecamatan", "");
+                                            form.setValue("siswa.desaKelurahan", "");
+                                            form.setValue("siswa.kodePos", "");
                                             setIsKodePosReadOnly(false);
                                             setRegencies([]);
                                             setDistricts([]);
                                             setVillages([]);
-                                            form.trigger("provinsi");
+                                            form.trigger("siswa.provinsi");
                                         }
                                         setProvincePopoverOpen(false);
                                     }}
@@ -1204,7 +1206,7 @@ export function RegistrationForm() {
 
                 <FormField
                     control={form.control}
-                    name="kabupaten"
+                    name="siswa.kabupaten"
                     render={({ field }) => (
                     <FormItem className="flex flex-col">
                         <FormLabel>Kabupaten/Kota *</FormLabel>
@@ -1234,14 +1236,14 @@ export function RegistrationForm() {
                                     key={regency.value}
                                     onSelect={() => {
                                         if (regency.value !== field.value) {
-                                            form.setValue("kabupaten", regency.value);
-                                            form.setValue("kecamatan", "");
-                                            form.setValue("desaKelurahan", "");
-                                            form.setValue("kodePos", "");
+                                            form.setValue("siswa.kabupaten", regency.value);
+                                            form.setValue("siswa.kecamatan", "");
+                                            form.setValue("siswa.desaKelurahan", "");
+                                            form.setValue("siswa.kodePos", "");
                                             setIsKodePosReadOnly(false);
                                             setDistricts([]);
                                             setVillages([]);
-                                            form.trigger("kabupaten");
+                                            form.trigger("siswa.kabupaten");
                                         }
                                         setRegencyPopoverOpen(false);
                                     }}
@@ -1262,7 +1264,7 @@ export function RegistrationForm() {
 
                 <FormField
                     control={form.control}
-                    name="kecamatan"
+                    name="siswa.kecamatan"
                     render={({ field }) => (
                     <FormItem className="flex flex-col">
                         <FormLabel>Kecamatan *</FormLabel>
@@ -1292,12 +1294,12 @@ export function RegistrationForm() {
                                     key={district.value}
                                     onSelect={() => {
                                         if (district.value !== field.value) {
-                                            form.setValue("kecamatan", district.value);
-                                            form.setValue("desaKelurahan", "");
-                                            form.setValue("kodePos", "");
+                                            form.setValue("siswa.kecamatan", district.value);
+                                            form.setValue("siswa.desaKelurahan", "");
+                                            form.setValue("siswa.kodePos", "");
                                             setIsKodePosReadOnly(false);
                                             setVillages([]);
-                                            form.trigger("kecamatan");
+                                            form.trigger("siswa.kecamatan");
                                         }
                                         setDistrictPopoverOpen(false);
                                     }}
@@ -1318,7 +1320,7 @@ export function RegistrationForm() {
 
                 <FormField
                     control={form.control}
-                    name="desaKelurahan"
+                    name="siswa.desaKelurahan"
                     render={({ field }) => (
                     <FormItem className="flex flex-col">
                         <FormLabel>Desa/Kelurahan *</FormLabel>
@@ -1348,16 +1350,16 @@ export function RegistrationForm() {
                                     key={village.value}
                                     onSelect={() => {
                                         if (village.value !== field.value) {
-                                            form.setValue("desaKelurahan", village.value);
+                                            form.setValue("siswa.desaKelurahan", village.value);
                                             if (village.postalCode) {
-                                                form.setValue("kodePos", village.postalCode);
+                                                form.setValue("siswa.kodePos", village.postalCode);
                                                 setIsKodePosReadOnly(true);
                                             } else {
-                                                form.setValue("kodePos", "");
+                                                form.setValue("siswa.kodePos", "");
                                                 setIsKodePosReadOnly(false);
                                             }
-                                            form.trigger("desaKelurahan");
-                                            form.trigger("kodePos");
+                                            form.trigger("siswa.desaKelurahan");
+                                            form.trigger("siswa.kodePos");
                                         }
                                         setVillagePopoverOpen(false);
                                     }}
@@ -1376,7 +1378,7 @@ export function RegistrationForm() {
                     )}
                 />
 
-                <FormField control={form.control} name="dusun" render={({ field }) => (
+                <FormField control={form.control} name="siswa.dusun" render={({ field }) => (
                     <FormItem><FormLabel>Dusun (Opsional)</FormLabel><FormControl><Input
                     placeholder="Nama dusun/dukuh"
                     {...field}
@@ -1386,7 +1388,7 @@ export function RegistrationForm() {
                 )} />
                 <FormField
                     control={form.control}
-                    name="rtRw"
+                    name="siswa.rtRw"
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>RT/RW *</FormLabel>
@@ -1395,7 +1397,7 @@ export function RegistrationForm() {
                                 mask="000/000"
                                 lazy={!rtRwIsFocused && !rtRwValue}
                                 placeholder="Contoh: 001/002"
-                                className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('rtRw', form.formState.errors) && "border-destructive")}
+                                className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('siswa.rtRw', form.formState.errors) && "border-destructive")}
                                 value={field.value ?? ''}
                                 unmask={false}
                                 onAccept={(value) => field.onChange(value)}
@@ -1411,18 +1413,18 @@ export function RegistrationForm() {
                         </FormItem>
                     )}
                 />
-                <FormField control={form.control} name="alamatJalan" render={({ field }) => (
+                <FormField control={form.control} name="siswa.alamatJalan" render={({ field }) => (
                     <FormItem><FormLabel>Alamat Jalan (Opsional)</FormLabel><FormControl><Input placeholder="Contoh: Jl. Kenanga No. 27 (Bisa nama jalan saja)" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Kosongkan jika tidak tahu nama jalan.</FormDescription><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="kodePos" render={({ field }) => (
+                <FormField control={form.control} name="siswa.kodePos" render={({ field }) => (
                     <FormItem><FormLabel>Kode Pos *</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={5} placeholder="5 digit kode pos" {...field} value={field.value ?? ''} readOnly={isKodePosReadOnly} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <Separator className="my-4" />
-                <FormField control={form.control} name="modaTransportasi" render={() => (
+                <FormField control={form.control} name="siswa.modaTransportasi" render={() => (
                     <FormItem><FormLabel>Moda Transportasi ke Sekolah *</FormLabel>
                     <div className="space-y-2">
                     {modaTransportasiOptions.map((option) => (
-                        <FormField key={option.id} control={form.control} name="modaTransportasi"
+                        <FormField key={option.id} control={form.control} name="siswa.modaTransportasi"
                         render={({ field }) => (
                             <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                             <FormControl><Checkbox checked={field.value?.includes(option.id)}
@@ -1436,8 +1438,8 @@ export function RegistrationForm() {
                         )} /> ))}
                     </div><FormMessage /></FormItem>
                 )} />
-                {form.watch('modaTransportasi', []).includes('lainnya') && (
-                    <FormField control={form.control} name="modaTransportasiLainnya" render={({ field }) => (
+                {form.watch('siswa.modaTransportasi', []).includes('lainnya') && (
+                    <FormField control={form.control} name="siswa.modaTransportasiLainnya" render={({ field }) => (
                     <FormItem><FormLabel>Detail Moda Transportasi Lainnya *</FormLabel><FormControl><Input placeholder="Sebutkan moda transportasi lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                 )}

@@ -105,8 +105,7 @@ export const waliSchema = z.object({
   }
 });
 
-
-export const registrationSchema = z.object({
+const siswaSchema = z.object({
   namaLengkap: z.string().min(1, "Nama lengkap wajib diisi"),
   namaPanggilan: z.string().min(1, "Nama panggilan wajib diisi"),
   jenisKelamin: z.enum(["Laki-laki", "Perempuan"], { required_error: "Jenis kelamin wajib dipilih" }),
@@ -138,11 +137,6 @@ export const registrationSchema = z.object({
   
   modaTransportasi: z.array(z.string()).min(1, "Pilih minimal satu moda transportasi"),
   modaTransportasiLainnya: z.string().optional(),
-
-  ayah: parentSchema,
-  ibu: parentSchema,
-  wali: waliSchema,
-
 }).superRefine((data, ctx) => {
   if (data.agama === "Lainnya" && (!data.agamaLainnya || data.agamaLainnya.trim() === "")) {
     ctx.addIssue({
@@ -165,7 +159,15 @@ export const registrationSchema = z.object({
       path: ["modaTransportasiLainnya"],
     });
   }
-  
+});
+
+
+export const registrationSchema = z.object({
+  siswa: siswaSchema,
+  ayah: parentSchema,
+  ibu: parentSchema,
+  wali: waliSchema,
+}).superRefine((data, ctx) => {
   // Conditional validation for Wali data
   if (data.ayah.isDeceased && data.ibu.isDeceased) {
     if (!data.wali.nama?.trim()) ctx.addIssue({ path: ["wali", "nama"], message: "Nama Wali wajib diisi", code: 'custom' });
