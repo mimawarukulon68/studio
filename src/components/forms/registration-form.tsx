@@ -869,7 +869,7 @@ export function RegistrationForm() {
                 <FormControl>
                   <IMaskInput
                     mask="0000000000000000"
-                    lazy={false}
+                    lazy={!nikIsFocused && !nikValue}
                     inputMode="numeric"
                     placeholder="16 digit NIK"
                     className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError(`${namePrefix}.nik`, form.formState.errors) && "border-destructive")}
@@ -1188,7 +1188,7 @@ export function RegistrationForm() {
                         <FormControl>
                             <IMaskInput
                                 mask="0000000000"
-                                lazy={false}
+                                lazy={!nisnIsFocused && !nisnValue}
                                 inputMode="numeric"
                                 placeholder="10 digit NISN"
                                 className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('siswa.nisn', form.formState.errors) && "border-destructive")}
@@ -1216,7 +1216,7 @@ export function RegistrationForm() {
                         <FormControl>
                              <IMaskInput
                                 mask="0000000000000000"
-                                lazy={false}
+                                lazy={!nikIsFocused && !nikValue}
                                 inputMode="numeric"
                                 placeholder="16 digit NIK (sesuai Kartu Keluarga)"
                                 className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('siswa.nikSiswa', form.formState.errors) && "border-destructive")}
