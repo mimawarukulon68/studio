@@ -79,7 +79,7 @@ const stepsData = [
   { num: 4, title: "Data Wali", Icon: ShieldCheck, fields: [
      "wali.hubungan", "wali.hubunganLainnya", "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan", "wali.pekerjaan", "wali.penghasilan", "wali.pendidikanLainnya", "wali.pekerjaanLainnya", "wali.nomorTelepon"
   ] as FieldPath<RegistrationFormData>[] },
-  { num: 5, title: "Konfirmasi", Icon: FileCheck2, fields: [] },
+  { num: 5, title: "Review", Icon: FileCheck2, fields: [] },
 ];
 
 interface Wilayah {
@@ -1091,7 +1091,7 @@ export function RegistrationForm() {
     return (
         <Card className="w-full shadow-lg">
             <CardHeader>
-                <CardTitle className="font-headline text-xl text-center">Konfirmasi Data Pendaftaran</CardTitle>
+                <CardTitle className="font-headline text-xl text-center">Review Data Pendaftaran</CardTitle>
                 <CardDescription className="text-center pt-1">
                     Pastikan semua data yang Anda masukkan sudah benar sebelum mengirim.
                 </CardDescription>
@@ -1129,8 +1129,8 @@ export function RegistrationForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onFormSubmit, onFormError)} className="w-full max-w-3xl p-2">
-        <div className="sticky top-0 z-30 bg-background shadow-md mb-8">
-           <div className="p-1.5">{renderStepIndicators()}</div>
+        <div className="sticky top-0 z-30 bg-background shadow-md mb-8 rounded-md">
+           {renderStepIndicators()}
         </div>
 
         <div className="space-y-8">
