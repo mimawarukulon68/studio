@@ -223,10 +223,10 @@ export function RegistrationForm() {
       fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
       if (form.getValues('ayah.pekerjaan') === 'Meninggal Dunia') {
-        form.setValue('ayah.pekerjaan', '', { shouldValidate: true });
+        form.setValue('ayah.pekerjaan', '');
       }
       if (form.getValues('ayah.penghasilan') === 'Meninggal Dunia') {
-        form.setValue('ayah.penghasilan', '', { shouldValidate: true });
+        form.setValue('ayah.penghasilan', '');
       }
     }
   }, [isAyahDeceased, form]);
@@ -240,10 +240,10 @@ export function RegistrationForm() {
        fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
       if (form.getValues('ibu.pekerjaan') === 'Meninggal Dunia') {
-        form.setValue('ibu.pekerjaan', '', { shouldValidate: true });
+        form.setValue('ibu.pekerjaan', '');
       }
       if (form.getValues('ibu.penghasilan') === 'Meninggal Dunia') {
-        form.setValue('ibu.penghasilan', '', { shouldValidate: true });
+        form.setValue('ibu.penghasilan', '');
       }
     }
   }, [isIbuDeceased, form]);
@@ -517,7 +517,7 @@ export function RegistrationForm() {
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
 
     if (action === 'next') {
-        if (!isStepBeingLeftValid) return; // Don't proceed if current step is invalid
+        //if (!isStepBeingLeftValid) return; // Don't proceed if current step is invalid, Baris ini yang mencegah maju jika tidak valid
         if (currentStep < TOTAL_STEPS) {
             setCurrentStep(prev => prev + 1);
         }
@@ -531,10 +531,10 @@ export function RegistrationForm() {
             for (let i = currentStep; i < targetStep; i++) {
                 const isIntermediateStepValid = await validateStep(i);
                  setStepCompletionStatus(prev => ({ ...prev, [i]: isIntermediateStepValid }));
-                if (!isIntermediateStepValid) {
-                    setCurrentStep(i); // Stop at the first invalid step
-                    return;
-                }
+                // if (!isIntermediateStepValid) {
+                //     setCurrentStep(i); // Stop at the first invalid step Baris ini yang mencegah lompat jika ada yang tidak valid
+                //     return;
+                // }
             }
         }
         setCurrentStep(targetStep);
