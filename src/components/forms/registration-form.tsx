@@ -588,6 +588,17 @@ export function RegistrationForm() {
 
     const processedData: any = JSON.parse(JSON.stringify(data));
 
+    if (processedData.ayah.nomorTelepon) {
+        processedData.ayah.nomorTelepon = `+62${processedData.ayah.nomorTelepon}`;
+    }
+    if (processedData.ibu.nomorTelepon) {
+        processedData.ibu.nomorTelepon = `+62${processedData.ibu.nomorTelepon}`;
+    }
+    if (processedData.wali.nomorTelepon) {
+        processedData.wali.nomorTelepon = `+62${processedData.wali.nomorTelepon}`;
+    }
+
+
     // Find labels for wilayah inside the 'siswa' object
     processedData.siswa.provinsi = provinces.find(p => p.value === data.siswa.provinsi)?.label || data.siswa.provinsi;
     processedData.siswa.kabupaten = regencies.find(r => r.value === data.siswa.kabupaten)?.label || data.siswa.kabupaten;
@@ -740,8 +751,8 @@ export function RegistrationForm() {
     const isDeceased = parentType === 'ayah' ? isAyahDeceased : parentType === 'ibu' ? isIbuDeceased : false;
     const isWaliCurrentlyRequired = form.watch('ayah.isDeceased') && form.watch('ibu.isDeceased');
 
-    const pekerjaanOptions = isDeceased ? [...pekerjaanOptionsList, "Meninggal Dunia"] : pekerjaanOptionsList;
-    const penghasilanOptions = isDeceased ? [...penghasilanOptionsList, "Meninggal Dunia"] : penghasilanOptionsList;
+    const pekerjaanOptions = pekerjaanOptionsList;
+    const penghasilanOptions = penghasilanOptionsList;
 
     const nikIsFocused = parentType === 'ayah' ? ayahNikIsFocused : parentType === 'ibu' ? ibuNikIsFocused : waliNikIsFocused;
     const setNikIsFocused = parentType === 'ayah' ? setAyahNikIsFocused : parentType === 'ibu' ? setIbuNikIsFocused : setWaliNikIsFocused;
@@ -858,7 +869,8 @@ export function RegistrationForm() {
                 <FormControl>
                   <IMaskInput
                     mask="0000000000000000"
-                    lazy={!nikIsFocused && !nikValue}
+                    lazy={false}
+                    inputMode="numeric"
                     placeholder="16 digit NIK"
                     className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError(`${namePrefix}.nik`, form.formState.errors) && "border-destructive")}
                     value={field.value ?? ''}
@@ -986,18 +998,25 @@ export function RegistrationForm() {
               <FormItem>
                 <FormLabel>Nomor HP (Whatsapp Aktif) (Opsional)</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="tel" 
-                    placeholder="+6281234567890" 
-                    {...field} 
-                    value={field.value ?? ''}
-                    disabled={parentType !== 'wali' && isDeceased}
-                  />
+                  <div className="flex items-center">
+                    <span className="inline-flex h-10 items-center rounded-l-md border border-r-0 border-input bg-input px-3 text-sm text-muted-foreground">
+                        +62
+                    </span>
+                    <Input
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="81234567890"
+                        className="rounded-l-none"
+                        {...field}
+                        value={field.value ?? ''}
+                        disabled={parentType !== 'wali' && isDeceased}
+                    />
+                  </div>
                 </FormControl>
                  <FormDescription>
                   {parentType !== 'wali' && isDeceased
                       ? "Nomor HP tidak dapat diisi karena yang bersangkutan telah meninggal."
-                      : "Minimal salah satu nomor (Ayah/Ibu/Wali) wajib diisi."
+                      : "Ketik nomor tanpa 0 di depan. Minimal salah satu nomor (Ayah/Ibu/Wali) wajib diisi."
                   }
                  </FormDescription>
                 <FormMessage />
@@ -1076,6 +1095,7 @@ export function RegistrationForm() {
                     if (key === 'kabupaten') displayValue = regencies.find(r => r.value === value)?.label || value;
                     if (key === 'kecamatan') displayValue = districts.find(d => d.value === value)?.label || value;
                     if (key === 'desaKelurahan') displayValue = villages.find(v => v.value === value)?.label || value;
+                    if (key === 'nomorTelepon') displayValue = value ? `+62${value}` : '-';
 
                     return (
                         <div key={`${sectionName}-${key}`} className="flex justify-between items-start py-2 border-b border-dashed">
@@ -1168,7 +1188,8 @@ export function RegistrationForm() {
                         <FormControl>
                             <IMaskInput
                                 mask="0000000000"
-                                lazy={!nisnIsFocused && !nisnValue}
+                                lazy={false}
+                                inputMode="numeric"
                                 placeholder="10 digit NISN"
                                 className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('siswa.nisn', form.formState.errors) && "border-destructive")}
                                 value={field.value ?? ''}
@@ -1195,7 +1216,8 @@ export function RegistrationForm() {
                         <FormControl>
                              <IMaskInput
                                 mask="0000000000000000"
-                                lazy={!nikIsFocused && !nikValue}
+                                lazy={false}
+                                inputMode="numeric"
                                 placeholder="16 digit NIK (sesuai Kartu Keluarga)"
                                 className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('siswa.nikSiswa', form.formState.errors) && "border-destructive")}
                                 value={field.value ?? ''}

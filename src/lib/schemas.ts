@@ -32,8 +32,12 @@ const parentBaseFields = {
   pekerjaan: z.union([z.enum([...pekerjaanOptionsList, "Meninggal Dunia"] as const), z.literal('')]).optional().nullable(),
   pekerjaanLainnya: z.string().optional(),
   penghasilan: z.union([z.enum([...penghasilanOptionsList, "Meninggal Dunia"] as const), z.literal('')]).optional().nullable(),
-  nomorTelepon: z.string().optional()
-    .refine(val => !val || (val.startsWith("+62") && val.length >= 11 && val.length <= 15 && /^\+62\d+$/.test(val)), { message: "Format nomor salah (contoh: +6281234567890)" }),
+  nomorTelepon: z.string().optional().refine(val => {
+    if (!val) return true; // Optional fields are valid if empty
+    return /^[1-9]\d{8,11}$/.test(val);
+  }, {
+      message: "Format nomor salah. Awali dengan 8 (bukan 0) dan berisi 9-12 digit.",
+  }),
 };
 
 // Schema for Ayah and Ibu with conditional validation
