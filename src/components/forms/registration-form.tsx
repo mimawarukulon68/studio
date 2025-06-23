@@ -751,8 +751,8 @@ export function RegistrationForm() {
     const isDeceased = parentType === 'ayah' ? isAyahDeceased : parentType === 'ibu' ? isIbuDeceased : false;
     const isWaliCurrentlyRequired = form.watch('ayah.isDeceased') && form.watch('ibu.isDeceased');
 
-    const pekerjaanOptions = pekerjaanOptionsList;
-    const penghasilanOptions = penghasilanOptionsList;
+    const pekerjaanOptions = isDeceased ? [...pekerjaanOptionsList, "Meninggal Dunia"] as const : pekerjaanOptionsList;
+    const penghasilanOptions = isDeceased ? [...penghasilanOptionsList, "Meninggal Dunia"] as const : penghasilanOptionsList;
 
     const nikIsFocused = parentType === 'ayah' ? ayahNikIsFocused : parentType === 'ibu' ? ibuNikIsFocused : waliNikIsFocused;
     const setNikIsFocused = parentType === 'ayah' ? setAyahNikIsFocused : parentType === 'ibu' ? setIbuNikIsFocused : setWaliNikIsFocused;
