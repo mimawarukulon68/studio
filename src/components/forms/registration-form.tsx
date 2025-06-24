@@ -118,7 +118,7 @@ export function RegistrationForm() {
   const [isSubmittedSuccessfully, setIsSubmittedSuccessfully] = useState(false);
 
   const [provinces, setProvinces] = useState<WilayahOption[]>([]);
-  const [regencies, setRegencies] = useState<WilayahOption[]>([]);
+  const [regencies, setRegencies] = useState<WilayahOption[]>(([]));
   const [districts, setDistricts] = useState<WilayahOption[]>([]);
   const [villages, setVillages] = useState<WilayahOption[]>([]);
 
@@ -517,7 +517,9 @@ export function RegistrationForm() {
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
 
     if (action === 'next') {
-        setCurrentStep(prev => prev + 1);
+        if (currentStep < TOTAL_STEPS) {
+          setCurrentStep(prev => prev + 1);
+        }
     } else if (action === 'prev') {
       if (currentStep > 1) {
         setCurrentStep(prev => prev - 1);
@@ -983,22 +985,22 @@ export function RegistrationForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Nomor HP (Whatsapp Aktif) (Opsional)</FormLabel>
-                <FormControl>
-                  <div className="flex items-center">
+                 <div className="flex items-center">
                     <span className="inline-flex h-10 items-center rounded-l-md border border-r-0 border-input bg-input px-3 text-sm text-muted-foreground">
                         +62
                     </span>
-                    <Input
-                        type="tel"
-                        inputMode="numeric"
-                        placeholder="81234567890"
-                        className="rounded-l-none"
-                        {...field}
-                        value={field.value ?? ''}
-                        disabled={parentType !== 'wali' && isDeceased}
-                    />
+                    <FormControl>
+                        <Input
+                            type="tel"
+                            inputMode="numeric"
+                            placeholder="81234567890"
+                            className="rounded-l-none"
+                            {...field}
+                            value={field.value ?? ''}
+                            disabled={parentType !== 'wali' && isDeceased}
+                        />
+                    </FormControl>
                   </div>
-                </FormControl>
                  <FormDescription>
                   {parentType !== 'wali' && isDeceased
                       ? "Nomor HP tidak dapat diisi karena yang bersangkutan telah meninggal."
