@@ -781,9 +781,11 @@ export function RegistrationForm() {
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <FormLabel className="font-normal">
-                    {title} sudah meninggal dunia
-                  </FormLabel>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="font-normal">
+                      {title} sudah meninggal dunia
+                    </FormLabel>
+                  </div>
                 </FormItem>
               )}
             />
@@ -1617,3 +1619,5 @@ export function RegistrationForm() {
     </Form>
   );
 }
+
+    
