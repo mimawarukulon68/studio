@@ -1139,7 +1139,7 @@ export function RegistrationForm() {
 
         <div className="space-y-8">
             {currentStep === 1 && (
-            <Card className="w-full shadow-lg">
+            <Card key="step-1" className="w-full shadow-lg">
                 <CardHeader>
                 <CardTitle className="font-headline text-xl text-center">Identitas Peserta Didik</CardTitle>
                 </CardHeader>
@@ -1583,11 +1583,10 @@ export function RegistrationForm() {
             </Card>
             )}
 
-            {currentStep === 2 && renderParentFields('ayah')}
-            {currentStep === 3 && renderParentFields('ibu')}
-            {currentStep === 4 && renderParentFields('wali')}
-            {currentStep === 5 && renderReviewStep()}
-
+            {currentStep === 2 && <div key="step-2">{renderParentFields('ayah')}</div>}
+            {currentStep === 3 && <div key="step-3">{renderParentFields('ibu')}</div>}
+            {currentStep === 4 && <div key="step-4">{renderParentFields('wali')}</div>}
+            {currentStep === 5 && <div key="step-5">{renderReviewStep()}</div>}
         </div>
 
         <CardFooter className="flex justify-between mt-8">
