@@ -223,10 +223,10 @@ export function RegistrationForm() {
       fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
       if (form.getValues('ayah.pekerjaan') === 'Meninggal Dunia') {
-        form.setValue('ayah.pekerjaan', '');
+        form.setValue('ayah.pekerjaan', undefined);
       }
       if (form.getValues('ayah.penghasilan') === 'Meninggal Dunia') {
-        form.setValue('ayah.penghasilan', '');
+        form.setValue('ayah.penghasilan', undefined);
       }
     }
   }, [isAyahDeceased, form]);
@@ -240,10 +240,10 @@ export function RegistrationForm() {
        fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
       if (form.getValues('ibu.pekerjaan') === 'Meninggal Dunia') {
-        form.setValue('ibu.pekerjaan', '');
+        form.setValue('ibu.pekerjaan', undefined);
       }
       if (form.getValues('ibu.penghasilan') === 'Meninggal Dunia') {
-        form.setValue('ibu.penghasilan', '');
+        form.setValue('ibu.penghasilan', undefined);
       }
     }
   }, [isIbuDeceased, form]);
@@ -517,7 +517,6 @@ export function RegistrationForm() {
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
 
     if (action === 'next') {
-        //if (!isStepBeingLeftValid) return; // Don't proceed if current step is invalid, Baris ini yang mencegah maju jika tidak valid
         if (currentStep < TOTAL_STEPS) {
             setCurrentStep(prev => prev + 1);
         }
@@ -526,17 +525,6 @@ export function RegistrationForm() {
         setCurrentStep(prev => prev - 1);
       }
     } else if (action === 'jumpTo' && targetStep !== undefined) {
-        // If jumping forward, validate intermediate steps
-        if (targetStep > currentStep) {
-            for (let i = currentStep; i < targetStep; i++) {
-                const isIntermediateStepValid = await validateStep(i);
-                 setStepCompletionStatus(prev => ({ ...prev, [i]: isIntermediateStepValid }));
-                // if (!isIntermediateStepValid) {
-                //     setCurrentStep(i); // Stop at the first invalid step Baris ini yang mencegah lompat jika ada yang tidak valid
-                //     return;
-                // }
-            }
-        }
         setCurrentStep(targetStep);
     }
   };
@@ -1564,22 +1552,31 @@ export function RegistrationForm() {
                 )} />
                 <Separator className="my-4" />
                 <FormField control={form.control} name="siswa.modaTransportasi" render={() => (
-                    <FormItem><FormLabel>Moda Transportasi ke Sekolah *</FormLabel>
-                    <div className="space-y-2">
-                    {modaTransportasiOptions.map((option) => (
-                        <FormField key={option.id} control={form.control} name="siswa.modaTransportasi"
-                        render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl><Checkbox checked={field.value?.includes(option.id)}
-                                onCheckedChange={(checked) => {
-                                    return checked
-                                    ? field.onChange([...(field.value || []), option.id])
-                                    : field.onChange((field.value || []).filter((value: string) => value !== option.id));
-                                }} /></FormControl>
-                            <FormLabel className="font-normal">{option.label}</FormLabel>
-                            </FormItem>
-                        )} /> ))}
-                    </div><FormMessage /></FormItem>
+                    <FormItem>
+                      <fieldset>
+                        <legend className="text-sm font-medium leading-none">Moda Transportasi ke Sekolah *</legend>
+                        <div className="space-y-2 pt-2">
+                          {modaTransportasiOptions.map((option) => (
+                            <FormField key={option.id} control={form.control} name="siswa.modaTransportasi"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                  <FormControl>
+                                    <Checkbox checked={field.value?.includes(option.id)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...(field.value || []), option.id])
+                                          : field.onChange((field.value || []).filter((value: string) => value !== option.id));
+                                      }} />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">{option.label}</FormLabel>
+                                </FormItem>
+                              )}
+                            />
+                          ))}
+                        </div>
+                      </fieldset>
+                      <FormMessage />
+                    </FormItem>
                 )} />
                 {form.watch('siswa.modaTransportasi', []).includes('lainnya') && (
                     <FormField control={form.control} name="siswa.modaTransportasiLainnya" render={({ field }) => (
@@ -1625,7 +1622,3 @@ export function RegistrationForm() {
     </Form>
   );
 }
-
-    
-
-    
