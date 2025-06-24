@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, type FieldPath, type FieldErrors, type FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, ArrowRight, Check, Send, UserRound, User as UserIcon, ShieldCheck, XIcon, ChevronsUpDown, CheckIcon, CalendarIcon, AlertCircle, FileCheck2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Send, UserRound, User as UserIcon, ShieldCheck, XIcon, ChevronsUpDown, CheckIcon, CalendarIcon, AlertCircle, FileCheck2 } from 'lucide-react';
 import { IMaskInput } from 'react-imask';
 import type IMask from 'imask';
 import { format, parse, isValid as isDateValid } from 'date-fns';
@@ -517,9 +517,7 @@ export function RegistrationForm() {
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
 
     if (action === 'next') {
-        if (currentStep < TOTAL_STEPS) {
-            setCurrentStep(prev => prev + 1);
-        }
+        setCurrentStep(prev => prev + 1);
     } else if (action === 'prev') {
       if (currentStep > 1) {
         setCurrentStep(prev => prev - 1);
@@ -704,7 +702,7 @@ export function RegistrationForm() {
                 aria-current={isCurrent ? "step" : undefined}
                 >
                 {(successfullyValidated && step.num < TOTAL_STEPS) && (
-                    <Check className="w-4 h-4 absolute top-0.5 right-0.5 text-green-600" strokeWidth={3} />
+                    <CheckIcon className="w-4 h-4 absolute top-0.5 right-0.5 text-green-600" strokeWidth={3} />
                 )}
                 {(attemptedAndInvalid) && (
                     <XIcon className="w-4 h-4 absolute top-0.5 right-0.5 text-destructive" strokeWidth={3} />
@@ -783,11 +781,9 @@ export function RegistrationForm() {
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      {title} sudah meninggal dunia
-                    </FormLabel>
-                  </div>
+                  <FormLabel className="font-normal">
+                    {title} sudah meninggal dunia
+                  </FormLabel>
                 </FormItem>
               )}
             />
