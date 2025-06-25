@@ -1271,15 +1271,16 @@ export function RegistrationForm() {
                     name="siswa.tanggalLahir"
                     render={({ field, fieldState }) => (
                     <FormItem className="flex flex-col">
-                        <CustomDatePicker
-                            id="tanggalLahir"
-                            label="Tanggal Lahir *"
-                            value={field.value}
-                            onDateChange={(dateStr) => field.onChange(dateStr)}
-                            onRHFBlur={field.onBlur}
-                            ariaInvalid={!!fieldState.error}
-                            disabled={field.disabled}
-                        />
+                        <FormLabel>Tanggal Lahir *</FormLabel>
+                        <FormControl>
+                            <CustomDatePicker
+                                value={field.value}
+                                onDateChange={(dateStr) => field.onChange(dateStr)}
+                                onRHFBlur={field.onBlur}
+                                ariaInvalid={!!fieldState.error}
+                                disabled={field.disabled}
+                            />
+                        </FormControl>
                         <FormMessage />
                     </FormItem>
                     )}

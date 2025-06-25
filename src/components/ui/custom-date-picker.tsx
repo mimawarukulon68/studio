@@ -10,7 +10,6 @@ import type IMask from 'imask';
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -33,7 +32,6 @@ function parseInputToDate(input: string | undefined): Date | undefined {
 
 interface CustomDatePickerProps {
   id?: string;
-  label?: string;
   value?: string; // DD/MM/YYYY from RHF
   onDateChange?: (dateStr: string | undefined) => void; // To RHF
   onRHFBlur?: () => void; // For react-hook-form onBlur trigger
@@ -45,8 +43,7 @@ interface CustomDatePickerProps {
 }
 
 export function CustomDatePicker({
-  id = "custom-date",
-  label,
+  id,
   value,
   onDateChange,
   onRHFBlur,
@@ -108,9 +105,7 @@ export function CustomDatePicker({
   const shouldShowFormattedDisplay = !isFocused && selectedDate && !disabled;
 
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
-      {label && <Label htmlFor={id} className={cn(disabled && "text-muted-foreground", ariaInvalid && "text-destructive")}>{label}</Label>}
-      <div className="relative">
+      <div className={cn("relative", className)}>
         {shouldShowFormattedDisplay ? (
           <div
             onClick={() => { if (!disabled) { setIsFocused(true); setTimeout(() => inputElementRef.current?.focus(), 0); }}}
@@ -177,6 +172,5 @@ export function CustomDatePicker({
           </PopoverContent>
         </Popover>
       </div>
-    </div>
   );
 }
