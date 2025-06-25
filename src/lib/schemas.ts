@@ -116,7 +116,8 @@ const siswaSchema = z.object({
   nisn: z.string().min(1, "NISN wajib diisi").length(10, { message: "NISN harus 10 digit angka" }).regex(/^\d+$/, { message: "NISN harus berupa angka" }),
   nikSiswa: z.string().min(1, "NIK wajib diisi").length(16, { message: "NIK harus 16 digit angka" }).regex(/^\d+$/, { message: "NIK harus berupa angka" }),
   tempatLahir: z.string().min(1, "Tempat lahir wajib diisi"),
-  tanggalLahir: z.string().min(1, "Tanggal lahir wajib diisi")
+  tanggalLahir: z.string({ required_error: "Tanggal lahir wajib diisi" })
+    .min(1, { message: "Tanggal lahir wajib diisi" })
     .refine((val) => {
       const parsed = parse(val, 'dd/MM/yyyy', new Date());
       return isValid(parsed) && format(parsed, 'dd/MM/yyyy') === val;
@@ -135,7 +136,7 @@ const siswaSchema = z.object({
   kecamatan: z.string().min(1, "Kecamatan wajib diisi"),
   desaKelurahan: z.string().min(1, "Desa/Kelurahan wajib diisi"),
   dusun: z.string().optional(),
-  rtRw: z.string().min(1, "RT/RW wajib diisi").regex(/^\d{1,3}\/\d{1,3}$/, "Format RT/RW salah (contoh: 001/002)"),
+  rtRw: z.string().min(1, { message: "RT/RW wajib diisi" }).regex(/^\d{1,3}\/\d{1,3}$/, "Format RT/RW salah (contoh: 001/002)"),
   alamatJalan: z.string().optional(),
   kodePos: z.string().min(1, "Kode pos wajib diisi").length(5, "Kode pos harus 5 digit").regex(/^\d{5}$/, "Kode Pos harus 5 digit angka"),
   
