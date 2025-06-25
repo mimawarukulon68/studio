@@ -784,7 +784,7 @@ export function RegistrationForm() {
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <div className="space-y-1 leading-none">
+                   <div className="space-y-1 leading-none">
                     <FormLabel className="font-normal">
                       {title} sudah meninggal dunia
                     </FormLabel>
@@ -867,7 +867,7 @@ export function RegistrationForm() {
                     onAccept={(value) => field.onChange(value)}
                     onFocus={() => setNikIsFocused(true)}
                     onBlur={(e) => {
-                        field.onBlur(e);
+                        field.onBlur();
                         setNikIsFocused(false);
                     }}
                     inputRef={field.ref}
@@ -1220,7 +1220,7 @@ export function RegistrationForm() {
                                 onAccept={(value) => field.onChange(value)}
                                 onFocus={() => setNisnIsFocused(true)}
                                 onBlur={(e) => {
-                                    field.onBlur(e);
+                                    field.onBlur();
                                     setNisnIsFocused(false);
                                 }}
                                 inputRef={field.ref}
@@ -1248,7 +1248,7 @@ export function RegistrationForm() {
                                 onAccept={(value) => field.onChange(value)}
                                 onFocus={() => setNikIsFocused(true)}
                                 onBlur={(e) => {
-                                    field.onBlur(e);
+                                    field.onBlur();
                                     setNikIsFocused(false);
                                 }}
                                 inputRef={field.ref}
@@ -1570,8 +1570,11 @@ export function RegistrationForm() {
                                 unmask={false}
                                 onAccept={(value) => field.onChange(value)}
                                 onFocus={() => setRtRwIsFocused(true)}
-                                onBlur={(e) => {
-                                    field.onBlur(e);
+                                onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
+                                    if (e.target.value.replace(/\D/g, '').length === 0) {
+                                        form.setValue('siswa.rtRw', '', { shouldValidate: true });
+                                    }
+                                    field.onBlur();
                                     setRtRwIsFocused(false);
                                 }}
                                 inputRef={field.ref}
@@ -1591,8 +1594,8 @@ export function RegistrationForm() {
                 <FormField control={form.control} name="siswa.modaTransportasi" render={() => (
                     <FormItem>
                       <fieldset>
-                        <legend className="text-sm font-medium leading-none">Moda Transportasi ke Sekolah *</legend>
-                        <div className="space-y-2 pt-2">
+                        <legend className="text-sm font-medium leading-none mb-3">Moda Transportasi ke Sekolah *</legend>
+                        <div className="space-y-2">
                           {modaTransportasiOptions.map((option) => (
                             <FormField key={option.id} control={form.control} name="siswa.modaTransportasi"
                               render={({ field }) => (
