@@ -260,10 +260,10 @@ export function RegistrationForm() {
 
   const nisnValue = form.watch("siswa.nisn");
   const nikValue = form.watch("siswa.nikSiswa");
+  const rtRwValue = form.watch("siswa.rtRw");
   const ayahNikValue = form.watch("ayah.nik");
   const ibuNikValue = form.watch("ibu.nik");
   const waliNikValue = form.watch("wali.nik");
-  const rtRwValue = form.watch("siswa.rtRw");
   const selectedProvinceCode = form.watch("siswa.provinsi");
   const selectedRegencyCode = form.watch("siswa.kabupaten");
   const selectedDistrictCode = form.watch("siswa.kecamatan");
@@ -1660,4 +1660,6 @@ export function RegistrationForm() {
 }
 
     
+    
+
     
