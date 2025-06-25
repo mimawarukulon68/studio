@@ -36,6 +36,7 @@ interface CustomDatePickerProps {
   label?: string;
   value?: string; // DD/MM/YYYY from RHF
   onDateChange?: (dateStr: string | undefined) => void; // To RHF
+  onRHFBlur?: () => void; // For react-hook-form onBlur trigger
   name?: string;
   className?: string;
   inputClassName?: string;
@@ -48,6 +49,7 @@ export function CustomDatePicker({
   label,
   value,
   onDateChange,
+  onRHFBlur,
   name,
   className,
   inputClassName,
@@ -91,6 +93,7 @@ export function CustomDatePicker({
     setIsFocused(false);
     const parsedDate = parseInputToDate(inputValue);
     onDateChange?.(parsedDate ? format(parsedDate, 'dd/MM/yyyy') : undefined);
+    onRHFBlur?.();
   };
 
   const handleCalendarSelect = (dateFromCalendar: Date | undefined) => {

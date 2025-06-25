@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Select,
   SelectContent,
@@ -800,7 +801,7 @@ export function RegistrationForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Hubungan dengan Siswa {isWaliCurrentlyRequired ? '*' : '(Opsional)'}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                    <Select onValueChange={(value) => { field.onChange(value); form.trigger('wali.hubungan'); }} value={field.value ?? undefined}>
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Pilih hubungan" /></SelectTrigger>
                       </FormControl>
@@ -895,7 +896,7 @@ export function RegistrationForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Pendidikan Terakhir { parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*') }</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                <Select onValueChange={(value) => { field.onChange(value); form.trigger(`${namePrefix}.pendidikan`); }} value={field.value ?? undefined}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih pendidikan" /></SelectTrigger>
                   </FormControl>
@@ -929,7 +930,7 @@ export function RegistrationForm() {
               <FormItem>
                 <FormLabel>Pekerjaan Utama { parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*') }</FormLabel>
                 <Select 
-                    onValueChange={field.onChange} 
+                    onValueChange={(value) => { field.onChange(value); form.trigger(`${namePrefix}.pekerjaan`); }} 
                     value={field.value ?? undefined}
                 >
                   <FormControl>
@@ -965,7 +966,7 @@ export function RegistrationForm() {
               <FormItem>
                 <FormLabel>Penghasilan Bulanan { parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*') }</FormLabel>
                 <Select 
-                    onValueChange={field.onChange} 
+                    onValueChange={(value) => { field.onChange(value); form.trigger(`${namePrefix}.penghasilan`); }} 
                     value={field.value ?? undefined}
                 >
                   <FormControl>
@@ -1170,9 +1171,37 @@ export function RegistrationForm() {
                     onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                     /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="siswa.jenisKelamin" render={({ field }) => (
-                    <FormItem><FormLabel>Jenis Kelamin *</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih jenis kelamin" /></SelectTrigger></FormControl><SelectContent>{jenisKelaminOptions.map(jk => <SelectItem key={jk} value={jk}>{jk}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                )} />
+                <FormField
+                  control={form.control}
+                  name="siswa.jenisKelamin"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Jenis Kelamin *</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            form.trigger("siswa.jenisKelamin");
+                          }}
+                          value={field.value}
+                          className="flex flex-row space-x-4"
+                        >
+                          {jenisKelaminOptions.map((option) => (
+                            <FormItem key={option} className="flex items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value={option} />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                {option}
+                              </FormLabel>
+                            </FormItem>
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                     control={form.control}
                     name="siswa.nisn"
@@ -1247,6 +1276,7 @@ export function RegistrationForm() {
                             label="Tanggal Lahir *"
                             value={field.value}
                             onDateChange={(dateStr) => field.onChange(dateStr)}
+                            onRHFBlur={field.onBlur}
                             ariaInvalid={!!fieldState.error}
                             disabled={field.disabled}
                         />
@@ -1255,7 +1285,7 @@ export function RegistrationForm() {
                     )}
                 />
                 <FormField control={form.control} name="siswa.agama" render={({ field }) => (
-                    <FormItem><FormLabel>Agama *</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih agama" /></SelectTrigger></FormControl><SelectContent>{agamaOptionsList.map(ag => <SelectItem key={ag} value={ag}>{ag}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Agama *</FormLabel><Select onValueChange={(value) => { field.onChange(value); form.trigger('siswa.agama'); }} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih agama" /></SelectTrigger></FormControl><SelectContent>{agamaOptionsList.map(ag => <SelectItem key={ag} value={ag}>{ag}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
                 {form.watch('siswa.agama') === 'Lainnya' && (
                     <FormField control={form.control} name="siswa.agamaLainnya" render={({ field }) => (
@@ -1273,7 +1303,7 @@ export function RegistrationForm() {
                 <p className="font-medium text-center">Alamat Tempat Tinggal</p>
 
                 <FormField control={form.control} name="siswa.tempatTinggal" render={({ field }) => (
-                    <FormItem><FormLabel>Tempat Tinggal Saat Ini *</FormLabel><Select onValueChange={field.onChange} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih tempat tinggal" /></SelectTrigger></FormControl><SelectContent>{tempatTinggalOptionsList.map(tt => <SelectItem key={tt} value={tt}>{tt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Tempat Tinggal Saat Ini *</FormLabel><Select onValueChange={(value) => { field.onChange(value); form.trigger('siswa.tempatTinggal'); }} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih tempat tinggal" /></SelectTrigger></FormControl><SelectContent>{tempatTinggalOptionsList.map(tt => <SelectItem key={tt} value={tt}>{tt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
                 {form.watch('siswa.tempatTinggal') === 'Lainnya' && (
                     <FormField control={form.control} name="siswa.tempatTinggalLainnya" render={({ field }) => (
