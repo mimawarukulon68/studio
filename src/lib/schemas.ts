@@ -136,21 +136,9 @@ const siswaSchema = z.object({
   kecamatan: z.string().min(1, "Kecamatan wajib diisi"),
   desaKelurahan: z.string().min(1, "Desa/Kelurahan wajib diisi"),
   dusun: z.string().optional(),
-  rtRw: z.string().superRefine((val, ctx) => {
-    if (val.trim().length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "RT/RW wajib diisi",
-      });
-      return;
-    }
-    if (!/^\d{1,3}\/\d{1,3}$/.test(val)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Format RT/RW salah (contoh: 001/002)",
-      });
-    }
-  }),
+  rtRw: z.string()
+    .min(1, "RT/RW wajib diisi")
+    .regex(/^\d{1,3}\/\d{1,3}$/, "Format RT/RW salah (contoh: 001/002)"),
   alamatJalan: z.string().optional(),
   kodePos: z.string().min(1, "Kode pos wajib diisi").length(5, "Kode pos harus 5 digit").regex(/^\d{5}$/, "Kode Pos harus 5 digit angka"),
   
@@ -217,3 +205,6 @@ export const modaTransportasiOptions = [
   { id: "lainnya", label: "Lainnya" },
 ] as const;
 
+
+
+    
