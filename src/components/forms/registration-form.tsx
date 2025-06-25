@@ -118,7 +118,7 @@ export function RegistrationForm() {
   const [isSubmittedSuccessfully, setIsSubmittedSuccessfully] = useState(false);
 
   const [provinces, setProvinces] = useState<WilayahOption[]>([]);
-  const [regencies, setRegencies] = useState<WilayahOption[]>(([]));
+  const [regencies, setRegencies] = useState<WilayahOption[]>([]);
   const [districts, setDistricts] = useState<WilayahOption[]>([]);
   const [villages, setVillages] = useState<WilayahOption[]>([]);
 
@@ -1074,6 +1074,12 @@ export function RegistrationForm() {
                     if (key.endsWith('Lainnya') || value === undefined || value === '' || value === null) return null;
                     
                     let displayValue = value;
+                    if (key === 'tanggalLahir' && typeof value === 'string') {
+                        const dateObj = parse(value, 'dd/MM/yyyy', new Date());
+                        if (isDateValid(dateObj)) {
+                            displayValue = format(dateObj, 'dd MMMM yyyy', { locale: localeID });
+                        }
+                    }
                     if (key === 'agama' && value === 'Lainnya') displayValue = `Lainnya: ${data.agamaLainnya}`;
                     if (key === 'tempatTinggal' && value === 'Lainnya') displayValue = `Lainnya: ${data.tempatTinggalLainnya}`;
                     if (key === 'pendidikan' && value === 'Lainnya') displayValue = `Lainnya: ${data.pendidikanLainnya}`;
@@ -1528,6 +1534,7 @@ export function RegistrationForm() {
                                 mask="000/000"
                                 lazy={!rtRwIsFocused && !rtRwValue}
                                 placeholder="Contoh: 001/002"
+                                inputMode="numeric"
                                 className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('siswa.rtRw', form.formState.errors) && "border-destructive")}
                                 value={field.value ?? ''}
                                 unmask={false}
@@ -1622,4 +1629,5 @@ export function RegistrationForm() {
   );
 }
 
+    
     
