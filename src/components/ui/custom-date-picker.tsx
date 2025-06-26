@@ -6,8 +6,7 @@ import { CalendarIcon } from "lucide-react";
 import { format, parse, isValid as isDateValid } from 'date-fns';
 import { id as localeID } from 'date-fns/locale/id';
 import { IMaskInput } from 'react-imask';
-import type IMask from 'imask';
-
+import IMask from 'imask';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -19,7 +18,6 @@ import { cn } from "@/lib/utils";
 
 function parseInputToDate(input: string | undefined): Date | undefined {
   if (!input) return undefined;
-  // This regex allows for partial input during typing, but we only care about the final valid date
   if (!/^\d{2}\/\d{2}\/\d{4}$/.test(input)) return undefined; 
   
   const date = parse(input, "dd/MM/yyyy", new Date());
@@ -32,9 +30,9 @@ function parseInputToDate(input: string | undefined): Date | undefined {
 
 interface CustomDatePickerProps {
   id?: string;
-  value?: string; // DD/MM/YYYY from RHF
-  onDateChange?: (dateStr: string | undefined) => void; // To RHF
-  onRHFBlur?: () => void; // For react-hook-form onBlur trigger
+  value?: string; 
+  onDateChange?: (dateStr: string | undefined) => void; 
+  onRHFBlur?: () => void; 
   name?: string;
   className?: string;
   inputClassName?: string;
@@ -56,10 +54,8 @@ export function CustomDatePicker({
   const [isPickerOpen, setIsPickerOpen] = React.useState(false);
   const [isFocused, setIsFocused] = React.useState(false);
   
-  // This state tracks the raw text in the input field
   const [inputValue, setInputValue] = React.useState(value || '');
 
-  // Keep inputValue in sync with the value from react-hook-form
   React.useEffect(() => {
     setInputValue(value || '');
   }, [value]);
@@ -72,13 +68,13 @@ export function CustomDatePicker({
   const fromYear = currentYear - 120;
   const toYear = currentYear;
 
-  const iMaskOptions: IMask.MaskedDateOptions = {
+  const iMaskOptions: Record<string, any> = {
     mask: Date,
     pattern: 'd{/}m{/}Y',
     lazy: !isFocused && !value,
     placeholderChar: '_',
-    format: (date) => format(date, "dd/MM/yyyy"),
-    parse: (str) => parse(str, "dd/MM/yyyy", new Date()),
+    format: (date: any) => format(date, "dd/MM/yyyy"),
+    parse: (str: string) => parse(str, "dd/MM/yyyy", new Date()),
     blocks: {
       d: { mask: IMask.MaskedRange, from: 1, to: 31, maxLength: 2, autofix: 'pad' },
       m: { mask: IMask.MaskedRange, from: 1, to: 12, maxLength: 2, autofix: 'pad' },
@@ -97,51 +93,65 @@ export function CustomDatePicker({
     setIsPickerOpen(false);
     const formattedValueForRHF = dateFromCalendar ? format(dateFromCalendar, "dd/MM/yyyy") : undefined;
     onDateChange?.(formattedValueForRHF);
-    // Directly blur the input after selection to trigger correct display state
-    inputElementRef.current?.blur();
+    inputElementRef.current?.blur(); 
   };
   
   const displayValue = selectedDate ? format(selectedDate, "dd MMMM yyyy", { locale: localeID }) : "";
-  const shouldShowFormattedDisplay = !isFocused && selectedDate && !disabled;
 
   return (
-      <div className={cn("relative", className)}>
-        {shouldShowFormattedDisplay ? (
-          <div
-            onClick={() => { if (!disabled) { setIsFocused(true); setTimeout(() => inputElementRef.current?.focus(), 0); }}}
-            className={cn(
-              "flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-              "cursor-text",
-              inputClassName,
-              ariaInvalid && "border-destructive"
-            )}
-            role="textbox"
-            tabIndex={disabled ? -1 : 0}
-            onFocus={() => { if (!disabled) { setIsFocused(true); setTimeout(() => inputElementRef.current?.focus(), 0); }}}
-          >
-            {displayValue}
-          </div>
-        ) : (
-          <IMaskInput
-            inputRef={(el: HTMLInputElement) => (inputElementRef.current = el)}
-            {...iMaskOptions}
-            id={id}
-            name={name}
-            value={inputValue}
-            onAccept={(val) => setInputValue(val as string)}
-            onFocus={() => setIsFocused(true)}
-            onBlur={handleBlur}
-            disabled={disabled}
-            aria-invalid={ariaInvalid}
-            placeholder="DD/MM/YYYY"
-            className={cn(
-              "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-              "pr-10",
-              inputClassName,
-              ariaInvalid && "border-destructive"
-            )}
-          />
+      <div className={cn("relative h-10", className)}> {/* <--- PERUBAHAN DI SINI */}
+        {/* The actual IMaskInput, always rendered but possibly visually hidden */}
+        <IMaskInput
+          inputRef={(el: HTMLInputElement | null) => {
+            inputElementRef.current = el;
+          }} 
+          {...iMaskOptions}
+          id={id} 
+          name={name} 
+          value={inputValue}
+          onAccept={(val) => setInputValue(val as string)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={handleBlur}
+          disabled={disabled}
+          aria-invalid={ariaInvalid}
+          placeholder="DD/MM/YYYY"
+          className={cn(
+            "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+            "pr-10",
+            inputClassName,
+            ariaInvalid && "border-destructive",
+            selectedDate && !isFocused && !disabled && "absolute inset-0 opacity-0 pointer-events-none", 
+          )}
+        />
+
+        {/* The styled div to show the formatted date, only when a date is selected and input is not focused */}
+        {selectedDate && !isFocused && (
+          !disabled ? ( 
+            <div
+              // Perhatikan: div ini tidak perlu ID karena IMaskInput di bawahnya sudah punya ID
+              onClick={() => { if (!disabled) { setIsFocused(true); setTimeout(() => inputElementRef.current?.focus(), 0); }}}
+              className={cn(
+                "absolute inset-0 flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background cursor-text",
+                inputClassName
+              )}
+              role="textbox" 
+              tabIndex={disabled ? -1 : 0} 
+            >
+              {displayValue}
+            </div>
+          ) : ( 
+              <div
+                className={cn(
+                  "absolute inset-0 flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+                  inputClassName,
+                   "opacity-50" 
+                )}
+              >
+                {displayValue}
+              </div>
+          )
         )}
+
         <Popover open={isPickerOpen} onOpenChange={setIsPickerOpen}>
           <PopoverTrigger asChild>
             <Button
