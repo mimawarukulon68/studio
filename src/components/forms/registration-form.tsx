@@ -874,7 +874,14 @@ export function RegistrationForm() {
                     value={field.value ?? ''}
                     unmask={true}
                     onAccept={(value) => field.onChange(value)}
-                    onFocus={() => setNikIsFocused(true)}
+                    onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
+                      setNikIsFocused(true);
+                      setTimeout(() => {
+                        if (document.activeElement === e.target) {
+                          e.target.setSelectionRange(0, 0);
+                        }
+                      }, 0);
+                    }}
                     onBlur={(e) => {
                       field.onBlur();
                       setNikIsFocused(false);
@@ -1235,7 +1242,14 @@ export function RegistrationForm() {
                           value={field.value ?? ''}
                           unmask={true}
                           onAccept={(value) => field.onChange(value)}
-                          onFocus={() => setNisnIsFocused(true)}
+                          onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
+                            setNisnIsFocused(true);
+                            setTimeout(() => {
+                              if (document.activeElement === e.target) {
+                                e.target.setSelectionRange(0, 0);
+                              }
+                            }, 0);
+                          }}
                           onBlur={(e) => {
                             field.onBlur();
                             setNisnIsFocused(false);
@@ -1263,7 +1277,14 @@ export function RegistrationForm() {
                           value={field.value ?? ''}
                           unmask={true}
                           onAccept={(value) => field.onChange(value)}
-                          onFocus={() => setNikIsFocused(true)}
+                          onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
+                            setNikIsFocused(true);
+                            setTimeout(() => {
+                              if (document.activeElement === e.target) {
+                                e.target.setSelectionRange(0, 0);
+                              }
+                            }, 0);
+                          }}
                           onBlur={(e) => {
                             field.onBlur();
                             setNikIsFocused(false);
@@ -1288,12 +1309,14 @@ export function RegistrationForm() {
                     name="siswa.tanggalLahir"
                     render={({ field, fieldState }) => (
                     <FormItem className="flex flex-col">
-                        <FormLabel htmlFor="siswa-tanggal-lahir">Tanggal Lahir *</FormLabel> {/* Tambahkan htmlFor */}
+                        <FormLabel>Tanggal Lahir *</FormLabel>
                         <FormControl>
                             <CustomDatePicker
-                                id="siswa-tanggal-lahir" // Tambahkan ID ke CustomDatePicker
                                 value={field.value}
-                                onDateChange={(dateStr) => field.onChange(dateStr)}
+                                onDateChange={(dateStr) => {
+                                  field.onChange(dateStr)
+                                  form.trigger("siswa.tanggalLahir");
+                                }}
                                 onRHFBlur={field.onBlur}
                                 ariaInvalid={!!fieldState.error}
                                 disabled={field.disabled}
@@ -1587,7 +1610,14 @@ export function RegistrationForm() {
                           value={field.value ?? ''}
                           unmask={false}
                           onAccept={(value) => field.onChange(value)}
-                          onFocus={() => setRtRwIsFocused(true)}
+                          onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
+                            setRtRwIsFocused(true);
+                            setTimeout(() => {
+                              if (document.activeElement === e.target) {
+                                e.target.setSelectionRange(0, 0);
+                              }
+                            }, 0);
+                          }}
                           onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
                             if (e.target.value.replace(/\D/g, '').length === 0) {
                               form.setValue('siswa.rtRw', '', { shouldValidate: true });
@@ -1688,7 +1718,4 @@ export function RegistrationForm() {
   );
 }
 
-
-
-
-
+    
