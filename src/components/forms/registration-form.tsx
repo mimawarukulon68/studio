@@ -65,21 +65,29 @@ import { Separator } from '@/components/ui/separator';
 const TOTAL_STEPS = 5;
 
 const stepsData = [
-  { num: 1, title: "Identitas Siswa", Icon: UserRound, fields: [
-    "siswa.namaLengkap", "siswa.namaPanggilan", "siswa.jenisKelamin", "siswa.nisn", "siswa.nikSiswa",
-    "siswa.tempatLahir", "siswa.tanggalLahir", "siswa.agama", "siswa.anakKe", "siswa.jumlahSaudaraKandung",
-    "siswa.tempatTinggal", "siswa.provinsi", "siswa.kabupaten", "siswa.kecamatan", "siswa.desaKelurahan", "siswa.dusun", "siswa.rtRw", "siswa.alamatJalan", "siswa.kodePos",
-    "siswa.modaTransportasi", "siswa.agamaLainnya", "siswa.tempatTinggalLainnya", "siswa.modaTransportasiLainnya"
-  ] as FieldPath<RegistrationFormData>[] },
-  { num: 2, title: "Data Ayah", Icon: UserIcon, fields: [
-    "ayah.isDeceased", "ayah.nama", "ayah.nik", "ayah.tahunLahir", "ayah.pendidikan", "ayah.pekerjaan", "ayah.penghasilan", "ayah.pendidikanLainnya", "ayah.pekerjaanLainnya", "ayah.nomorTelepon"
-  ] as FieldPath<RegistrationFormData>[] },
-  { num: 3, title: "Data Ibu", Icon: UserIcon, fields: [
-    "ibu.isDeceased", "ibu.nama", "ibu.nik", "ibu.tahunLahir", "ibu.pendidikan", "ibu.pekerjaan", "ibu.penghasilan", "ibu.pendidikanLainnya", "ibu.pekerjaanLainnya", "ibu.nomorTelepon"
-  ] as FieldPath<RegistrationFormData>[] },
-  { num: 4, title: "Data Wali", Icon: ShieldCheck, fields: [
-     "wali.hubungan", "wali.hubunganLainnya", "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan", "wali.pekerjaan", "wali.penghasilan", "wali.pendidikanLainnya", "wali.pekerjaanLainnya", "wali.nomorTelepon"
-  ] as FieldPath<RegistrationFormData>[] },
+  {
+    num: 1, title: "Identitas Siswa", Icon: UserRound, fields: [
+      "siswa.namaLengkap", "siswa.namaPanggilan", "siswa.jenisKelamin", "siswa.nisn", "siswa.nikSiswa",
+      "siswa.tempatLahir", "siswa.tanggalLahir", "siswa.agama", "siswa.anakKe", "siswa.jumlahSaudaraKandung",
+      "siswa.tempatTinggal", "siswa.provinsi", "siswa.kabupaten", "siswa.kecamatan", "siswa.desaKelurahan", "siswa.dusun", "siswa.rtRw", "siswa.alamatJalan", "siswa.kodePos",
+      "siswa.modaTransportasi", "siswa.agamaLainnya", "siswa.tempatTinggalLainnya", "siswa.modaTransportasiLainnya"
+    ] as FieldPath<RegistrationFormData>[]
+  },
+  {
+    num: 2, title: "Data Ayah", Icon: UserIcon, fields: [
+      "ayah.isDeceased", "ayah.nama", "ayah.nik", "ayah.tahunLahir", "ayah.pendidikan", "ayah.pekerjaan", "ayah.penghasilan", "ayah.pendidikanLainnya", "ayah.pekerjaanLainnya", "ayah.nomorTelepon"
+    ] as FieldPath<RegistrationFormData>[]
+  },
+  {
+    num: 3, title: "Data Ibu", Icon: UserIcon, fields: [
+      "ibu.isDeceased", "ibu.nama", "ibu.nik", "ibu.tahunLahir", "ibu.pendidikan", "ibu.pekerjaan", "ibu.penghasilan", "ibu.pendidikanLainnya", "ibu.pekerjaanLainnya", "ibu.nomorTelepon"
+    ] as FieldPath<RegistrationFormData>[]
+  },
+  {
+    num: 4, title: "Data Wali", Icon: ShieldCheck, fields: [
+      "wali.hubungan", "wali.hubunganLainnya", "wali.nama", "wali.nik", "wali.tahunLahir", "wali.pendidikan", "wali.pekerjaan", "wali.penghasilan", "wali.pendidikanLainnya", "wali.pekerjaanLainnya", "wali.nomorTelepon"
+    ] as FieldPath<RegistrationFormData>[]
+  },
   { num: 5, title: "Review", Icon: FileCheck2, fields: [] },
 ];
 
@@ -127,14 +135,14 @@ export function RegistrationForm() {
   const [regenciesLoading, setRegenciesLoading] = useState(false);
   const [districtsLoading, setDistrictsLoading] = useState(false);
   const [villagesLoading, setVillagesLoading] = useState(false);
-  
+
   const [isKodePosReadOnly, setIsKodePosReadOnly] = useState(false);
-  
+
   const [provincePopoverOpen, setProvincePopoverOpen] = useState(false);
   const [regencyPopoverOpen, setRegencyPopoverOpen] = useState(false);
   const [districtPopoverOpen, setDistrictPopoverOpen] = useState(false);
   const [villagePopoverOpen, setVillagePopoverOpen] = useState(false);
-  
+
   const [nisnIsFocused, setNisnIsFocused] = useState(false);
   const [nikIsFocused, setNikIsFocused] = useState(false);
   const [rtRwIsFocused, setRtRwIsFocused] = useState(false);
@@ -145,7 +153,7 @@ export function RegistrationForm() {
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
-    mode: 'onBlur', 
+    mode: 'onBlur',
     defaultValues: {
       siswa: {
         namaLengkap: '',
@@ -210,7 +218,7 @@ export function RegistrationForm() {
       },
     },
   });
-  
+
   const isAyahDeceased = form.watch('ayah.isDeceased');
   const isIbuDeceased = form.watch('ibu.isDeceased');
   const isWaliRequired = isAyahDeceased && isIbuDeceased;
@@ -237,8 +245,8 @@ export function RegistrationForm() {
       form.setValue('ibu.pekerjaan', 'Meninggal Dunia', { shouldValidate: true });
       form.setValue('ibu.penghasilan', 'Meninggal Dunia', { shouldValidate: true });
       form.setValue('ibu.nomorTelepon', '', { shouldValidate: true });
-       const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ibu.nik', 'ibu.tahunLahir', 'ibu.pendidikan', 'ibu.pendidikanLainnya', 'ibu.pekerjaanLainnya', 'ibu.nomorTelepon'];
-       fieldsToClear.forEach(field => form.clearErrors(field));
+      const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ibu.nik', 'ibu.tahunLahir', 'ibu.pendidikan', 'ibu.pendidikanLainnya', 'ibu.pekerjaanLainnya', 'ibu.nomorTelepon'];
+      fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
       if (form.getValues('ibu.pekerjaan') === 'Meninggal Dunia') {
         form.setValue('ibu.pekerjaan', undefined);
@@ -272,23 +280,23 @@ export function RegistrationForm() {
 
   useEffect(() => {
     const copyParentDataToWali = (parentType: 'ayah' | 'ibu') => {
-        const parentData = form.getValues(parentType);
-        // Do not copy 'isDeceased' status
-        form.setValue('wali.nama', parentData.nama || '', { shouldValidate: true });
-        form.setValue('wali.nik', parentData.nik || '', { shouldValidate: true });
-        form.setValue('wali.tahunLahir', parentData.tahunLahir, { shouldValidate: true });
-        form.setValue('wali.pendidikan', parentData.pendidikan, { shouldValidate: true });
-        form.setValue('wali.pendidikanLainnya', parentData.pendidikanLainnya || '', { shouldValidate: true });
-        form.setValue('wali.pekerjaan', parentData.pekerjaan, { shouldValidate: true });
-        form.setValue('wali.pekerjaanLainnya', parentData.pekerjaanLainnya || '', { shouldValidate: true });
-        form.setValue('wali.penghasilan', parentData.penghasilan, { shouldValidate: true });
-        form.setValue('wali.nomorTelepon', parentData.nomorTelepon || '', { shouldValidate: true });
+      const parentData = form.getValues(parentType);
+      // Do not copy 'isDeceased' status
+      form.setValue('wali.nama', parentData.nama || '', { shouldValidate: true });
+      form.setValue('wali.nik', parentData.nik || '', { shouldValidate: true });
+      form.setValue('wali.tahunLahir', parentData.tahunLahir, { shouldValidate: true });
+      form.setValue('wali.pendidikan', parentData.pendidikan, { shouldValidate: true });
+      form.setValue('wali.pendidikanLainnya', parentData.pendidikanLainnya || '', { shouldValidate: true });
+      form.setValue('wali.pekerjaan', parentData.pekerjaan, { shouldValidate: true });
+      form.setValue('wali.pekerjaanLainnya', parentData.pekerjaanLainnya || '', { shouldValidate: true });
+      form.setValue('wali.penghasilan', parentData.penghasilan, { shouldValidate: true });
+      form.setValue('wali.nomorTelepon', parentData.nomorTelepon || '', { shouldValidate: true });
     }
 
     if (hubunganWali === 'Ayah Kandung') {
-        copyParentDataToWali('ayah');
+      copyParentDataToWali('ayah');
     } else if (hubunganWali === 'Ibu Kandung') {
-        copyParentDataToWali('ibu');
+      copyParentDataToWali('ibu');
     }
   }, [hubunganWali, form]);
 
@@ -355,10 +363,10 @@ export function RegistrationForm() {
           }
         } catch (error) {
           console.error("Error fetching regencies:", error);
-          if(isMounted) toast({ title: "Error", description: `Gagal memuat data kabupaten/kota: ${(error as Error).message}`, variant: "destructive" });
-           setRegencies([]);
+          if (isMounted) toast({ title: "Error", description: `Gagal memuat data kabupaten/kota: ${(error as Error).message}`, variant: "destructive" });
+          setRegencies([]);
         } finally {
-          if(isMounted) setRegenciesLoading(false);
+          if (isMounted) setRegenciesLoading(false);
         }
       };
       fetchRegencies();
@@ -386,15 +394,15 @@ export function RegistrationForm() {
           if (!response.ok) throw new Error('Gagal memuat kecamatan. Status: ' + response.status);
           const jsonResponse = await response.json();
           if (!isMounted) return;
-          
+
           const data = Array.isArray(jsonResponse) ? jsonResponse : [];
           setDistricts(data.map((d: Wilayah) => ({ value: d.code, label: d.name })));
         } catch (error) {
           console.error("Error fetching districts:", error);
-          if(isMounted) toast({ title: "Error", description: `Gagal memuat data kecamatan: ${(error as Error).message}`, variant: "destructive" });
+          if (isMounted) toast({ title: "Error", description: `Gagal memuat data kecamatan: ${(error as Error).message}`, variant: "destructive" });
           setDistricts([]);
         } finally {
-          if(isMounted) setDistrictsLoading(false);
+          if (isMounted) setDistrictsLoading(false);
         }
       };
       fetchDistricts();
@@ -416,18 +424,18 @@ export function RegistrationForm() {
         setIsKodePosReadOnly(false);
         try {
           const response = await fetch(`/api/wilayah/villages/${selectedDistrictCode}`);
-           if (!response.ok) throw new Error('Gagal memuat desa/kelurahan. Status: ' + response.status);
-           const jsonResponse = await response.json();
-           if (!isMounted) return;
+          if (!response.ok) throw new Error('Gagal memuat desa/kelurahan. Status: ' + response.status);
+          const jsonResponse = await response.json();
+          if (!isMounted) return;
 
-           const data = Array.isArray(jsonResponse) ? jsonResponse : [];
-           setVillages(data.map((v: VillageWilayah) => ({ value: v.code, label: v.name, postalCode: v.postal_code })));
+          const data = Array.isArray(jsonResponse) ? jsonResponse : [];
+          setVillages(data.map((v: VillageWilayah) => ({ value: v.code, label: v.name, postalCode: v.postal_code })));
         } catch (error) {
           console.error("Error fetching villages:", error);
-          if(isMounted) toast({ title: "Error", description: `Gagal memuat data desa/kelurahan: ${(error as Error).message}`, variant: "destructive" });
+          if (isMounted) toast({ title: "Error", description: `Gagal memuat data desa/kelurahan: ${(error as Error).message}`, variant: "destructive" });
           setVillages([]);
         } finally {
-          if(isMounted) setVillagesLoading(false);
+          if (isMounted) setVillagesLoading(false);
         }
       };
       fetchVillages();
@@ -457,83 +465,83 @@ export function RegistrationForm() {
 
     // Special logic for conditional fields that might not be caught by RHF's default trigger
     if (step === 1) {
-        const isStepValid = !fieldsToValidate.some(field => {
-            const error = getFieldError(field, form.formState.errors);
-            if (field === "siswa.agamaLainnya" && form.getValues("siswa.agama") !== "Lainnya") return false;
-            if (field === "siswa.tempatTinggalLainnya" && form.getValues("siswa.tempatTinggal") !== "Lainnya") return false;
-            if (field === "siswa.modaTransportasiLainnya" && !form.getValues("siswa.modaTransportasi").includes("lainnya")) return false;
-            if (field === "siswa.dusun") return false;
-            if (field === "siswa.alamatJalan") return false; 
-            return !!error;
-        });
-        return isStepValid;
+      const isStepValid = !fieldsToValidate.some(field => {
+        const error = getFieldError(field, form.formState.errors);
+        if (field === "siswa.agamaLainnya" && form.getValues("siswa.agama") !== "Lainnya") return false;
+        if (field === "siswa.tempatTinggalLainnya" && form.getValues("siswa.tempatTinggal") !== "Lainnya") return false;
+        if (field === "siswa.modaTransportasiLainnya" && !form.getValues("siswa.modaTransportasi").includes("lainnya")) return false;
+        if (field === "siswa.dusun") return false;
+        if (field === "siswa.alamatJalan") return false;
+        return !!error;
+      });
+      return isStepValid;
     } else if (step === 2) { // Ayah
-        const ayahData = form.getValues().ayah;
-        const validationResult = parentSchema.safeParse(ayahData);
-        if (!validationResult.success) {
-            validationResult.error.errors.forEach(err => {
-                const path = `ayah.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
-                form.setError(path, { type: 'manual', message: err.message });
-            });
-        }
-        return validationResult.success;
+      const ayahData = form.getValues().ayah;
+      const validationResult = parentSchema.safeParse(ayahData);
+      if (!validationResult.success) {
+        validationResult.error.errors.forEach(err => {
+          const path = `ayah.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
+          form.setError(path, { type: 'manual', message: err.message });
+        });
+      }
+      return validationResult.success;
     } else if (step === 3) { // Ibu
-        const ibuData = form.getValues().ibu;
-        const validationResult = parentSchema.safeParse(ibuData);
-         if (!validationResult.success) {
-            validationResult.error.errors.forEach(err => {
-                const path = `ibu.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
-                form.setError(path, { type: 'manual', message: err.message });
-            });
-        }
-        return validationResult.success;
+      const ibuData = form.getValues().ibu;
+      const validationResult = parentSchema.safeParse(ibuData);
+      if (!validationResult.success) {
+        validationResult.error.errors.forEach(err => {
+          const path = `ibu.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
+          form.setError(path, { type: 'manual', message: err.message });
+        });
+      }
+      return validationResult.success;
     } else if (step === 4) { // Wali
-        const waliData = form.getValues().wali;
-        const isRequired = form.getValues('ayah.isDeceased') && form.getValues('ibu.isDeceased');
-        
-        await form.trigger(getFieldsForStep(4));
-        const waliFieldsHaveErrors = getFieldsForStep(4).some(field => getFieldError(field, form.formState.errors));
-        if (waliFieldsHaveErrors) return false;
+      const waliData = form.getValues().wali;
+      const isRequired = form.getValues('ayah.isDeceased') && form.getValues('ibu.isDeceased');
 
-        if (!isRequired) {
-            const hasWaliInput = Object.values(waliData).some(v => v !== '' && v !== undefined && v !== null);
-            if (!hasWaliInput) {
-                getFieldsForStep(4).forEach(field => form.clearErrors(field));
-                return true;
-            } else {
-                 const validationResult = waliSchema.safeParse(waliData);
-                 return validationResult.success;
-            }
+      await form.trigger(getFieldsForStep(4));
+      const waliFieldsHaveErrors = getFieldsForStep(4).some(field => getFieldError(field, form.formState.errors));
+      if (waliFieldsHaveErrors) return false;
+
+      if (!isRequired) {
+        const hasWaliInput = Object.values(waliData).some(v => v !== '' && v !== undefined && v !== null);
+        if (!hasWaliInput) {
+          getFieldsForStep(4).forEach(field => form.clearErrors(field));
+          return true;
+        } else {
+          const validationResult = waliSchema.safeParse(waliData);
+          return validationResult.success;
         }
+      }
     }
     return true;
   };
 
 
   const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
-    setIsAttemptingSubmit(false); 
+    setIsAttemptingSubmit(false);
 
     const stepBeingLeft = currentStep;
     const isStepBeingLeftValid = await validateStep(stepBeingLeft);
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
 
     if (action === 'next') {
-        if (currentStep < TOTAL_STEPS) {
-          setCurrentStep(prev => prev + 1);
-        }
+      if (currentStep < TOTAL_STEPS) {
+        setCurrentStep(prev => prev + 1);
+      }
     } else if (action === 'prev') {
       if (currentStep > 1) {
         setCurrentStep(prev => prev - 1);
       }
     } else if (action === 'jumpTo' && targetStep !== undefined) {
-        setCurrentStep(targetStep);
+      setCurrentStep(targetStep);
     }
   };
 
 
- const onFormSubmit = async (data: RegistrationFormData) => {
+  const onFormSubmit = async (data: RegistrationFormData) => {
     if (!isAttemptingSubmit) {
-      return; 
+      return;
     }
 
     let allStepsValid = true;
@@ -557,34 +565,34 @@ export function RegistrationForm() {
         description: "Mohon periksa kembali isian Anda pada langkah yang ditandai.",
         variant: "destructive",
       });
-      setIsAttemptingSubmit(false); 
+      setIsAttemptingSubmit(false);
       return;
     }
-    
+
     // Final check for phone number before submission
     if (!data.ayah.nomorTelepon && !data.ibu.nomorTelepon && !data.wali.nomorTelepon) {
-        toast({
-            title: "Nomor Telepon Belum Diisi",
-            description: "Mohon isi minimal salah satu nomor telepon (Ayah, Ibu, atau Wali).",
-            variant: "destructive",
-        });
-        form.setError("ayah.nomorTelepon", { type: "manual", message: "Minimal satu nomor telepon wajib diisi." });
-        setStepCompletionStatus(prev => ({ ...prev, 2: false }));
-        setCurrentStep(2);
-        setIsAttemptingSubmit(false);
-        return;
+      toast({
+        title: "Nomor Telepon Belum Diisi",
+        description: "Mohon isi minimal salah satu nomor telepon (Ayah, Ibu, atau Wali).",
+        variant: "destructive",
+      });
+      form.setError("ayah.nomorTelepon", { type: "manual", message: "Minimal satu nomor telepon wajib diisi." });
+      setStepCompletionStatus(prev => ({ ...prev, 2: false }));
+      setCurrentStep(2);
+      setIsAttemptingSubmit(false);
+      return;
     }
 
     const processedData: any = JSON.parse(JSON.stringify(data));
 
     if (processedData.ayah.nomorTelepon) {
-        processedData.ayah.nomorTelepon = `+62${processedData.ayah.nomorTelepon}`;
+      processedData.ayah.nomorTelepon = `+62${processedData.ayah.nomorTelepon}`;
     }
     if (processedData.ibu.nomorTelepon) {
-        processedData.ibu.nomorTelepon = `+62${processedData.ibu.nomorTelepon}`;
+      processedData.ibu.nomorTelepon = `+62${processedData.ibu.nomorTelepon}`;
     }
     if (processedData.wali.nomorTelepon) {
-        processedData.wali.nomorTelepon = `+62${processedData.wali.nomorTelepon}`;
+      processedData.wali.nomorTelepon = `+62${processedData.wali.nomorTelepon}`;
     }
 
 
@@ -603,33 +611,33 @@ export function RegistrationForm() {
         delete obj[otherField];
       }
     };
-    
+
     const processParentLainnya = (parentObj: any) => {
       if (!parentObj) return;
       processSingleLainnya(parentObj, 'pendidikan', 'pendidikanLainnya');
       processSingleLainnya(parentObj, 'pekerjaan', 'pekerjaanLainnya');
       if ('isDeceased' in parentObj) {
-          delete parentObj.isDeceased;
+        delete parentObj.isDeceased;
       }
       if ('hubungan' in parentObj) {
-          processSingleLainnya(parentObj, 'hubungan', 'hubunganLainnya');
+        processSingleLainnya(parentObj, 'hubungan', 'hubunganLainnya');
       }
     };
-    
+
     processSingleLainnya(processedData.siswa, 'agama', 'agamaLainnya');
     processSingleLainnya(processedData.siswa, 'tempatTinggal', 'tempatTinggalLainnya');
-    
+
     processParentLainnya(processedData.ayah);
     processParentLainnya(processedData.ibu);
     processParentLainnya(processedData.wali);
-    
+
     if (processedData.siswa.modaTransportasi) {
       const transportationMap = new Map(modaTransportasiOptions.map(opt => [opt.id, opt.label]));
       const transportationLabels = processedData.siswa.modaTransportasi.map((id: string) => {
-          if (id === 'lainnya') {
-              return processedData.siswa.modaTransportasiLainnya ? `Lainnya: ${processedData.siswa.modaTransportasiLainnya}` : 'Lainnya';
-          }
-          return transportationMap.get(id) || id;
+        if (id === 'lainnya') {
+          return processedData.siswa.modaTransportasiLainnya ? `Lainnya: ${processedData.siswa.modaTransportasiLainnya}` : 'Lainnya';
+        }
+        return transportationMap.get(id) || id;
       });
       processedData.siswa.modaTransportasi = transportationLabels;
       delete processedData.siswa.modaTransportasiLainnya;
@@ -640,16 +648,16 @@ export function RegistrationForm() {
       title: "Pendaftaran Terkirim!",
       description: "Data Anda telah berhasil direkam.",
     });
-    
+
     setIsSubmittedSuccessfully(true);
-    setIsAttemptingSubmit(false); 
+    setIsAttemptingSubmit(false);
   };
 
   const onFormError = async (errors: FieldErrors<RegistrationFormData>) => {
     if (!isAttemptingSubmit) {
-       return; 
+      return;
     }
-    
+
     console.log("Form errors on submit (from RHF):", errors);
     toast({
       title: "Formulir Belum Lengkap",
@@ -658,10 +666,10 @@ export function RegistrationForm() {
     });
 
     const newCompletionStatus: Record<number, boolean | undefined> = {};
-    let firstErrorStep = TOTAL_STEPS + 1; 
+    let firstErrorStep = TOTAL_STEPS + 1;
 
     for (let i = 1; i <= TOTAL_STEPS; i++) {
-      const isStepCurrentlyValid = await validateStep(i); 
+      const isStepCurrentlyValid = await validateStep(i);
       newCompletionStatus[i] = isStepCurrentlyValid;
       if (!isStepCurrentlyValid && i < firstErrorStep) {
         firstErrorStep = i;
@@ -672,65 +680,65 @@ export function RegistrationForm() {
     if (firstErrorStep <= TOTAL_STEPS) {
       setCurrentStep(firstErrorStep);
     }
-    setIsAttemptingSubmit(false); 
+    setIsAttemptingSubmit(false);
   };
-  
+
   const renderStepIndicators = () => {
     return (
-        <div className="grid grid-cols-5 gap-1 rounded-md border shadow-sm p-1.5">
-            {stepsData.map((step) => {
-            const isCurrent = currentStep === step.num;
-            const validationState = stepCompletionStatus[step.num];
-            const successfullyValidated = validationState === true;
-            const attemptedAndInvalid = validationState === false; 
-            const StepIcon = step.Icon;
+      <div className="grid grid-cols-5 gap-1 rounded-md border shadow-sm p-1.5">
+        {stepsData.map((step) => {
+          const isCurrent = currentStep === step.num;
+          const validationState = stepCompletionStatus[step.num];
+          const successfullyValidated = validationState === true;
+          const attemptedAndInvalid = validationState === false;
+          const StepIcon = step.Icon;
 
-            return (
-                <div
-                key={step.num}
-                className={cn(
-                    "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-colors text-center relative shadow-sm hover:border-primary/70",
-                    isCurrent
-                    ? (attemptedAndInvalid 
-                        ? "bg-primary text-primary-foreground border-destructive ring-2 ring-destructive ring-offset-background"
-                        : "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-primary ring-offset-background") 
-                    : successfullyValidated 
+          return (
+            <div
+              key={step.num}
+              className={cn(
+                "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-colors text-center relative shadow-sm hover:border-primary/70",
+                isCurrent
+                  ? (attemptedAndInvalid
+                    ? "bg-primary text-primary-foreground border-destructive ring-2 ring-destructive ring-offset-background"
+                    : "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-primary ring-offset-background")
+                  : successfullyValidated
                     ? "border-green-500 bg-card"
-                    : attemptedAndInvalid 
-                    ? "border-destructive bg-card"
-                    : "border-border bg-card", 
-                )}
-                onClick={() => processStep('jumpTo', step.num)}
-                title={step.title}
-                aria-current={isCurrent ? "step" : undefined}
-                >
-                {(successfullyValidated && step.num < TOTAL_STEPS) && (
-                    <CheckIcon className="w-4 h-4 absolute top-0.5 right-0.5 text-green-600" strokeWidth={3} />
-                )}
-                {(attemptedAndInvalid) && (
-                    <XIcon className="w-4 h-4 absolute top-0.5 right-0.5 text-destructive" strokeWidth={3} />
-                )}
+                    : attemptedAndInvalid
+                      ? "border-destructive bg-card"
+                      : "border-border bg-card",
+              )}
+              onClick={() => processStep('jumpTo', step.num)}
+              title={step.title}
+              aria-current={isCurrent ? "step" : undefined}
+            >
+              {(successfullyValidated && step.num < TOTAL_STEPS) && (
+                <CheckIcon className="w-4 h-4 absolute top-0.5 right-0.5 text-green-600" strokeWidth={3} />
+              )}
+              {(attemptedAndInvalid) && (
+                <XIcon className="w-4 h-4 absolute top-0.5 right-0.5 text-destructive" strokeWidth={3} />
+              )}
 
-                <StepIcon className={cn(
-                    "w-5 h-5 mb-0.5",
-                    isCurrent ? "text-primary-foreground" : 
-                    attemptedAndInvalid ? "text-destructive" : 
-                    successfullyValidated ? "text-green-600" : 
-                    "text-primary" 
-                )} />
-                <span className={cn(
-                    "text-xs leading-tight font-medium",
-                    isCurrent ? "text-primary-foreground" :
-                    attemptedAndInvalid ? "text-destructive" :
+              <StepIcon className={cn(
+                "w-5 h-5 mb-0.5",
+                isCurrent ? "text-primary-foreground" :
+                  attemptedAndInvalid ? "text-destructive" :
+                    successfullyValidated ? "text-green-600" :
+                      "text-primary"
+              )} />
+              <span className={cn(
+                "text-xs leading-tight font-medium",
+                isCurrent ? "text-primary-foreground" :
+                  attemptedAndInvalid ? "text-destructive" :
                     successfullyValidated ? "text-green-700" :
-                    "text-card-foreground"
-                )}>
-                    {step.title}
-                </span>
-                </div>
-            );
-            })}
-        </div>
+                      "text-card-foreground"
+              )}>
+                {step.title}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     );
   };
 
@@ -762,7 +770,7 @@ export function RegistrationForm() {
           )}
         </CardHeader>
         <CardContent className="space-y-6">
-           {parentType === 'wali' && isWaliCurrentlyRequired && (
+          {parentType === 'wali' && isWaliCurrentlyRequired && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Perhatian</AlertTitle>
@@ -771,7 +779,6 @@ export function RegistrationForm() {
               </AlertDescription>
             </Alert>
           )}
-
           {(parentType === 'ayah' || parentType === 'ibu') && (
             <FormField
               control={form.control}
@@ -780,12 +787,14 @@ export function RegistrationForm() {
                 <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
                   <FormControl>
                     <Checkbox
+                      id={`${namePrefix}-is-deceased`} // Tambahkan ID unik
                       checked={field.value}
                       onCheckedChange={field.onChange}
+                      name={field.name} // Secara eksplisit berikan atribut 'name'
                     />
                   </FormControl>
-                   <div className="space-y-1 leading-none">
-                    <FormLabel className="font-normal">
+                  <div className="space-y-1 leading-none">
+                    <FormLabel htmlFor={`${namePrefix}-is-deceased`} className="font-normal"> {/* Hubungkan label ke ID checkbox */}
                       {title} sudah meninggal dunia
                     </FormLabel>
                   </div>
@@ -795,24 +804,24 @@ export function RegistrationForm() {
           )}
 
           {parentType === 'wali' && (
-             <FormField
-                control={form.control}
-                name="wali.hubungan"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Hubungan dengan Siswa {isWaliCurrentlyRequired ? '*' : '(Opsional)'}</FormLabel>
-                    <Select onValueChange={(value) => { field.onChange(value); form.trigger('wali.hubungan'); }} value={field.value ?? undefined}>
-                      <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Pilih hubungan" /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {hubunganWaliOptionsList.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="wali.hubungan"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hubungan dengan Siswa {isWaliCurrentlyRequired ? '*' : '(Opsional)'}</FormLabel>
+                  <Select {...field} onValueChange={(value) => { field.onChange(value); form.trigger('wali.hubungan'); }}> {/* Menambahkan {...field} dan menghapus value={field.value ?? undefined} */}
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Pilih hubungan" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {hubunganWaliOptionsList.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           )}
           {parentType === 'wali' && form.watch('wali.hubungan') === 'Lainnya (tuliskan)' && (
             <FormField
@@ -854,7 +863,7 @@ export function RegistrationForm() {
             name={`${namePrefix}.nik` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>NIK {title} { parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*') }</FormLabel>
+                <FormLabel>NIK {title} {parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*')}</FormLabel>
                 <FormControl>
                   <IMaskInput
                     mask="0000000000000000"
@@ -867,8 +876,8 @@ export function RegistrationForm() {
                     onAccept={(value) => field.onChange(value)}
                     onFocus={() => setNikIsFocused(true)}
                     onBlur={(e) => {
-                        field.onBlur();
-                        setNikIsFocused(false);
+                      field.onBlur();
+                      setNikIsFocused(false);
                     }}
                     inputRef={field.ref}
                   />
@@ -882,7 +891,7 @@ export function RegistrationForm() {
             name={`${namePrefix}.tahunLahir` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tahun Lahir { parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*') }</FormLabel>
+                <FormLabel>Tahun Lahir {parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*')}</FormLabel>
                 <FormControl>
                   <Input type="number" placeholder="Contoh: 1980" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
                 </FormControl>
@@ -895,8 +904,8 @@ export function RegistrationForm() {
             name={`${namePrefix}.pendidikan` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Pendidikan Terakhir { parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*') }</FormLabel>
-                <Select onValueChange={(value) => { field.onChange(value); form.trigger(`${namePrefix}.pendidikan`); }} value={field.value ?? undefined}>
+                <FormLabel>Pendidikan Terakhir {parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*')}</FormLabel>
+                <Select {...field} onValueChange={(value) => { field.onChange(value); form.trigger(`${namePrefix}.pendidikan`); }}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih pendidikan" /></SelectTrigger>
                   </FormControl>
@@ -928,10 +937,10 @@ export function RegistrationForm() {
             name={`${namePrefix}.pekerjaan` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Pekerjaan Utama { parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*') }</FormLabel>
-                <Select 
-                    onValueChange={(value) => { field.onChange(value); form.trigger(`${namePrefix}.pekerjaan`); }} 
-                    value={field.value ?? undefined}
+                <FormLabel>Pekerjaan Utama {parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*')}</FormLabel>
+                <Select
+                  {...field} // Sebarkan properti 'field' di sini
+                  onValueChange={(value) => { field.onChange(value); form.trigger(`${namePrefix}.pekerjaan`); }}
                 >
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih pekerjaan" /></SelectTrigger>
@@ -964,10 +973,10 @@ export function RegistrationForm() {
             name={`${namePrefix}.penghasilan` as FieldPath<RegistrationFormData>}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Penghasilan Bulanan { parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*') }</FormLabel>
-                <Select 
-                    onValueChange={(value) => { field.onChange(value); form.trigger(`${namePrefix}.penghasilan`); }} 
-                    value={field.value ?? undefined}
+                <FormLabel>Penghasilan Bulanan {parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*')}</FormLabel>
+                <Select
+                  {...field} // Sebarkan properti 'field' di sini
+                  onValueChange={(value) => { field.onChange(value); form.trigger(`${namePrefix}.penghasilan`); }}
                 >
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih penghasilan" /></SelectTrigger>
@@ -986,28 +995,28 @@ export function RegistrationForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Nomor HP (Whatsapp Aktif) (Opsional)</FormLabel>
-                 <div className="flex items-center">
-                    <span className="inline-flex h-10 items-center rounded-l-md border border-r-0 border-input bg-input px-3 text-sm text-muted-foreground">
-                        +62
-                    </span>
-                    <FormControl>
-                        <Input
-                            type="tel"
-                            inputMode="numeric"
-                            placeholder="81234567890"
-                            className="rounded-l-none"
-                            {...field}
-                            value={field.value ?? ''}
-                            disabled={parentType !== 'wali' && isDeceased}
-                        />
-                    </FormControl>
-                  </div>
-                 <FormDescription>
+                <div className="flex items-center">
+                  <span className="inline-flex h-10 items-center rounded-l-md border border-r-0 border-input bg-input px-3 text-sm text-muted-foreground">
+                    +62
+                  </span>
+                  <FormControl>
+                    <Input
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="81234567890"
+                      className="rounded-l-none"
+                      {...field}
+                      value={field.value ?? ''}
+                      disabled={parentType !== 'wali' && isDeceased}
+                    />
+                  </FormControl>
+                </div>
+                <FormDescription>
                   {parentType !== 'wali' && isDeceased
-                      ? "Nomor HP tidak dapat diisi karena yang bersangkutan telah meninggal."
-                      : "Ketik nomor tanpa 0 di depan. Minimal salah satu nomor (Ayah/Ibu/Wali) wajib diisi."
+                    ? "Nomor HP tidak dapat diisi karena yang bersangkutan telah meninggal."
+                    : "Ketik nomor tanpa 0 di depan. Minimal salah satu nomor (Ayah/Ibu/Wali) wajib diisi."
                   }
-                 </FormDescription>
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -1016,127 +1025,127 @@ export function RegistrationForm() {
       </Card>
     );
   };
-  
-    const renderReviewStep = () => {
+
+  const renderReviewStep = () => {
     const formData = form.getValues();
 
     const renderValue = (value: any): string => {
-        if (typeof value === 'boolean') return value ? 'Ya' : 'Tidak';
-        if (Array.isArray(value)) {
-            const transportationMap = new Map(modaTransportasiOptions.map(opt => [opt.id, opt.label]));
-             const labels = value.map((id: string) => {
-                if (id === 'lainnya') {
-                    return formData.siswa.modaTransportasiLainnya ? `Lainnya: ${formData.siswa.modaTransportasiLainnya}` : 'Lainnya';
-                }
-                return transportationMap.get(id) || id;
-            });
-            return labels.join(', ');
-        }
-        if (!value) return '-';
-        return String(value);
+      if (typeof value === 'boolean') return value ? 'Ya' : 'Tidak';
+      if (Array.isArray(value)) {
+        const transportationMap = new Map(modaTransportasiOptions.map(opt => [opt.id, opt.label]));
+        const labels = value.map((id: string) => {
+          if (id === 'lainnya') {
+            return formData.siswa.modaTransportasiLainnya ? `Lainnya: ${formData.siswa.modaTransportasiLainnya}` : 'Lainnya';
+          }
+          return transportationMap.get(id) || id;
+        });
+        return labels.join(', ');
+      }
+      if (!value) return '-';
+      return String(value);
     };
 
     const displayLabels: Record<string, string> = {
-        'namaLengkap': 'Nama Lengkap',
-        'namaPanggilan': 'Nama Panggilan',
-        'jenisKelamin': 'Jenis Kelamin',
-        'nisn': 'NISN',
-        'nikSiswa': 'NIK Siswa',
-        'tempatLahir': 'Tempat Lahir',
-        'tanggalLahir': 'Tanggal Lahir',
-        'agama': 'Agama',
-        'anakKe': 'Anak Ke-',
-        'jumlahSaudaraKandung': 'Jumlah Saudara Kandung',
-        'tempatTinggal': 'Tempat Tinggal Saat Ini',
-        'provinsi': 'Provinsi',
-        'kabupaten': 'Kabupaten/Kota',
-        'kecamatan': 'Kecamatan',
-        'desaKelurahan': 'Desa/Kelurahan',
-        'dusun': 'Dusun',
-        'rtRw': 'RT/RW',
-        'alamatJalan': 'Alamat Jalan',
-        'kodePos': 'Kode Pos',
-        'modaTransportasi': 'Moda Transportasi',
-        'isDeceased': 'Sudah Meninggal',
-        'nama': 'Nama',
-        'nik': 'NIK',
-        'tahunLahir': 'Tahun Lahir',
-        'pendidikan': 'Pendidikan',
-        'pekerjaan': 'Pekerjaan',
-        'penghasilan': 'Penghasilan',
-        'nomorTelepon': 'Nomor HP',
-        'hubungan': 'Hubungan dengan Siswa',
+      'namaLengkap': 'Nama Lengkap',
+      'namaPanggilan': 'Nama Panggilan',
+      'jenisKelamin': 'Jenis Kelamin',
+      'nisn': 'NISN',
+      'nikSiswa': 'NIK Siswa',
+      'tempatLahir': 'Tempat Lahir',
+      'tanggalLahir': 'Tanggal Lahir',
+      'agama': 'Agama',
+      'anakKe': 'Anak Ke-',
+      'jumlahSaudaraKandung': 'Jumlah Saudara Kandung',
+      'tempatTinggal': 'Tempat Tinggal Saat Ini',
+      'provinsi': 'Provinsi',
+      'kabupaten': 'Kabupaten/Kota',
+      'kecamatan': 'Kecamatan',
+      'desaKelurahan': 'Desa/Kelurahan',
+      'dusun': 'Dusun',
+      'rtRw': 'RT/RW',
+      'alamatJalan': 'Alamat Jalan',
+      'kodePos': 'Kode Pos',
+      'modaTransportasi': 'Moda Transportasi',
+      'isDeceased': 'Sudah Meninggal',
+      'nama': 'Nama',
+      'nik': 'NIK',
+      'tahunLahir': 'Tahun Lahir',
+      'pendidikan': 'Pendidikan',
+      'pekerjaan': 'Pekerjaan',
+      'penghasilan': 'Penghasilan',
+      'nomorTelepon': 'Nomor HP',
+      'hubungan': 'Hubungan dengan Siswa',
     };
 
     const renderSectionData = (data: Record<string, any>, sectionName: string) => {
-        return (
-             <dl className="space-y-2">
-                {Object.entries(data).map(([key, value]) => {
-                    if (key.endsWith('Lainnya') || value === undefined || value === '' || value === null) return null;
-                    
-                    let displayValue = value;
-                    if (key === 'tanggalLahir' && typeof value === 'string') {
-                        const dateObj = parse(value, 'dd/MM/yyyy', new Date());
-                        if (isDateValid(dateObj)) {
-                            displayValue = format(dateObj, 'dd MMMM yyyy', { locale: localeID });
-                        }
-                    }
-                    if (key === 'agama' && value === 'Lainnya') displayValue = `Lainnya: ${data.agamaLainnya}`;
-                    if (key === 'tempatTinggal' && value === 'Lainnya') displayValue = `Lainnya: ${data.tempatTinggalLainnya}`;
-                    if (key === 'pendidikan' && value === 'Lainnya') displayValue = `Lainnya: ${data.pendidikanLainnya}`;
-                    if (key === 'pekerjaan' && value === 'Lainnya') displayValue = `Lainnya: ${data.pekerjaanLainnya}`;
-                    if (key === 'hubungan' && value === 'Lainnya (tuliskan)') displayValue = `Lainnya: ${data.hubunganLainnya}`;
-                    if (key === 'provinsi') displayValue = provinces.find(p => p.value === value)?.label || value;
-                    if (key === 'kabupaten') displayValue = regencies.find(r => r.value === value)?.label || value;
-                    if (key === 'kecamatan') displayValue = districts.find(d => d.value === value)?.label || value;
-                    if (key === 'desaKelurahan') displayValue = villages.find(v => v.value === value)?.label || value;
-                    if (key === 'nomorTelepon') displayValue = value ? `+62${value}` : '-';
+      return (
+        <dl className="space-y-2">
+          {Object.entries(data).map(([key, value]) => {
+            if (key.endsWith('Lainnya') || value === undefined || value === '' || value === null) return null;
 
-                    return (
-                        <div key={`${sectionName}-${key}`} className="flex justify-between items-start py-2 border-b border-dashed">
-                            <dt className="text-sm text-muted-foreground pr-2">{displayLabels[key] || key}</dt>
-                            <dd className="text-sm font-medium text-right break-words">{renderValue(displayValue)}</dd>
-                        </div>
-                    );
-                })}
-            </dl>
-        );
+            let displayValue = value;
+            if (key === 'tanggalLahir' && typeof value === 'string') {
+              const dateObj = parse(value, 'dd/MM/yyyy', new Date());
+              if (isDateValid(dateObj)) {
+                displayValue = format(dateObj, 'dd MMMM yyyy', { locale: localeID });
+              }
+            }
+            if (key === 'agama' && value === 'Lainnya') displayValue = `Lainnya: ${data.agamaLainnya}`;
+            if (key === 'tempatTinggal' && value === 'Lainnya') displayValue = `Lainnya: ${data.tempatTinggalLainnya}`;
+            if (key === 'pendidikan' && value === 'Lainnya') displayValue = `Lainnya: ${data.pendidikanLainnya}`;
+            if (key === 'pekerjaan' && value === 'Lainnya') displayValue = `Lainnya: ${data.pekerjaanLainnya}`;
+            if (key === 'hubungan' && value === 'Lainnya (tuliskan)') displayValue = `Lainnya: ${data.hubunganLainnya}`;
+            if (key === 'provinsi') displayValue = provinces.find(p => p.value === value)?.label || value;
+            if (key === 'kabupaten') displayValue = regencies.find(r => r.value === value)?.label || value;
+            if (key === 'kecamatan') displayValue = districts.find(d => d.value === value)?.label || value;
+            if (key === 'desaKelurahan') displayValue = villages.find(v => v.value === value)?.label || value;
+            if (key === 'nomorTelepon') displayValue = value ? `+62${value}` : '-';
+
+            return (
+              <div key={`${sectionName}-${key}`} className="flex justify-between items-start py-2 border-b border-dashed">
+                <dt className="text-sm text-muted-foreground pr-2">{displayLabels[key] || key}</dt>
+                <dd className="text-sm font-medium text-right break-words">{renderValue(displayValue)}</dd>
+              </div>
+            );
+          })}
+        </dl>
+      );
     };
 
     return (
-        <Card className="w-full shadow-lg">
-            <CardHeader>
-                <CardTitle className="font-headline text-xl text-center">Review Data Pendaftaran</CardTitle>
-                <CardDescription className="text-center pt-1">
-                    Pastikan semua data yang Anda masukkan sudah benar sebelum mengirim.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Accordion type="multiple" defaultValue={['siswa', 'ayah', 'ibu', 'wali']} className="w-full">
-                    <AccordionItem value="siswa">
-                        <AccordionTrigger className="font-semibold">Data Identitas Siswa</AccordionTrigger>
-                        <AccordionContent>{renderSectionData(formData.siswa, 'siswa')}</AccordionContent>
-                    </AccordionItem>
-                    <AccordionItem value="ayah">
-                        <AccordionTrigger className="font-semibold">Data Ayah</AccordionTrigger>
-                        <AccordionContent>{renderSectionData(formData.ayah, 'ayah')}</AccordionContent>
-                    </AccordionItem>
-                    <AccordionItem value="ibu">
-                        <AccordionTrigger className="font-semibold">Data Ibu</AccordionTrigger>
-                        <AccordionContent>{renderSectionData(formData.ibu, 'ibu')}</AccordionContent>
-                    </AccordionItem>
-                     <AccordionItem value="wali">
-                        <AccordionTrigger className="font-semibold">Data Wali</AccordionTrigger>
-                        <AccordionContent>
-                           {Object.values(formData.wali).every(v => v === '' || v === undefined || v === null) 
-                                ? <p className="text-sm text-muted-foreground italic">Data wali tidak diisi.</p>
-                                : renderSectionData(formData.wali, 'wali')
-                            }
-                        </AccordionContent>
-                    </AccordionItem>
-                </Accordion>
-            </CardContent>
-        </Card>
+      <Card className="w-full shadow-lg">
+        <CardHeader>
+          <CardTitle className="font-headline text-xl text-center">Review Data Pendaftaran</CardTitle>
+          <CardDescription className="text-center pt-1">
+            Pastikan semua data yang Anda masukkan sudah benar sebelum mengirim.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Accordion type="multiple" defaultValue={['siswa', 'ayah', 'ibu', 'wali']} className="w-full">
+            <AccordionItem value="siswa">
+              <AccordionTrigger className="font-semibold">Data Identitas Siswa</AccordionTrigger>
+              <AccordionContent>{renderSectionData(formData.siswa, 'siswa')}</AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="ayah">
+              <AccordionTrigger className="font-semibold">Data Ayah</AccordionTrigger>
+              <AccordionContent>{renderSectionData(formData.ayah, 'ayah')}</AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="ibu">
+              <AccordionTrigger className="font-semibold">Data Ibu</AccordionTrigger>
+              <AccordionContent>{renderSectionData(formData.ibu, 'ibu')}</AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="wali">
+              <AccordionTrigger className="font-semibold">Data Wali</AccordionTrigger>
+              <AccordionContent>
+                {Object.values(formData.wali).every(v => v === '' || v === undefined || v === null)
+                  ? <p className="text-sm text-muted-foreground italic">Data wali tidak diisi.</p>
+                  : renderSectionData(formData.wali, 'wali')
+                }
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </CardContent>
+      </Card>
     );
   };
 
@@ -1145,135 +1154,144 @@ export function RegistrationForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onFormSubmit, onFormError)} className="w-full max-w-3xl p-2">
         <div className="sticky top-0 z-30 bg-background shadow-md mb-8 rounded-md">
-           {renderStepIndicators()}
+          {renderStepIndicators()}
         </div>
 
         <div className="space-y-8">
-            {currentStep === 1 && (
+          {currentStep === 1 && (
             <Card key="step-1" className="w-full shadow-lg">
-                <CardHeader>
+              <CardHeader>
                 <CardTitle className="font-headline text-xl text-center">Identitas Peserta Didik</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
+              </CardHeader>
+              <CardContent className="space-y-6">
                 <FormField control={form.control} name="siswa.namaLengkap" render={({ field }) => (
-                    <FormItem><FormLabel>Nama Lengkap *</FormLabel><FormControl><Input
+                  <FormItem><FormLabel>Nama Lengkap *</FormLabel><FormControl><Input
                     placeholder="Sesuai Akta Kelahiran"
                     {...field}
                     value={field.value ?? ''}
                     onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                    /></FormControl><FormMessage /></FormItem>
+                  /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="siswa.namaPanggilan" render={({ field }) => (
-                    <FormItem><FormLabel>Nama Panggilan *</FormLabel><FormControl><Input
+                  <FormItem><FormLabel>Nama Panggilan *</FormLabel><FormControl><Input
                     placeholder="Nama panggilan anda"
                     {...field}
                     value={field.value ?? ''}
                     onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                    /></FormControl><FormMessage /></FormItem>
+                  /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField
                   control={form.control}
                   name="siswa.jenisKelamin"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel>Jenis Kelamin *</FormLabel>
+                      {/* Ganti FormLabel utama dengan fieldset dan legend */}
+                      <fieldset>
+                        <legend className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-3">Jenis Kelamin *</legend>
+                        <FormControl>
+                          <RadioGroup
+                            // PENTING: Sebarkan semua properti 'field' di sini.
+                            // Ini akan otomatis meneruskan 'name', 'value', 'onChange', dan 'onBlur'.
+                            {...field}
+                            onValueChange={(value) => { // Tetap gunakan ini jika Anda ingin trigger validasi manual setelah perubahan
+                              field.onChange(value);
+                              form.trigger("siswa.jenisKelamin");
+                            }}
+                            className="flex flex-row space-x-4"
+                          >
+                            {jenisKelaminOptions.map((option) => {
+                              const uniqueId = `${field.name}-${option.toLowerCase().replace(/\s/g, '-')}`;
+                              return (
+                                <div key={option} className="flex items-center space-x-2 space-y-0">
+                                  {/* Hapus 'name={field.name}' dari RadioGroupItem, karena sudah ditangani oleh RadioGroup melalui {...field} */}
+                                  <RadioGroupItem value={option} id={uniqueId} />
+                                  <FormLabel htmlFor={uniqueId} className="font-normal">
+                                    {option}
+                                  </FormLabel>
+                                </div>
+                              );
+                            })}
+
+                          </RadioGroup>
+                        </FormControl>
+                      </fieldset>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="siswa.nisn"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>NISN (Nomor Induk Siswa Nasional) *</FormLabel>
                       <FormControl>
-                        <RadioGroup
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            form.trigger("siswa.jenisKelamin");
+                        <IMaskInput
+                          mask="0000000000"
+                          lazy={!nisnIsFocused && !nisnValue}
+                          inputMode="numeric"
+                          placeholder="10 digit NISN"
+                          className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('siswa.nisn', form.formState.errors) && "border-destructive")}
+                          value={field.value ?? ''}
+                          unmask={true}
+                          onAccept={(value) => field.onChange(value)}
+                          onFocus={() => setNisnIsFocused(true)}
+                          onBlur={(e) => {
+                            field.onBlur();
+                            setNisnIsFocused(false);
                           }}
-                          value={field.value}
-                          className="flex flex-row space-x-4"
-                        >
-                          {jenisKelaminOptions.map((option) => (
-                            <FormItem key={option} className="flex items-center space-x-2 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value={option} />
-                              </FormControl>
-                              <FormLabel className="font-normal">
-                                {option}
-                              </FormLabel>
-                            </FormItem>
-                          ))}
-                        </RadioGroup>
+                          inputRef={field.ref}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <FormField
-                    control={form.control}
-                    name="siswa.nisn"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>NISN (Nomor Induk Siswa Nasional) *</FormLabel>
-                        <FormControl>
-                            <IMaskInput
-                                mask="0000000000"
-                                lazy={!nisnIsFocused && !nisnValue}
-                                inputMode="numeric"
-                                placeholder="10 digit NISN"
-                                className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('siswa.nisn', form.formState.errors) && "border-destructive")}
-                                value={field.value ?? ''}
-                                unmask={true}
-                                onAccept={(value) => field.onChange(value)}
-                                onFocus={() => setNisnIsFocused(true)}
-                                onBlur={(e) => {
-                                    field.onBlur();
-                                    setNisnIsFocused(false);
-                                }}
-                                inputRef={field.ref}
-                            />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="siswa.nikSiswa"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>NIK (Nomor Induk Kependudukan) *</FormLabel>
-                        <FormControl>
-                             <IMaskInput
-                                mask="0000000000000000"
-                                lazy={!nikIsFocused && !nikValue}
-                                inputMode="numeric"
-                                placeholder="16 digit NIK (sesuai Kartu Keluarga)"
-                                className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('siswa.nikSiswa', form.formState.errors) && "border-destructive")}
-                                value={field.value ?? ''}
-                                unmask={true}
-                                onAccept={(value) => field.onChange(value)}
-                                onFocus={() => setNikIsFocused(true)}
-                                onBlur={(e) => {
-                                    field.onBlur();
-                                    setNikIsFocused(false);
-                                }}
-                                inputRef={field.ref}
-                            />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
+                  control={form.control}
+                  name="siswa.nikSiswa"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>NIK (Nomor Induk Kependudukan) *</FormLabel>
+                      <FormControl>
+                        <IMaskInput
+                          mask="0000000000000000"
+                          lazy={!nikIsFocused && !nikValue}
+                          inputMode="numeric"
+                          placeholder="16 digit NIK (sesuai Kartu Keluarga)"
+                          className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('siswa.nikSiswa', form.formState.errors) && "border-destructive")}
+                          value={field.value ?? ''}
+                          unmask={true}
+                          onAccept={(value) => field.onChange(value)}
+                          onFocus={() => setNikIsFocused(true)}
+                          onBlur={(e) => {
+                            field.onBlur();
+                            setNikIsFocused(false);
+                          }}
+                          inputRef={field.ref}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
                 <FormField control={form.control} name="siswa.tempatLahir" render={({ field }) => (
-                    <FormItem><FormLabel>Tempat Lahir *</FormLabel><FormControl><Input
+                  <FormItem><FormLabel>Tempat Lahir *</FormLabel><FormControl><Input
                     placeholder="Kota/Kabupaten kelahiran"
                     {...field}
                     value={field.value ?? ''}
                     onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                    /></FormControl><FormMessage /></FormItem>
+                  /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField
                     control={form.control}
                     name="siswa.tanggalLahir"
                     render={({ field, fieldState }) => (
                     <FormItem className="flex flex-col">
-                        <FormLabel>Tanggal Lahir *</FormLabel>
+                        <FormLabel htmlFor="siswa-tanggal-lahir">Tanggal Lahir *</FormLabel> {/* Tambahkan htmlFor */}
                         <FormControl>
                             <CustomDatePicker
+                                id="siswa-tanggal-lahir" // Tambahkan ID ke CustomDatePicker
                                 value={field.value}
                                 onDateChange={(dateStr) => field.onChange(dateStr)}
                                 onRHFBlur={field.onBlur}
@@ -1286,352 +1304,359 @@ export function RegistrationForm() {
                     )}
                 />
                 <FormField control={form.control} name="siswa.agama" render={({ field }) => (
-                    <FormItem><FormLabel>Agama *</FormLabel><Select onValueChange={(value) => { field.onChange(value); form.trigger('siswa.agama'); }} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih agama" /></SelectTrigger></FormControl><SelectContent>{agamaOptionsList.map(ag => <SelectItem key={ag} value={ag}>{ag}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Agama *</FormLabel><Select {...field} onValueChange={(value) => { field.onChange(value); form.trigger('siswa.agama'); }}><FormControl><SelectTrigger><SelectValue placeholder="Pilih agama" /></SelectTrigger></FormControl><SelectContent>{agamaOptionsList.map(ag => <SelectItem key={ag} value={ag}>{ag}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
                 {form.watch('siswa.agama') === 'Lainnya' && (
-                    <FormField control={form.control} name="siswa.agamaLainnya" render={({ field }) => (
-                        <FormItem><FormLabel>Detail Agama Lainnya *</FormLabel><FormControl><Input placeholder="Sebutkan agama lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-                    )} />
+                  <FormField control={form.control} name="siswa.agamaLainnya" render={({ field }) => (
+                    <FormItem><FormLabel>Detail Agama Lainnya *</FormLabel><FormControl><Input placeholder="Sebutkan agama lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                  )} />
                 )}
                 <FormField control={form.control} name="siswa.anakKe" render={({ field }) => (
-                    <FormItem><FormLabel>Anak Keberapa *</FormLabel><FormControl><Input type="number" min="1" placeholder="Contoh: 1" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Anak Keberapa *</FormLabel><FormControl><Input type="number" min="1" placeholder="Contoh: 1" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="siswa.jumlahSaudaraKandung" render={({ field }) => (
-                    <FormItem><FormLabel>Jumlah Saudara Kandung *</FormLabel><FormControl><Input type="number" min="0" placeholder="Isi 0 jika tidak punya" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Jumlah Saudara Kandung *</FormLabel><FormControl><Input type="number" min="0" placeholder="Isi 0 jika tidak punya" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
                 )} />
-                
+
                 <Separator className="my-4" />
                 <p className="font-medium text-center">Alamat Tempat Tinggal</p>
-
                 <FormField control={form.control} name="siswa.tempatTinggal" render={({ field }) => (
-                    <FormItem><FormLabel>Tempat Tinggal Saat Ini *</FormLabel><Select onValueChange={(value) => { field.onChange(value); form.trigger('siswa.tempatTinggal'); }} value={field.value ?? undefined}><FormControl><SelectTrigger><SelectValue placeholder="Pilih tempat tinggal" /></SelectTrigger></FormControl><SelectContent>{tempatTinggalOptionsList.map(tt => <SelectItem key={tt} value={tt}>{tt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Tempat Tinggal Saat Ini *</FormLabel><Select {...field} onValueChange={(value) => { field.onChange(value); form.trigger('siswa.tempatTinggal'); }}><FormControl><SelectTrigger><SelectValue placeholder="Pilih tempat tinggal" /></SelectTrigger></FormControl><SelectContent>{tempatTinggalOptionsList.map(tt => <SelectItem key={tt} value={tt}>{tt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
                 {form.watch('siswa.tempatTinggal') === 'Lainnya' && (
-                    <FormField control={form.control} name="siswa.tempatTinggalLainnya" render={({ field }) => (
-                        <FormItem><FormLabel>Detail Tempat Tinggal Lainnya *</FormLabel><FormControl><Input placeholder="Sebutkan tempat tinggal lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-                    )} />
+                  <FormField control={form.control} name="siswa.tempatTinggalLainnya" render={({ field }) => (
+                    <FormItem><FormLabel>Detail Tempat Tinggal Lainnya *</FormLabel><FormControl><Input placeholder="Sebutkan tempat tinggal lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                  )} />
                 )}
-                
+
                 <FormField
-                    control={form.control}
-                    name="siswa.provinsi"
-                    render={({ field }) => (
+                  control={form.control}
+                  name="siswa.provinsi"
+                  render={({ field }) => (
                     <FormItem className="flex flex-col">
-                        <FormLabel>Provinsi *</FormLabel>
-                        <Popover open={provincePopoverOpen} onOpenChange={setProvincePopoverOpen}>
+                      <FormLabel>Provinsi *</FormLabel>
+                      <Popover open={provincePopoverOpen} onOpenChange={setProvincePopoverOpen}>
                         <PopoverTrigger asChild>
-                            <FormControl>
+                          <FormControl>
                             <Button
-                                variant="outline"
-                                role="combobox"
-                                className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
-                                disabled={provincesLoading || provinces.length === 0}
+                              variant="outline"
+                              role="combobox"
+                              className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
+                              disabled={provincesLoading || provinces.length === 0}
                             >
-                                {field.value ? provinces.find(p => p.value === field.value)?.label : (provincesLoading ? "Memuat..." : "Pilih Provinsi")}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              {field.value ? provinces.find(p => p.value === field.value)?.label : (provincesLoading ? "Memuat..." : "Pilih Provinsi")}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
-                            </FormControl>
+                          </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                            <Command>
+                          <Command>
                             <CommandInput placeholder="Cari provinsi..." />
                             <CommandList>
-                                <CommandEmpty>Provinsi tidak ditemukan.</CommandEmpty>
-                                <CommandGroup>
+                              <CommandEmpty>Provinsi tidak ditemukan.</CommandEmpty>
+                              <CommandGroup>
                                 {provinces.map((province) => (
-                                    <CommandItem
+                                  <CommandItem
                                     value={province.label}
                                     key={province.value}
                                     onSelect={() => {
-                                        if (province.value !== field.value) {
-                                            form.setValue("siswa.provinsi", province.value);
-                                            form.setValue("siswa.kabupaten", "");
-                                            form.setValue("siswa.kecamatan", "");
-                                            form.setValue("siswa.desaKelurahan", "");
-                                            form.setValue("siswa.kodePos", "");
-                                            setIsKodePosReadOnly(false);
-                                            setRegencies([]);
-                                            setDistricts([]);
-                                            setVillages([]);
-                                            form.trigger("siswa.provinsi");
-                                        }
-                                        setProvincePopoverOpen(false);
+                                      if (province.value !== field.value) {
+                                        form.setValue("siswa.provinsi", province.value);
+                                        form.setValue("siswa.kabupaten", "");
+                                        form.setValue("siswa.kecamatan", "");
+                                        form.setValue("siswa.desaKelurahan", "");
+                                        form.setValue("siswa.kodePos", "");
+                                        setIsKodePosReadOnly(false);
+                                        setRegencies([]);
+                                        setDistricts([]);
+                                        setVillages([]);
+                                        form.trigger("siswa.provinsi");
+                                      }
+                                      setProvincePopoverOpen(false);
                                     }}
-                                    >
+                                  >
                                     <CheckIcon className={cn("mr-2 h-4 w-4", province.value === field.value ? "opacity-100" : "opacity-0")} />
                                     {province.label}
-                                    </CommandItem>
+                                  </CommandItem>
                                 ))}
-                                </CommandGroup>
+                              </CommandGroup>
                             </CommandList>
-                            </Command>
+                          </Command>
                         </PopoverContent>
-                        </Popover>
-                        <FormMessage />
+                      </Popover>
+                      <FormMessage />
                     </FormItem>
-                    )}
+                  )}
                 />
 
                 <FormField
-                    control={form.control}
-                    name="siswa.kabupaten"
-                    render={({ field }) => (
+                  control={form.control}
+                  name="siswa.kabupaten"
+                  render={({ field }) => (
                     <FormItem className="flex flex-col">
-                        <FormLabel>Kabupaten/Kota *</FormLabel>
-                        <Popover open={regencyPopoverOpen} onOpenChange={setRegencyPopoverOpen}>
+                      <FormLabel>Kabupaten/Kota *</FormLabel>
+                      <Popover open={regencyPopoverOpen} onOpenChange={setRegencyPopoverOpen}>
                         <PopoverTrigger asChild>
-                            <FormControl>
+                          <FormControl>
                             <Button
-                                variant="outline"
-                                role="combobox"
-                                disabled={!selectedProvinceCode || regenciesLoading || regencies.length === 0}
-                                className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
+                              variant="outline"
+                              role="combobox"
+                              disabled={!selectedProvinceCode || regenciesLoading || regencies.length === 0}
+                              className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
                             >
-                                {field.value ? regencies.find(r => r.value === field.value)?.label : (regenciesLoading ? "Memuat..." : "Pilih Kabupaten/Kota")}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              {field.value ? regencies.find(r => r.value === field.value)?.label : (regenciesLoading ? "Memuat..." : "Pilih Kabupaten/Kota")}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
-                            </FormControl>
+                          </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                            <Command>
+                          <Command>
                             <CommandInput placeholder="Cari kabupaten/kota..." />
                             <CommandList>
-                                <CommandEmpty>Kabupaten/Kota tidak ditemukan.</CommandEmpty>
-                                <CommandGroup>
+                              <CommandEmpty>Kabupaten/Kota tidak ditemukan.</CommandEmpty>
+                              <CommandGroup>
                                 {regencies.map((regency) => (
-                                    <CommandItem
+                                  <CommandItem
                                     value={regency.label}
                                     key={regency.value}
                                     onSelect={() => {
-                                        if (regency.value !== field.value) {
-                                            form.setValue("siswa.kabupaten", regency.value);
-                                            form.setValue("siswa.kecamatan", "");
-                                            form.setValue("siswa.desaKelurahan", "");
-                                            form.setValue("siswa.kodePos", "");
-                                            setIsKodePosReadOnly(false);
-                                            setDistricts([]);
-                                            setVillages([]);
-                                            form.trigger("siswa.kabupaten");
-                                        }
-                                        setRegencyPopoverOpen(false);
+                                      if (regency.value !== field.value) {
+                                        form.setValue("siswa.kabupaten", regency.value);
+                                        form.setValue("siswa.kecamatan", "");
+                                        form.setValue("siswa.desaKelurahan", "");
+                                        form.setValue("siswa.kodePos", "");
+                                        setIsKodePosReadOnly(false);
+                                        setDistricts([]);
+                                        setVillages([]);
+                                        form.trigger("siswa.kabupaten");
+                                      }
+                                      setRegencyPopoverOpen(false);
                                     }}
-                                    >
+                                  >
                                     <CheckIcon className={cn("mr-2 h-4 w-4", regency.value === field.value ? "opacity-100" : "opacity-0")} />
                                     {regency.label}
-                                    </CommandItem>
+                                  </CommandItem>
                                 ))}
-                                </CommandGroup>
+                              </CommandGroup>
                             </CommandList>
-                            </Command>
+                          </Command>
                         </PopoverContent>
-                        </Popover>
-                        <FormMessage />
+                      </Popover>
+                      <FormMessage />
                     </FormItem>
-                    )}
+                  )}
                 />
 
                 <FormField
-                    control={form.control}
-                    name="siswa.kecamatan"
-                    render={({ field }) => (
+                  control={form.control}
+                  name="siswa.kecamatan"
+                  render={({ field }) => (
                     <FormItem className="flex flex-col">
-                        <FormLabel>Kecamatan *</FormLabel>
-                        <Popover open={districtPopoverOpen} onOpenChange={setDistrictPopoverOpen}>
+                      <FormLabel>Kecamatan *</FormLabel>
+                      <Popover open={districtPopoverOpen} onOpenChange={setDistrictPopoverOpen}>
                         <PopoverTrigger asChild>
-                            <FormControl>
+                          <FormControl>
                             <Button
-                                variant="outline"
-                                role="combobox"
-                                disabled={!selectedRegencyCode || districtsLoading || districts.length === 0}
-                                className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
+                              variant="outline"
+                              role="combobox"
+                              disabled={!selectedRegencyCode || districtsLoading || districts.length === 0}
+                              className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
                             >
-                                {field.value ? districts.find(d => d.value === field.value)?.label : (districtsLoading ? "Memuat..." : "Pilih Kecamatan")}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              {field.value ? districts.find(d => d.value === field.value)?.label : (districtsLoading ? "Memuat..." : "Pilih Kecamatan")}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
-                            </FormControl>
+                          </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                            <Command>
+                          <Command>
                             <CommandInput placeholder="Cari kecamatan..." />
                             <CommandList>
-                                <CommandEmpty>Kecamatan tidak ditemukan.</CommandEmpty>
-                                <CommandGroup>
+                              <CommandEmpty>Kecamatan tidak ditemukan.</CommandEmpty>
+                              <CommandGroup>
                                 {districts.map((district) => (
-                                    <CommandItem
+                                  <CommandItem
                                     value={district.label}
                                     key={district.value}
                                     onSelect={() => {
-                                        if (district.value !== field.value) {
-                                            form.setValue("siswa.kecamatan", district.value);
-                                            form.setValue("siswa.desaKelurahan", "");
-                                            form.setValue("siswa.kodePos", "");
-                                            setIsKodePosReadOnly(false);
-                                            setVillages([]);
-                                            form.trigger("siswa.kecamatan");
-                                        }
-                                        setDistrictPopoverOpen(false);
+                                      if (district.value !== field.value) {
+                                        form.setValue("siswa.kecamatan", district.value);
+                                        form.setValue("siswa.desaKelurahan", "");
+                                        form.setValue("siswa.kodePos", "");
+                                        setIsKodePosReadOnly(false);
+                                        setVillages([]);
+                                        form.trigger("siswa.kecamatan");
+                                      }
+                                      setDistrictPopoverOpen(false);
                                     }}
-                                    >
+                                  >
                                     <CheckIcon className={cn("mr-2 h-4 w-4", district.value === field.value ? "opacity-100" : "opacity-0")} />
                                     {district.label}
-                                    </CommandItem>
+                                  </CommandItem>
                                 ))}
-                                </CommandGroup>
+                              </CommandGroup>
                             </CommandList>
-                            </Command>
+                          </Command>
                         </PopoverContent>
-                        </Popover>
-                        <FormMessage />
+                      </Popover>
+                      <FormMessage />
                     </FormItem>
-                    )}
+                  )}
                 />
 
                 <FormField
-                    control={form.control}
-                    name="siswa.desaKelurahan"
-                    render={({ field }) => (
+                  control={form.control}
+                  name="siswa.desaKelurahan"
+                  render={({ field }) => (
                     <FormItem className="flex flex-col">
-                        <FormLabel>Desa/Kelurahan *</FormLabel>
-                        <Popover open={villagePopoverOpen} onOpenChange={setVillagePopoverOpen}>
+                      <FormLabel>Desa/Kelurahan *</FormLabel>
+                      <Popover open={villagePopoverOpen} onOpenChange={setVillagePopoverOpen}>
                         <PopoverTrigger asChild>
-                            <FormControl>
+                          <FormControl>
                             <Button
-                                variant="outline"
-                                role="combobox"
-                                disabled={!selectedDistrictCode || villagesLoading || villages.length === 0}
-                                className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
+                              variant="outline"
+                              role="combobox"
+                              disabled={!selectedDistrictCode || villagesLoading || villages.length === 0}
+                              className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
                             >
-                                {field.value ? villages.find(v => v.value === field.value)?.label : (villagesLoading ? "Memuat..." : "Pilih Desa/Kelurahan")}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              {field.value ? villages.find(v => v.value === field.value)?.label : (villagesLoading ? "Memuat..." : "Pilih Desa/Kelurahan")}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
-                            </FormControl>
+                          </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                            <Command>
+                          <Command>
                             <CommandInput placeholder="Cari desa/kelurahan..." />
                             <CommandList>
-                                <CommandEmpty>Desa/Kelurahan tidak ditemukan.</CommandEmpty>
-                                <CommandGroup>
+                              <CommandEmpty>Desa/Kelurahan tidak ditemukan.</CommandEmpty>
+                              <CommandGroup>
                                 {villages.map((village) => (
-                                    <CommandItem
+                                  <CommandItem
                                     value={village.label}
                                     key={village.value}
                                     onSelect={() => {
-                                        if (village.value !== field.value) {
-                                            form.setValue("siswa.desaKelurahan", village.value);
-                                            if (village.postalCode) {
-                                                form.setValue("siswa.kodePos", village.postalCode);
-                                                setIsKodePosReadOnly(true);
-                                            } else {
-                                                form.setValue("siswa.kodePos", "");
-                                                setIsKodePosReadOnly(false);
-                                            }
-                                            form.trigger("siswa.desaKelurahan");
-                                            form.trigger("siswa.kodePos");
+                                      if (village.value !== field.value) {
+                                        form.setValue("siswa.desaKelurahan", village.value);
+                                        if (village.postalCode) {
+                                          form.setValue("siswa.kodePos", village.postalCode);
+                                          setIsKodePosReadOnly(true);
+                                        } else {
+                                          form.setValue("siswa.kodePos", "");
+                                          setIsKodePosReadOnly(false);
                                         }
-                                        setVillagePopoverOpen(false);
+                                        form.trigger("siswa.desaKelurahan");
+                                        form.trigger("siswa.kodePos");
+                                      }
+                                      setVillagePopoverOpen(false);
                                     }}
-                                    >
+                                  >
                                     <CheckIcon className={cn("mr-2 h-4 w-4", village.value === field.value ? "opacity-100" : "opacity-0")} />
                                     {village.label}
-                                    </CommandItem>
+                                  </CommandItem>
                                 ))}
-                                </CommandGroup>
+                              </CommandGroup>
                             </CommandList>
-                            </Command>
+                          </Command>
                         </PopoverContent>
-                        </Popover>
-                        <FormMessage />
+                      </Popover>
+                      <FormMessage />
                     </FormItem>
-                    )}
+                  )}
                 />
 
                 <FormField control={form.control} name="siswa.dusun" render={({ field }) => (
-                    <FormItem><FormLabel>Dusun (Opsional)</FormLabel><FormControl><Input
+                  <FormItem><FormLabel>Dusun (Opsional)</FormLabel><FormControl><Input
                     placeholder="Nama dusun/dukuh"
                     {...field}
                     value={field.value ?? ''}
                     onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                    /></FormControl><FormMessage /></FormItem>
+                  /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField
-                    control={form.control}
-                    name="siswa.rtRw"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>RT/RW *</FormLabel>
-                        <FormControl>
-                            <IMaskInput
-                                mask="000/000"
-                                lazy={!rtRwIsFocused && !rtRwValue}
-                                placeholder="Contoh: 001/002"
-                                inputMode="numeric"
-                                className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('siswa.rtRw', form.formState.errors) && "border-destructive")}
-                                value={field.value ?? ''}
-                                unmask={false}
-                                onAccept={(value) => field.onChange(value)}
-                                onFocus={() => setRtRwIsFocused(true)}
-                                onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
-                                    if (e.target.value.replace(/\D/g, '').length === 0) {
-                                        form.setValue('siswa.rtRw', '', { shouldValidate: true });
-                                    }
-                                    field.onBlur();
-                                    setRtRwIsFocused(false);
-                                }}
-                                inputRef={field.ref}
-                            />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
+                  control={form.control}
+                  name="siswa.rtRw"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>RT/RW *</FormLabel>
+                      <FormControl>
+                        <IMaskInput
+                          mask="000/000"
+                          lazy={!rtRwIsFocused && !rtRwValue}
+                          placeholder="Contoh: 001/002"
+                          inputMode="numeric"
+                          className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('siswa.rtRw', form.formState.errors) && "border-destructive")}
+                          value={field.value ?? ''}
+                          unmask={false}
+                          onAccept={(value) => field.onChange(value)}
+                          onFocus={() => setRtRwIsFocused(true)}
+                          onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
+                            if (e.target.value.replace(/\D/g, '').length === 0) {
+                              form.setValue('siswa.rtRw', '', { shouldValidate: true });
+                            }
+                            field.onBlur();
+                            setRtRwIsFocused(false);
+                          }}
+                          inputRef={field.ref}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
                 <FormField control={form.control} name="siswa.alamatJalan" render={({ field }) => (
-                    <FormItem><FormLabel>Alamat Jalan (Opsional)</FormLabel><FormControl><Input placeholder="Contoh: Jl. Kenanga No. 27 (Bisa nama jalan saja)" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Kosongkan jika tidak tahu nama jalan.</FormDescription><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Alamat Jalan (Opsional)</FormLabel><FormControl><Input placeholder="Contoh: Jl. Kenanga No. 27 (Bisa nama jalan saja)" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Kosongkan jika tidak tahu nama jalan.</FormDescription><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="siswa.kodePos" render={({ field }) => (
-                    <FormItem><FormLabel>Kode Pos *</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={5} placeholder="5 digit kode pos" {...field} value={field.value ?? ''} readOnly={isKodePosReadOnly} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Kode Pos *</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={5} placeholder="5 digit kode pos" {...field} value={field.value ?? ''} readOnly={isKodePosReadOnly} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <Separator className="my-4" />
-                <FormField control={form.control} name="siswa.modaTransportasi" render={() => (
+                <FormField
+                  control={form.control}
+                  name="siswa.modaTransportasi"
+                  render={({ field }) => ( // 'field' di sini sekarang mencakup semua properti yang dibutuhkan untuk array checkboxes
                     <FormItem>
                       <fieldset>
                         <legend className="text-sm font-medium leading-none mb-3">Moda Transportasi ke Sekolah *</legend>
                         <div className="space-y-2">
-                          {modaTransportasiOptions.map((option) => (
-                            <FormField key={option.id} control={form.control} name="siswa.modaTransportasi"
-                              render={({ field }) => (
-                                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                  <FormControl>
-                                    <Checkbox checked={field.value?.includes(option.id)}
-                                      onCheckedChange={(checked) => {
-                                        return checked
-                                          ? field.onChange([...(field.value || []), option.id])
-                                          : field.onChange((field.value || []).filter((value: string) => value !== option.id));
-                                      }} />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">{option.label}</FormLabel>
-                                </FormItem>
-                              )}
-                            />
-                          ))}
+                          {modaTransportasiOptions.map((option) => {
+                            const uniqueId = `${field.name}-${option.id.toLowerCase().replace(/\s/g, '-')}`; // ID unik untuk setiap checkbox
+                            return (
+                              <FormItem key={option.id} className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    id={uniqueId} // Menetapkan ID unik
+                                    checked={field.value?.includes(option.id)}
+                                    onCheckedChange={(checked) => {
+                                      return checked
+                                        ? field.onChange([...(field.value || []), option.id])
+                                        : field.onChange((field.value || []).filter((value: string) => value !== option.id));
+                                    }}
+                                    name={field.name} // Menetapkan nama yang sama untuk semua checkbox dalam grup
+                                  />
+                                </FormControl>
+                                <FormLabel htmlFor={uniqueId} className="font-normal"> {/* Menghubungkan label dengan ID checkbox */}
+                                  {option.label}
+                                </FormLabel>
+                              </FormItem>
+                            );
+                          })}
                         </div>
                       </fieldset>
                       <FormMessage />
                     </FormItem>
-                )} />
+                  )} />
                 {form.watch('siswa.modaTransportasi', []).includes('lainnya') && (
-                    <FormField control={form.control} name="siswa.modaTransportasiLainnya" render={({ field }) => (
+                  <FormField control={form.control} name="siswa.modaTransportasiLainnya" render={({ field }) => (
                     <FormItem><FormLabel>Detail Moda Transportasi Lainnya *</FormLabel><FormControl><Input placeholder="Sebutkan moda transportasi lainnya" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-                    )} />
+                  )} />
                 )}
-                </CardContent>
+              </CardContent>
             </Card>
-            )}
+          )}
 
-            {currentStep === 2 && <div key="step-2">{renderParentFields('ayah')}</div>}
-            {currentStep === 3 && <div key="step-3">{renderParentFields('ibu')}</div>}
-            {currentStep === 4 && <div key="step-4">{renderParentFields('wali')}</div>}
-            {currentStep === 5 && <div key="step-5">{renderReviewStep()}</div>}
+          {currentStep === 2 && <div key="step-2">{renderParentFields('ayah')}</div>}
+          {currentStep === 3 && <div key="step-3">{renderParentFields('ibu')}</div>}
+          {currentStep === 4 && <div key="step-4">{renderParentFields('wali')}</div>}
+          {currentStep === 5 && <div key="step-5">{renderReviewStep()}</div>}
         </div>
 
         <CardFooter className="flex justify-between mt-8">
@@ -1639,7 +1664,7 @@ export function RegistrationForm() {
             <Button type="button" variant="outline" onClick={() => processStep('prev')} disabled={form.formState.isSubmitting || isSubmittedSuccessfully} className="gap-0">
               <ArrowLeft className="h-4 w-4" /> Sebelumnya
             </Button>
-          ) : ( <div />
+          ) : (<div />
           )}
 
           {currentStep < TOTAL_STEPS ? (
@@ -1647,10 +1672,10 @@ export function RegistrationForm() {
               Berikutnya <ArrowRight className="h-4 w-4" />
             </Button>
           ) : (
-            <Button 
-              type="submit" 
-              onClick={() => setIsAttemptingSubmit(true)} 
-              className="ml-auto gap-2" 
+            <Button
+              type="submit"
+              onClick={() => setIsAttemptingSubmit(true)}
+              className="ml-auto gap-2"
               disabled={form.formState.isSubmitting || isSubmittedSuccessfully}
             >
               {form.formState.isSubmitting ? 'Mengirim...' : isSubmittedSuccessfully ? 'Terkirim' : 'Kirim Pendaftaran'}
@@ -1663,7 +1688,7 @@ export function RegistrationForm() {
   );
 }
 
-    
-    
 
-    
+
+
+
