@@ -218,6 +218,8 @@ export const modaTransportasiOptions = [
   { id: "jemputan_sekolah", label: "Jemputan Sekolah" },
   { id: "lainnya", label: "Lainnya" },
 ] as const;
+export type ModaTransportasiType = typeof modaTransportasiOptions[number]["id"];
+
 
 
 

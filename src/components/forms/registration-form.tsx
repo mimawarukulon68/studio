@@ -6,10 +6,8 @@ import { useForm, type FieldPath, type FieldErrors, type FieldError } from 'reac
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, ArrowRight, Send, UserRound, User as UserIcon, ShieldCheck, XIcon, ChevronsUpDown, CheckIcon, CalendarIcon, AlertCircle, FileCheck2 } from 'lucide-react';
 import { IMaskInput } from 'react-imask';
-import type IMask from 'imask';
 import { format, parse, isValid as isDateValid } from 'date-fns';
 import { id as localeID } from 'date-fns/locale/id';
-
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -52,6 +50,7 @@ import {
   agamaOptionsList,
   tempatTinggalOptionsList,
   modaTransportasiOptions,
+  type ModaTransportasiType,
   pendidikanOptionsList,
   pekerjaanOptionsList,
   penghasilanOptionsList,
@@ -632,16 +631,22 @@ export function RegistrationForm() {
     processParentLainnya(processedData.wali);
 
     if (processedData.siswa.modaTransportasi) {
-      const transportationMap = new Map(modaTransportasiOptions.map(opt => [opt.id, opt.label]));
+      const transportationMap = new Map<ModaTransportasiType, string>(
+        modaTransportasiOptions.map(opt => [opt.id, opt.label])
+      );
+    
       const transportationLabels = processedData.siswa.modaTransportasi.map((id: string) => {
-        if (id === 'lainnya') {
-          return processedData.siswa.modaTransportasiLainnya ? `Lainnya: ${processedData.siswa.modaTransportasiLainnya}` : 'Lainnya';
+        if (id === "lainnya") {
+          return processedData.siswa.modaTransportasiLainnya
+            ? `Lainnya: ${processedData.siswa.modaTransportasiLainnya}`
+            : "Lainnya";
         }
-        return transportationMap.get(id) || id;
+        return transportationMap.get(id as ModaTransportasiType) || id;
       });
+    
       processedData.siswa.modaTransportasi = transportationLabels;
       delete processedData.siswa.modaTransportasiLainnya;
-    }
+    }   
 
     console.log("Form submitted successfully:", processedData);
     toast({
@@ -788,7 +793,7 @@ export function RegistrationForm() {
                   <FormControl>
                     <Checkbox
                       id={`${namePrefix}-is-deceased`} // Tambahkan ID unik
-                      checked={field.value}
+                      checked={!!field.value}
                       onCheckedChange={field.onChange}
                       name={field.name} // Secara eksplisit berikan atribut 'name'
                     />
@@ -810,7 +815,7 @@ export function RegistrationForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Hubungan dengan Siswa {isWaliCurrentlyRequired ? '*' : '(Opsional)'}</FormLabel>
-                  <Select {...field} onValueChange={(value) => { field.onChange(value); form.trigger('wali.hubungan'); }}> {/* Menambahkan {...field} dan menghapus value={field.value ?? undefined} */}
+                  <Select {...field} value={field.value ?? ""} onValueChange={(value) => { field.onChange(value); form.trigger('wali.hubungan'); }}> {/* Menambahkan {...field} dan menghapus value={field.value ?? undefined} */}
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Pilih hubungan" /></SelectTrigger>
                     </FormControl>
@@ -850,7 +855,7 @@ export function RegistrationForm() {
                   <Input
                     placeholder={`Masukkan nama ${title.toLowerCase()}`}
                     {...field}
-                    value={field.value ?? ''}
+                    value={typeof field.value === "string" ? field.value : ""}
                     onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                   />
                 </FormControl>
@@ -871,7 +876,7 @@ export function RegistrationForm() {
                     inputMode="numeric"
                     placeholder="16 digit NIK"
                     className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError(`${namePrefix}.nik`, form.formState.errors) && "border-destructive")}
-                    value={field.value ?? ''}
+                    value={typeof field.value === "string" ? field.value : ""}
                     unmask={true}
                     onAccept={(value) => field.onChange(value)}
                     onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
@@ -900,7 +905,7 @@ export function RegistrationForm() {
               <FormItem>
                 <FormLabel>Tahun Lahir {parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*')}</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="Contoh: 1980" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
+                  <Input type="number" placeholder="Contoh: 1980" {...field} value={typeof field.value === "number" || typeof field.value === "string" ? field.value : ""} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -912,7 +917,7 @@ export function RegistrationForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Pendidikan Terakhir {parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*')}</FormLabel>
-                <Select {...field} onValueChange={(value) => { field.onChange(value); form.trigger(`${namePrefix}.pendidikan`); }}>
+                <Select {...field} value={typeof field.value === "string" ? field.value : ""} onValueChange={(value) => { field.onChange(value); form.trigger(`${namePrefix}.pendidikan`); }}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih pendidikan" /></SelectTrigger>
                   </FormControl>
@@ -932,7 +937,7 @@ export function RegistrationForm() {
                 <FormItem>
                   <FormLabel>Detail Pendidikan Lainnya *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Sebutkan pendidikan lainnya" {...field} value={field.value ?? ''} />
+                    <Input placeholder="Sebutkan pendidikan lainnya" {...field} value={typeof field.value === "string" ? field.value : ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -947,7 +952,7 @@ export function RegistrationForm() {
                 <FormLabel>Pekerjaan Utama {parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*')}</FormLabel>
                 <Select
                   {...field} // Sebarkan properti 'field' di sini
-                  onValueChange={(value) => { field.onChange(value); form.trigger(`${namePrefix}.pekerjaan`); }}
+                  value={typeof field.value === "string" ? field.value : ""} onValueChange={(value) => { field.onChange(value); form.trigger(`${namePrefix}.pekerjaan`); }}
                 >
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih pekerjaan" /></SelectTrigger>
@@ -968,7 +973,7 @@ export function RegistrationForm() {
                 <FormItem>
                   <FormLabel>Detail Pekerjaan Lainnya *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Sebutkan pekerjaan lainnya" {...field} value={field.value ?? ''} />
+                    <Input placeholder="Sebutkan pekerjaan lainnya" {...field} value={typeof field.value === "string" ? field.value : ""}/>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -983,7 +988,7 @@ export function RegistrationForm() {
                 <FormLabel>Penghasilan Bulanan {parentType === 'wali' ? (isWaliCurrentlyRequired ? '*' : '(Opsional)') : (isDeceased ? '(Opsional)' : '*')}</FormLabel>
                 <Select
                   {...field} // Sebarkan properti 'field' di sini
-                  onValueChange={(value) => { field.onChange(value); form.trigger(`${namePrefix}.penghasilan`); }}
+                  value={typeof field.value === "string" ? field.value : ""} onValueChange={(value) => { field.onChange(value); form.trigger(`${namePrefix}.penghasilan`); }}
                 >
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Pilih penghasilan" /></SelectTrigger>
@@ -1013,7 +1018,7 @@ export function RegistrationForm() {
                       placeholder="81234567890"
                       className="rounded-l-none"
                       {...field}
-                      value={field.value ?? ''}
+                      value={typeof field.value === "string" ? field.value : ""}
                       disabled={parentType !== 'wali' && isDeceased}
                     />
                   </FormControl>
@@ -1044,7 +1049,7 @@ export function RegistrationForm() {
           if (id === 'lainnya') {
             return formData.siswa.modaTransportasiLainnya ? `Lainnya: ${formData.siswa.modaTransportasiLainnya}` : 'Lainnya';
           }
-          return transportationMap.get(id) || id;
+          return transportationMap.get(id as ModaTransportasiType) || id;
         });
         return labels.join(', ');
       }
