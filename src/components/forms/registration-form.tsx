@@ -231,10 +231,10 @@ export function RegistrationForm() {
       fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
       if (form.getValues('ayah.pekerjaan') === 'Meninggal Dunia') {
-        form.setValue('ayah.pekerjaan', undefined);
+        form.setValue('ayah.pekerjaan', '');
       }
       if (form.getValues('ayah.penghasilan') === 'Meninggal Dunia') {
-        form.setValue('ayah.penghasilan', undefined);
+        form.setValue('ayah.penghasilan', '');
       }
     }
   }, [isAyahDeceased, form]);
@@ -248,10 +248,10 @@ export function RegistrationForm() {
       fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
       if (form.getValues('ibu.pekerjaan') === 'Meninggal Dunia') {
-        form.setValue('ibu.pekerjaan', undefined);
+        form.setValue('ibu.pekerjaan', '');
       }
       if (form.getValues('ibu.penghasilan') === 'Meninggal Dunia') {
-        form.setValue('ibu.penghasilan', undefined);
+        form.setValue('ibu.penghasilan', '');
       }
     }
   }, [isIbuDeceased, form]);
