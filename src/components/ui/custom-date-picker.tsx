@@ -38,6 +38,7 @@ interface CustomDatePickerProps {
   inputClassName?: string;
   disabled?: boolean;
   ariaInvalid?: boolean;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
 }
 
 export function CustomDatePicker({
@@ -50,6 +51,7 @@ export function CustomDatePicker({
   inputClassName,
   disabled = false,
   ariaInvalid = false,
+  inputMode,
 }: CustomDatePickerProps) {
   const [isPickerOpen, setIsPickerOpen] = React.useState(false);
   const [isFocused, setIsFocused] = React.useState(false);
@@ -115,6 +117,7 @@ export function CustomDatePicker({
           disabled={disabled}
           aria-invalid={ariaInvalid}
           placeholder="DD/MM/YYYY"
+          inputMode={inputMode}
           className={cn(
             "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
             "pr-10",

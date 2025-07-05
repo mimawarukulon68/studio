@@ -702,10 +702,10 @@ export function RegistrationForm() {
             <div
               key={step.num}
               className={cn(
-                "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-colors text-center relative shadow-sm hover:border-primary/70",
+                "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-colors text-center relative shadow-sm",
                 isCurrent
                   ? (attemptedAndInvalid
-                    ? "bg-primary text-primary-foreground border-destructive ring-2 ring-destructive ring-offset-background"
+                    ? "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-destructive ring-offset-background"
                     : "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-primary ring-offset-background")
                   : successfullyValidated
                     ? "border-green-500 bg-card"
@@ -1325,6 +1325,7 @@ export function RegistrationForm() {
                                 onRHFBlur={field.onBlur}
                                 ariaInvalid={!!fieldState.error}
                                 disabled={field.disabled}
+                                inputMode="numeric"
                             />
                         </FormControl>
                         <FormMessage />
