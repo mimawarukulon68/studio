@@ -1,5 +1,14 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
+import allVillages from '@/data/wilayah/villages.json';
+
+// Define an interface for type safety
+interface Village {
+    code: string;
+    name: string;
+    district_code: string;
+    postal_code: string;
+}
 
 export async function GET(
   request: NextRequest,
@@ -11,19 +20,13 @@ export async function GET(
   }
 
   try {
-    const response = await fetch(`https://wilayah.id/api/villages/${districtCode}.json`, {
-      next: { revalidate: 3600 * 24 } // Cache for 1 day
-    });
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Failed to fetch villages for district ${districtCode} from external API:`, response.status, errorText);
-      return NextResponse.json({ error: 'Failed to fetch villages', details: errorText }, { status: response.status });
-    }
-    const data = await response.json();
-    // The external API nests the array in a "data" property. We return only the array.
-    return NextResponse.json(data.data || []);
+    // Filter villages from the local JSON file based on districtCode
+    const filteredVillages = (allVillages as Village[]).filter(
+        (village) => village.district_code === districtCode
+    );
+    return NextResponse.json(filteredVillages);
   } catch (error) {
-    console.error(`Error in villages proxy for district ${districtCode}:`, error);
+    console.error(`Error reading local villages data for district ${districtCode}:`, error);
     return NextResponse.json({ error: 'Internal server error fetching villages', details: (error as Error).message }, { status: 500 });
   }
 }

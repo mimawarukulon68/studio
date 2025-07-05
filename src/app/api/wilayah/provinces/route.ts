@@ -1,21 +1,13 @@
 
-import { type NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import provinces from '@/data/wilayah/provinces.json';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const response = await fetch('https://wilayah.id/api/provinces.json', {
-      next: { revalidate: 3600 * 24 } // Cache for 1 day
-    });
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Failed to fetch provinces from external API:', response.status, errorText);
-      return NextResponse.json({ error: 'Failed to fetch provinces', details: errorText }, { status: response.status });
-    }
-    const data = await response.json();
-    // The external API nests the array in a "data" property. We return only the array.
-    return NextResponse.json(data.data || []);
+    // Return all provinces from the local JSON file
+    return NextResponse.json(provinces);
   } catch (error) {
-    console.error('Error in provinces proxy:', error);
+    console.error('Error reading local provinces data:', error);
     return NextResponse.json({ error: 'Internal server error fetching provinces', details: (error as Error).message }, { status: 500 });
   }
 }

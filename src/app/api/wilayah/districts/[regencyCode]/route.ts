@@ -1,5 +1,13 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
+import allDistricts from '@/data/wilayah/districts.json';
+
+// Define an interface for type safety
+interface District {
+    code: string;
+    name: string;
+    regency_code: string;
+}
 
 export async function GET(
   request: NextRequest,
@@ -11,19 +19,13 @@ export async function GET(
   }
 
   try {
-    const response = await fetch(`https://wilayah.id/api/districts/${regencyCode}.json`, {
-      next: { revalidate: 3600 * 24 } // Cache for 1 day
-    });
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Failed to fetch districts for regency ${regencyCode} from external API:`, response.status, errorText);
-      return NextResponse.json({ error: 'Failed to fetch districts', details: errorText }, { status: response.status });
-    }
-    const data = await response.json();
-    // The external API nests the array in a "data" property. We return only the array.
-    return NextResponse.json(data.data || []);
+    // Filter districts from the local JSON file based on regencyCode
+    const filteredDistricts = (allDistricts as District[]).filter(
+        (district) => district.regency_code === regencyCode
+    );
+    return NextResponse.json(filteredDistricts);
   } catch (error) {
-    console.error(`Error in districts proxy for regency ${regencyCode}:`, error);
+    console.error(`Error reading local districts data for regency ${regencyCode}:`, error);
     return NextResponse.json({ error: 'Internal server error fetching districts', details: (error as Error).message }, { status: 500 });
   }
 }
