@@ -601,7 +601,7 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
                         <FormItem><FormLabel>Kode Pos *</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={5} placeholder="5 digit kode pos" {...field} value={field.value ?? ''} readOnly={isKodePosReadOnly} /></FormControl><FormMessage /></FormItem>
                     )} />
 
-                    <div className="space-y-2 pt-2 text-center">
+                    <div className="space-y-2 pt-2 text-center bg-muted/50 p-4 rounded-md border">
                         <Label htmlFor="alamat-lengkap-preview" className="block">Alamat Lengkap (Pratinjau)</Label>
                         <div
                             id="alamat-lengkap-preview"
