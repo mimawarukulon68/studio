@@ -486,20 +486,22 @@ export function RegistrationForm() {
     const stepBeingLeft = currentStep;
     const isStepBeingLeftValid = await validateStep(stepBeingLeft);
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
-
+  
     if (action === 'next') {
       if (currentStep < TOTAL_STEPS) {
-        if (!isStepBeingLeftValid) return;
+        // ONLY for 'next' action, we block if the current step is invalid.
+        if (!isStepBeingLeftValid) {
+          return;
+        }
         setCurrentStep(prev => prev + 1);
       }
     } else if (action === 'prev') {
       if (currentStep > 1) {
+        // For 'prev', we don't block.
         setCurrentStep(prev => prev - 1);
       }
     } else if (action === 'jumpTo' && targetStep !== undefined) {
-      if (targetStep > currentStep) {
-        if (!isStepBeingLeftValid) return;
-      }
+      // For 'jumpTo', we also don't block, allowing free navigation.
       setCurrentStep(targetStep);
     }
   };
