@@ -1,17 +1,9 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import { format, parse, isValid as isDateValid } from 'date-fns';
 import { id as localeID } from 'date-fns/locale/id';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -27,25 +19,6 @@ interface Step5ReviewProps {
     villages: WilayahOption[];
 }
 
-const F4Preview = ({ formData, onOpenPrintDialog }: { formData: RegistrationFormData; onOpenPrintDialog: () => void }) => {
-    return (
-        <div className="flex flex-col items-center p-4">
-            <h2 className="text-xl font-bold">Pratinjau Formulir</h2>
-            <p className="text-muted-foreground text-sm text-center mb-4">Ini adalah tampilan formulir yang akan dicetak pada kertas F4.</p>
-            <div className="w-full h-[50vh] md:h-auto md:w-auto border rounded-lg overflow-hidden flex items-center justify-center">
-                <iframe
-                    src="/print"
-                    className="w-[210mm] h-[330mm] border-none scale-[0.3] md:scale-75 origin-top"
-                    title="Pratinjau Formulir Pendaftaran"
-                />
-            </div>
-            <Button onClick={onOpenPrintDialog} className="mt-4 no-print">
-                Cetak Formulir
-            </Button>
-        </div>
-    );
-};
-
 export const Step5Review: React.FC<Step5ReviewProps> = ({
     formData,
     provinces,
@@ -53,22 +26,6 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
     districts,
     villages
 }) => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-
-    const handleOpenPrintPreview = () => {
-        // Save data to localStorage so the /print page can access it
-        localStorage.setItem('formData', JSON.stringify(formData));
-        setIsModalOpen(true);
-    };
-
-    const handleOpenPrintDialog = () => {
-        const iframe = document.getElementById('print-preview-iframe') as HTMLIFrameElement;
-        if (iframe && iframe.contentWindow) {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
-        }
-    };
-
 
     const renderValue = (value: any): string => {
         if (typeof value === 'boolean') return value ? 'Ya' : 'Tidak';
@@ -187,29 +144,9 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
                 </Accordion>
 
                 <div className="mt-8 flex justify-center">
-                    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                        <DialogTrigger asChild>
-                            <Button onClick={handleOpenPrintPreview}>
-                                🖨️ Lihat Pratinjau Cetak (Ukuran F4)
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-start p-4 md:justify-center">
-                            <DialogHeader>
-                                <DialogTitle>Pratinjau Cetak Formulir</DialogTitle>
-                                <DialogDescription>
-                                    Gunakan `Ctrl+P` atau tombol cetak untuk mencetak. Tampilan ini dioptimalkan untuk kertas F4.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="overflow-auto w-full flex-grow flex items-start justify-center">
-                                <iframe
-                                    id="print-preview-iframe"
-                                    src="/print"
-                                    className="w-[210mm] h-[330mm] border-none origin-top-left md:origin-top transform scale-[0.4] sm:scale-[0.6] md:scale-[0.8] lg:scale-[1]"
-                                    title="Pratinjau Formulir Pendaftaran"
-                                />
-                            </div>
-                        </DialogContent>
-                    </Dialog>
+                    <Button>
+                        🖨️ Lihat Pratinjau Cetak
+                    </Button>
                 </div>
 
             </CardContent>

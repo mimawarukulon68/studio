@@ -549,10 +549,7 @@ export function RegistrationForm() {
       return;
     }
 
-    // Save to localStorage for print preview
-    localStorage.setItem('formData', JSON.stringify(data));
-
-    console.log("Form submitted successfully, data saved to localStorage:", data);
+    console.log("Form submitted successfully. Data:", data);
     toast({
       title: "Pendaftaran Terkirim!",
       description: "Data Anda telah berhasil direkam.",
