@@ -203,6 +203,15 @@ export const registrationSchema = z.object({
     if (!data.wali.penghasilan) ctx.addIssue({ path: ["wali", "penghasilan"], message: "Penghasilan Wali wajib diisi", code: 'custom' });
   }
 
+}).superRefine((data, ctx) => {
+    // Phone number validation: at least one phone number must be provided
+    if (!data.ayah.nomorTelepon && !data.ibu.nomorTelepon && !data.wali.nomorTelepon) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi.",
+            path: ["root"], // Use a non-specific path
+        });
+    }
 });
 
 export type RegistrationFormData = z.infer<typeof registrationSchema>;

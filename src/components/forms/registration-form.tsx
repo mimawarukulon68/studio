@@ -491,10 +491,7 @@ export function RegistrationForm() {
     // Now, handle the navigation based on the action
     switch (action) {
       case 'next':
-        // ONLY block the "Next" button if the current step is invalid
-        if (!isStepBeingLeftValid) {
-          return;
-        }
+        // For "Next", we NEVER block navigation. We just go to the next step.
         if (currentStep < TOTAL_STEPS) {
           setCurrentStep(currentStep + 1);
         }
@@ -546,19 +543,18 @@ export function RegistrationForm() {
       setIsAttemptingSubmit(false);
       return;
     }
-
-    if (!data.ayah.nomorTelepon && !data.ibu.nomorTelepon && !data.wali.nomorTelepon) {
-      toast({
-        title: "Nomor Telepon Belum Diisi",
-        description: "Mohon isi minimal salah satu nomor telepon (Ayah, Ibu, atau Wali).",
-        variant: "destructive",
-      });
-      form.setError("ayah.nomorTelepon", { type: "manual", message: "Minimal satu nomor telepon wajib diisi." });
-      setStepCompletionStatus(prev => ({ ...prev, 2: false }));
-      setCurrentStep(2);
-      setIsAttemptingSubmit(false);
-      return;
+    
+    const validationResult = registrationSchema.safeParse(data);
+    if (!validationResult.success) {
+         toast({
+            title: "Formulir Belum Lengkap",
+            description: "Masih ada data yang belum valid. Mohon periksa kembali.",
+            variant: "destructive",
+        });
+        setIsAttemptingSubmit(false);
+        return;
     }
+
 
     console.log("Form submitted successfully. Data:", data);
     toast({
@@ -585,14 +581,39 @@ export function RegistrationForm() {
     const newCompletionStatus: Record<number, boolean | undefined> = {};
     let firstErrorStep = TOTAL_STEPS + 1;
 
-    for (let i = 1; i <= TOTAL_STEPS; i++) {
-      const isStepCurrentlyValid = await validateStep(i);
-      newCompletionStatus[i] = isStepCurrentlyValid;
-      if (!isStepCurrentlyValid && i < firstErrorStep) {
-        firstErrorStep = i;
-      }
+    // Check all steps for validity
+    for (let i = 1; i < TOTAL_STEPS; i++) { // only check steps 1 through 4
+        const fieldsForStep = getFieldsForStep(i);
+        const stepHasError = fieldsForStep.some(field => getFieldError(field, errors));
+        
+        // Also check superRefine errors for parent/wali schemas
+        let extraError = false;
+        if (i === 2 && errors.ayah) extraError = true;
+        if (i === 3 && errors.ibu) extraError = true;
+        if (i === 4 && errors.wali) extraError = true;
+
+        if (stepHasError || extraError) {
+            newCompletionStatus[i] = false;
+            if (i < firstErrorStep) {
+                firstErrorStep = i;
+            }
+        } else {
+            // Re-validate to be sure and mark as complete if it passes
+            newCompletionStatus[i] = await validateStep(i);
+        }
     }
-    setStepCompletionStatus(newCompletionStatus);
+
+    // Also check for the root-level superRefine error
+    if (errors.root) {
+        // Find which step the root error belongs to (e.g., the phone number requirement)
+        if (errors.ayah?.nomorTelepon || errors.ibu?.nomorTelepon || errors.wali?.nomorTelepon) {
+             if (firstErrorStep > 2) firstErrorStep = 2; // Default to step 2 for phone error
+             newCompletionStatus[2] = false;
+        }
+    }
+
+
+    setStepCompletionStatus(prev => ({ ...prev, ...newCompletionStatus }));
 
     if (firstErrorStep <= TOTAL_STEPS) {
       setCurrentStep(firstErrorStep);
