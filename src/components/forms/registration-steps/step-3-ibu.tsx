@@ -4,7 +4,7 @@
 import React from 'react';
 import type { Control, FormState, UseFormSetValue, UseFormTrigger, UseFormWatch, FieldErrors, FieldError, FieldPath } from 'react-hook-form';
 import { IMaskInput } from 'react-imask';
-import { AlertCircle } from 'lucide-react';
+import { User } from 'lucide-react';
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -40,10 +40,11 @@ export const Step3Ibu: React.FC<Step3IbuProps> = ({
 
     return (
         <Card className="w-full shadow-lg">
-            <CardHeader>
+            <CardHeader className="items-center bg-muted/50">
+                <User className="w-8 h-8 mb-2 text-primary" />
                 <CardTitle className="font-headline text-xl text-center">Data Ibu Kandung</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 pt-6">
                 <FormField
                     control={control}
                     name="ibu.isDeceased"
@@ -112,7 +113,6 @@ export const Step3Ibu: React.FC<Step3IbuProps> = ({
                                         setNikIsFocused(false);
                                     }}
                                     inputRef={field.ref}
-                                    disabled={isDeceased}
                                 />
                             </FormControl>
                             <FormMessage />
@@ -126,7 +126,7 @@ export const Step3Ibu: React.FC<Step3IbuProps> = ({
                         <FormItem>
                             <FormLabel>Tahun Lahir {isDeceased ? '(Opsional)' : '*'}</FormLabel>
                             <FormControl>
-                                <Input type="number" placeholder="Contoh: 1980" {...field} value={typeof field.value === "number" || typeof field.value === "string" ? field.value : ""} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} disabled={isDeceased} />
+                                <Input type="number" placeholder="Contoh: 1980" {...field} value={typeof field.value === "number" || typeof field.value === "string" ? field.value : ""} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -138,7 +138,7 @@ export const Step3Ibu: React.FC<Step3IbuProps> = ({
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Pendidikan Terakhir {isDeceased ? '(Opsional)' : '*'}</FormLabel>
-                            <Select {...field} value={typeof field.value === "string" ? field.value : ""} onValueChange={field.onChange} disabled={isDeceased}>
+                            <Select {...field} value={typeof field.value === "string" ? field.value : ""} onValueChange={field.onChange}>
                                 <FormControl>
                                     <SelectTrigger><SelectValue placeholder="Pilih pendidikan" /></SelectTrigger>
                                 </FormControl>
@@ -158,7 +158,7 @@ export const Step3Ibu: React.FC<Step3IbuProps> = ({
                             <FormItem>
                                 <FormLabel>Detail Pendidikan Lainnya *</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Sebutkan pendidikan lainnya" {...field} value={typeof field.value === "string" ? field.value : ""} disabled={isDeceased} />
+                                    <Input placeholder="Sebutkan pendidikan lainnya" {...field} value={typeof field.value === "string" ? field.value : ""} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -171,7 +171,7 @@ export const Step3Ibu: React.FC<Step3IbuProps> = ({
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Pekerjaan Utama {isDeceased ? '(Opsional)' : '*'}</FormLabel>
-                            <Select {...field} value={typeof field.value === "string" ? field.value : ""} onValueChange={field.onChange} disabled={isDeceased}>
+                            <Select {...field} value={typeof field.value === "string" ? field.value : ""} onValueChange={field.onChange}>
                                 <FormControl>
                                     <SelectTrigger><SelectValue placeholder="Pilih pekerjaan" /></SelectTrigger>
                                 </FormControl>
@@ -191,7 +191,7 @@ export const Step3Ibu: React.FC<Step3IbuProps> = ({
                             <FormItem>
                                 <FormLabel>Detail Pekerjaan Lainnya *</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Sebutkan pekerjaan lainnya" {...field} value={typeof field.value === "string" ? field.value : ""} disabled={isDeceased} />
+                                    <Input placeholder="Sebutkan pekerjaan lainnya" {...field} value={typeof field.value === "string" ? field.value : ""} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -204,7 +204,7 @@ export const Step3Ibu: React.FC<Step3IbuProps> = ({
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Penghasilan Bulanan {isDeceased ? '(Opsional)' : '*'}</FormLabel>
-                            <Select {...field} value={typeof field.value === "string" ? field.value : ""} onValueChange={field.onChange} disabled={isDeceased}>
+                            <Select {...field} value={typeof field.value === "string" ? field.value : ""} onValueChange={field.onChange}>
                                 <FormControl>
                                     <SelectTrigger><SelectValue placeholder="Pilih penghasilan" /></SelectTrigger>
                                 </FormControl>
