@@ -11,8 +11,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'Gerbang Madrasah',
-  description: 'Pendaftaran Peserta Didik Baru MI Roudlotut Tholibin Warukulon Tahun Pelajaran 2024/2025',
+  title: 'SPMB MIRT',
+  description: 'Sistem Penerimaan Murid Baru MI Roudlotut Tholibin Warukulon Tahun Pelajaran 2024/2025',
 };
 
 export default function RootLayout({
