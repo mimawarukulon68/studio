@@ -601,11 +601,13 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
                         <FormItem><FormLabel>Kode Pos *</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={5} placeholder="5 digit kode pos" {...field} value={field.value ?? ''} readOnly={isKodePosReadOnly} /></FormControl><FormMessage /></FormItem>
                     )} />
 
-                    <div className="space-y-2 pt-2">
-                        <Label htmlFor="alamat-lengkap-preview">Alamat Lengkap (Pratinjau)</Label>
+                    <div
+                        className="space-y-2 pt-2 rounded-md border p-3 bg-[hsl(45deg_80%_95%_/_77%)] text-center"
+                    >
+                        <Label htmlFor="alamat-lengkap-preview" className="block text-left">Alamat Lengkap (Pratinjau)</Label>
                         <div
                             id="alamat-lengkap-preview"
-                            className="w-full select-none rounded-md border border-input p-3 text-sm text-muted-foreground min-h-[60px] bg-[hsl(45deg_80%_95%_/_77%)] text-center"
+                            className="w-full select-none text-sm text-muted-foreground min-h-[60px]"
                         >
                             <p>{fullAddress || "Isi kolom alamat di atas untuk melihat pratinjau..."}</p>
                         </div>
@@ -661,5 +663,3 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
         </div>
     );
 };
-
-    
