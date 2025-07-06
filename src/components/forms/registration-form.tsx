@@ -483,26 +483,35 @@ export function RegistrationForm() {
   const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     setIsAttemptingSubmit(false);
 
+    // First, validate the step we are leaving to update its UI status (green check or red X)
     const stepBeingLeft = currentStep;
     const isStepBeingLeftValid = await validateStep(stepBeingLeft);
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
-  
-    if (action === 'next') {
-      if (currentStep < TOTAL_STEPS) {
-        // ONLY for 'next' action, we block if the current step is invalid.
+
+    // Now, handle the navigation based on the action
+    switch (action) {
+      case 'next':
+        // ONLY block the "Next" button if the current step is invalid
         if (!isStepBeingLeftValid) {
           return;
         }
-        setCurrentStep(prev => prev + 1);
-      }
-    } else if (action === 'prev') {
-      if (currentStep > 1) {
-        // For 'prev', we don't block.
-        setCurrentStep(prev => prev - 1);
-      }
-    } else if (action === 'jumpTo' && targetStep !== undefined) {
-      // For 'jumpTo', we also don't block, allowing free navigation.
-      setCurrentStep(targetStep);
+        if (currentStep < TOTAL_STEPS) {
+          setCurrentStep(currentStep + 1);
+        }
+        break;
+      
+      case 'prev':
+        if (currentStep > 1) {
+          setCurrentStep(currentStep - 1);
+        }
+        break;
+
+      case 'jumpTo':
+        // For jumping, we NEVER block navigation. We just go to the target step.
+        if (targetStep !== undefined) {
+          setCurrentStep(targetStep);
+        }
+        break;
     }
   };
 
