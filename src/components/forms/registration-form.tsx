@@ -702,16 +702,16 @@ export function RegistrationForm() {
             <div
               key={step.num}
               className={cn(
-                "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-colors text-center relative shadow-sm",
+                "flex flex-col items-center justify-center p-1 rounded-lg border-2 cursor-pointer transition-colors text-center relative shadow-inner",
                 isCurrent
-                  ? (attemptedAndInvalid
+                  ? attemptedAndInvalid
                     ? "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-destructive ring-offset-background"
-                    : "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-primary ring-offset-background")
+                    : "bg-primary text-primary-foreground border-primary-foreground ring-2 ring-primary ring-offset-background"
                   : successfullyValidated
-                    ? "border-green-500 bg-card"
+                    ? "bg-card border-green-500 hover:bg-primary/5"
                     : attemptedAndInvalid
-                      ? "border-destructive bg-card"
-                      : "border-border bg-card",
+                      ? "bg-card border-destructive hover:bg-primary/5"
+                      : "bg-card border-border hover:bg-primary/5"
               )}
               onClick={() => processStep('jumpTo', step.num)}
               title={step.title}
