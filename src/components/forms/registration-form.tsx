@@ -190,7 +190,7 @@ export function RegistrationForm() {
       form.setValue('ayah.pekerjaan', 'Meninggal Dunia', { shouldValidate: true });
       form.setValue('ayah.penghasilan', 'Meninggal Dunia', { shouldValidate: true });
       form.setValue('ayah.nomorTelepon', '', { shouldValidate: true });
-      const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ayah.nik', 'ayah.tahunLahir', 'ayah.pendidikan', 'ayah.pendidikanLainnya', 'ayah.pekerjaanLainnya', 'ayah.nomorTelepon'];
+      const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ayah.nik', 'ayah.tahunLahir', 'ayah.pendidikan', 'ayah.pendidikanLainnya', 'ayah.pekerjaanLainnya'];
       fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
       if (form.getValues('ayah.pekerjaan') === 'Meninggal Dunia') {
@@ -207,7 +207,7 @@ export function RegistrationForm() {
       form.setValue('ibu.pekerjaan', 'Meninggal Dunia', { shouldValidate: true });
       form.setValue('ibu.penghasilan', 'Meninggal Dunia', { shouldValidate: true });
       form.setValue('ibu.nomorTelepon', '', { shouldValidate: true });
-      const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ibu.nik', 'ibu.tahunLahir', 'ibu.pendidikan', 'ibu.pendidikanLainnya', 'ibu.pekerjaanLainnya', 'ibu.nomorTelepon'];
+      const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ibu.nik', 'ibu.tahunLahir', 'ibu.pendidikan', 'ibu.pendidikanLainnya', 'ibu.pekerjaanLainnya'];
       fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
       if (form.getValues('ibu.pekerjaan') === 'Meninggal Dunia') {
@@ -555,8 +555,45 @@ export function RegistrationForm() {
         return;
     }
 
+    // Transform data to combine 'Lainnya' fields
+    const processedData = JSON.parse(JSON.stringify(data));
 
-    console.log("Form submitted successfully. Data:", data);
+    const processLainnyaField = (obj: any, mainField: string, lainnyaField: string, lainnyaValue = "Lainnya") => {
+        if (obj[mainField] === lainnyaValue && obj[lainnyaField]) {
+            obj[mainField] = `${lainnyaValue}: ${obj[lainnyaField]}`;
+        }
+        delete obj[lainnyaField];
+    };
+
+    // Siswa
+    processLainnyaField(processedData.siswa, 'agama', 'agamaLainnya');
+    processLainnyaField(processedData.siswa, 'tempatTinggal', 'tempatTinggalLainnya');
+
+    if (processedData.siswa.modaTransportasi.includes('lainnya')) {
+        const modaLainnyaText = processedData.siswa.modaTransportasiLainnya || '';
+        processedData.siswa.modaTransportasi = processedData.siswa.modaTransportasi.map((m: string) => 
+            m === 'lainnya' ? `Lainnya: ${modaLainnyaText}` : m
+        );
+    }
+    delete processedData.siswa.modaTransportasiLainnya;
+
+
+    // Ayah, Ibu, Wali
+    ['ayah', 'ibu', 'wali'].forEach(key => {
+        const person = processedData[key as keyof typeof processedData];
+        if (person) {
+            processLainnyaField(person, 'pendidikan', 'pendidikanLainnya');
+            processLainnyaField(person, 'pekerjaan', 'pekerjaanLainnya');
+            if (person.nomorTelepon) {
+                person.nomorTelepon = `+62${person.nomorTelepon}`;
+            }
+        }
+    });
+
+    // Wali-specific hubungan
+    processLainnyaField(processedData.wali, 'hubungan', 'hubunganLainnya', 'Lainnya (tuliskan)');
+
+    console.log("Form submitted successfully. Processed Data:", processedData);
     toast({
       title: "Pendaftaran Terkirim!",
       description: "Data Anda telah berhasil direkam.",
