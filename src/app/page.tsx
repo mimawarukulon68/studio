@@ -11,7 +11,7 @@ export default function Home() {
         <h1 className="text-2xl font-bold text-center">Formulir Pendaftaran</h1>
         <p className="text-center mt-2 text-primary-foreground/80">MI Roudlotut Tholibin Warukulon</p>
       </div>
-      <div className="w-full px-2 md:px-4">
+      <div className="w-full px-2 md:px-4 flex justify-center">
          <RegistrationForm />
       </div>
       <div className="py-12">
