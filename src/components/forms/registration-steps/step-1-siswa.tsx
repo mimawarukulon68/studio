@@ -17,12 +17,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Label } from "@/components/ui/label";
 import { cn } from '@/lib/utils';
 import type { RegistrationFormData, ModaTransportasiType } from '@/lib/schemas';
 import { jenisKelaminOptions, agamaOptionsList, tempatTinggalOptionsList, modaTransportasiOptions } from '@/lib/schemas';
 import type { WilayahOption } from '../registration-form';
-import { UserRound } from 'lucide-react';
 
 interface Step1SiswaProps {
     control: Control<RegistrationFormData>;
@@ -132,7 +130,6 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
         <div className="space-y-8">
             <Card key="step-1-personal" className="w-full shadow-lg">
                 <CardHeader className="items-center bg-muted/50">
-                    <UserRound className="w-8 h-8 mb-2 text-primary" />
                     <CardTitle className="font-headline text-xl text-center">Data Calon Siswa</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -310,7 +307,6 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
 
             <Card key="step-1-address" className="w-full shadow-lg">
                 <CardHeader className="items-center bg-muted/50">
-                    <UserRound className="w-8 h-8 mb-2 text-primary" />
                     <CardTitle className="font-headline text-xl text-center">Alamat Calon Siswa</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -605,7 +601,7 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
                     )} />
 
                     <div className="space-y-2 pt-2 text-center bg-muted/50 p-4 rounded-md border">
-                        <p className="text-sm font-medium">Alamat Lengkap (Pratinjau)</p>
+                        <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Alamat Lengkap (Pratinjau)</p>
                         <div
                             className="w-full select-none rounded-md border p-3 text-sm text-muted-foreground min-h-[60px] bg-[hsl(45deg_80%_95%_/_77%)]"
                         >

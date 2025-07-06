@@ -4,7 +4,6 @@
 import React from 'react';
 import type { Control, FormState, UseFormSetValue, UseFormTrigger, UseFormWatch, FieldErrors, FieldError, FieldPath } from 'react-hook-form';
 import { IMaskInput } from 'react-imask';
-import { User } from 'lucide-react';
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -41,7 +40,6 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
     return (
         <Card className="w-full shadow-lg">
             <CardHeader className="items-center bg-muted/50">
-                <User className="w-8 h-8 mb-2 text-primary" />
                 <CardTitle className="font-headline text-xl text-center">Data Ayah Kandung</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">

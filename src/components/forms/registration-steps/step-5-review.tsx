@@ -10,7 +10,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import type { RegistrationFormData, ModaTransportasiType } from '@/lib/schemas';
 import { modaTransportasiOptions } from '@/lib/schemas';
 import type { WilayahOption } from '../registration-form';
-import { FileCheck2 } from 'lucide-react';
 
 interface Step5ReviewProps {
     formData: RegistrationFormData;
@@ -114,7 +113,6 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
     return (
         <Card className="w-full shadow-lg">
             <CardHeader className="items-center bg-muted/50">
-                <FileCheck2 className="w-8 h-8 mb-2 text-primary" />
                 <CardTitle className="font-headline text-xl text-center">Review Data Pendaftaran</CardTitle>
                 <CardDescription className="text-center pt-1">
                     Pastikan semua data yang Anda masukkan sudah benar sebelum mengirim.
