@@ -605,9 +605,8 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
                     )} />
 
                     <div className="space-y-2 pt-2 text-center bg-muted/50 p-4 rounded-md border">
-                        <Label htmlFor="alamat-lengkap-preview" className="block">Alamat Lengkap (Pratinjau)</Label>
+                        <p className="text-sm font-medium">Alamat Lengkap (Pratinjau)</p>
                         <div
-                            id="alamat-lengkap-preview"
                             className="w-full select-none rounded-md border p-3 text-sm text-muted-foreground min-h-[60px] bg-[hsl(45deg_80%_95%_/_77%)]"
                         >
                             <p>{fullAddress || "Isi kolom alamat di atas untuk melihat pratinjau..."}</p>
