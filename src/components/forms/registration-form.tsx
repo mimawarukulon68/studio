@@ -124,7 +124,7 @@ export function RegistrationForm() {
         nikSiswa: '',
         tempatLahir: '',
         tanggalLahir: undefined,
-        agama: undefined,
+        agama: 'Islam',
         agamaLainnya: '',
         anakKe: undefined,
         jumlahSaudaraKandung: undefined,

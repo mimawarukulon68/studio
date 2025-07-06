@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Label } from "@/components/ui/label";
 import { cn } from '@/lib/utils';
 import type { RegistrationFormData, ModaTransportasiType } from '@/lib/schemas';
 import { jenisKelaminOptions, agamaOptionsList, tempatTinggalOptionsList, modaTransportasiOptions } from '@/lib/schemas';
@@ -93,6 +94,39 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
     setRtRwIsFocused,
     rtRwValue,
 }) => {
+    const alamatJalan = watch('siswa.alamatJalan');
+    const dusun = watch('siswa.dusun');
+    const rtRw = watch('siswa.rtRw');
+    const desaKelurahanCode = watch('siswa.desaKelurahan');
+    const kecamatanCode = watch('siswa.kecamatan');
+    const kabupatenCode = watch('siswa.kabupaten');
+    const provinsiCode = watch('siswa.provinsi');
+    const kodePos = watch('siswa.kodePos');
+
+    const fullAddress = React.useMemo(() => {
+        const parts: string[] = [];
+        if (alamatJalan) parts.push(alamatJalan);
+        if (dusun) parts.push(`Dsn. ${dusun}`);
+        if (rtRw && rtRw.replace(/\D/g, '').length > 0) parts.push(`RT/RW ${rtRw}`);
+        
+        const desaLabel = villages.find(v => v.value === desaKelurahanCode)?.label;
+        if (desaLabel) parts.push(`Ds/Kel. ${desaLabel}`);
+
+        const kecamatanLabel = districts.find(d => d.value === kecamatanCode)?.label;
+        if (kecamatanLabel) parts.push(`Kec. ${kecamatanLabel}`);
+
+        const kabupatenLabel = regencies.find(r => r.value === kabupatenCode)?.label;
+        if (kabupatenLabel) parts.push(kabupatenLabel);
+
+        const provinsiLabel = provinces.find(p => p.value === provinsiCode)?.label;
+        if (provinsiLabel) parts.push(provinsiLabel);
+
+        if (kodePos) parts.push(kodePos);
+
+        return parts.join(', ');
+    }, [alamatJalan, dusun, rtRw, desaKelurahanCode, kecamatanCode, kabupatenCode, provinsiCode, kodePos, villages, districts, regencies, provinces]);
+
+
     return (
         <div className="space-y-8">
             <Card key="step-1-personal" className="w-full shadow-lg">
@@ -562,6 +596,16 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
                     <FormField control={control} name="siswa.kodePos" render={({ field }) => (
                         <FormItem><FormLabel>Kode Pos *</FormLabel><FormControl><Input type="text" inputMode="numeric" maxLength={5} placeholder="5 digit kode pos" {...field} value={field.value ?? ''} readOnly={isKodePosReadOnly} /></FormControl><FormMessage /></FormItem>
                     )} />
+
+                    <div className="space-y-2 pt-2">
+                        <Label htmlFor="alamat-lengkap-preview">Alamat Lengkap (Pratinjau)</Label>
+                        <div
+                            id="alamat-lengkap-preview"
+                            className="w-full select-none rounded-md border border-input bg-muted/50 p-3 text-sm text-muted-foreground min-h-[60px]"
+                        >
+                            <p>{fullAddress || "Isi kolom alamat di atas untuk melihat pratinjau..."}</p>
+                        </div>
+                    </div>
                     
                     <Separator className="my-6" />
                     
