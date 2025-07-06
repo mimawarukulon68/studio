@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, type FieldPath, type FieldErrors, type FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, ArrowRight, Send, UserRound, User as UserIcon, ShieldCheck, XIcon, CheckIcon, FileCheck2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Send, UserRound, User as UserIcon, ShieldCheck, XIcon, CheckIcon, FileCheck2, Loader2 } from 'lucide-react';
 import {
   registrationSchema,
   type RegistrationFormData,
@@ -508,7 +508,9 @@ export function RegistrationForm() {
 
 
   const onFormSubmit = async (data: RegistrationFormData) => {
-    setIsAttemptingSubmit(true);
+    if (!isAttemptingSubmit) {
+      return;
+    }
 
     let allStepsValid = true;
     const newCompletionStatus: Record<number, boolean | undefined> = {};
@@ -717,10 +719,21 @@ export function RegistrationForm() {
             <Button
               type="submit"
               className="ml-auto gap-2"
+              onClick={() => setIsAttemptingSubmit(true)}
               disabled={form.formState.isSubmitting || isSubmittedSuccessfully}
             >
-              {form.formState.isSubmitting ? 'Mengirim...' : isSubmittedSuccessfully ? 'Terkirim' : 'Kirim Pendaftaran'}
-              <Send className="h-4 w-4" />
+              {form.formState.isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Mengirim...
+                </>
+              ) : isSubmittedSuccessfully ? (
+                'Terkirim'
+              ) : (
+                <>
+                  Kirim Pendaftaran
+                  <Send className="h-4 w-4" />
+                </>
+              )}
             </Button>
           )}
         </CardFooter>
