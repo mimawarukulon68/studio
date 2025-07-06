@@ -259,7 +259,11 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
                             placeholder="Kota/Kabupaten kelahiran"
                             {...field}
                             value={field.value ?? ''}
-                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                const capitalized = value.toLowerCase().replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase());
+                                field.onChange(capitalized);
+                            }}
                         /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField
@@ -601,7 +605,7 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
                         <Label htmlFor="alamat-lengkap-preview">Alamat Lengkap (Pratinjau)</Label>
                         <div
                             id="alamat-lengkap-preview"
-                            className="w-full select-none rounded-md border border-input bg-muted/50 p-3 text-sm text-muted-foreground min-h-[60px]"
+                            className="w-full select-none rounded-md border border-input p-3 text-sm text-muted-foreground min-h-[60px] bg-[hsl(45deg_80%_95%_/_77%)] text-center"
                         >
                             <p>{fullAddress || "Isi kolom alamat di atas untuk melihat pratinjau..."}</p>
                         </div>
@@ -657,3 +661,5 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
         </div>
     );
 };
+
+    
