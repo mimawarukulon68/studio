@@ -3,9 +3,9 @@ import { z } from 'zod';
 import { format, isValid, parse } from 'date-fns';
 
 // Unified pendidikan options, including "Lainnya"
-export const pendidikanOptionsList = ["Tidak sekolah", "Putus SD", "SD Sederajat", "SMP Sederajat", "SMA Sederajat", "D1", "D2", "D3", "D4/S1", "S2", "S3", "Lainnya"] as const;
-export const pekerjaanOptionsList = ["Tidak bekerja", "Nelayan", "Petani", "Peternak", "PNS/TNI/POLRI", "Karyawan Swasta", "Pedagang Kecil", "Pedagang Besar", "Wiraswasta", "Wirausaha", "Buruh", "Pensiunan", "Lainnya"] as const;
-export const penghasilanOptionsList = ["Kurang dari 500.000", "500.000 - 999.999", "1.000.000 - 1.999.999", "2.000.000 - 4.999.999", "5.000.000 - 20.000.000", "Lebih dari 20.000.000", "Tidak Berpenghasilan"] as const;
+export const pendidikanOptionsList = ["-", "Tidak sekolah", "Putus SD", "SD Sederajat", "SMP Sederajat", "SMA Sederajat", "D1", "D2", "D3", "D4/S1", "S2", "S3", "Lainnya"] as const;
+export const pekerjaanOptionsList = ["-", "Tidak bekerja", "Nelayan", "Petani", "Peternak", "PNS/TNI/POLRI", "Karyawan Swasta", "Pedagang Kecil", "Pedagang Besar", "Wiraswasta", "Wirausaha", "Buruh", "Pensiunan", "Lainnya"] as const;
+export const penghasilanOptionsList = ["-", "Kurang dari 500.000", "500.000 - 999.999", "1.000.000 - 1.999.999", "2.000.000 - 4.999.999", "5.000.000 - 20.000.000", "Lebih dari 20.000.000", "Tidak Berpenghasilan"] as const;
 export const hubunganWaliOptionsList = ["Ayah Kandung", "Ibu Kandung", "Ayah Tiri", "Ibu Tiri", "Kakek", "Nenek", "Paman", "Bibi", "Orang Tua Asuh", "Kerabat Lainnya", "Lainnya (tuliskan)"] as const;
 
 
@@ -29,14 +29,14 @@ const parentBaseFields = {
   ),
   pendidikan: z.enum(pendidikanOptionsList).optional().nullable(),
   pendidikanLainnya: z.string().optional(),
-  pekerjaan: z.union([z.enum([...pekerjaanOptionsList, "Meninggal Dunia"] as const), z.literal('')]).optional().nullable(),
+  pekerjaan: z.enum(pekerjaanOptionsList).optional().nullable(),
   pekerjaanLainnya: z.string().optional(),
-  penghasilan: z.union([z.enum([...penghasilanOptionsList, "Meninggal Dunia"] as const), z.literal('')]).optional().nullable(),
+  penghasilan: z.enum(penghasilanOptionsList).optional().nullable(),
   nomorTelepon: z.string().optional().refine(val => {
-    if (!val) return true; // Optional fields are valid if empty
-    return /^[1-9]\d{8,11}$/.test(val);
+    if (!val || val.trim() === '') return true; // Optional fields are valid if empty
+    return /^08\d{8,11}$/.test(val);
   }, {
-      message: "Format nomor salah. Awali dengan 8 (bukan 0) dan berisi 9-12 digit.",
+      message: "Format nomor salah. Awali dengan 08 dan berisi 10-13 digit.",
   }),
 };
 
@@ -53,11 +53,10 @@ export const parentSchema = z.object({
   };
 
   if (data.isDeceased) {
-    if(data.pekerjaan === "Meninggal Dunia" || data.penghasilan === "Meninggal Dunia") {
-      // These are valid states, just check for 'Lainnya' if needed
-       checkLainnya('pendidikan', 'pendidikanLainnya', "Detail pendidikan lainnya wajib diisi");
-       checkLainnya('pekerjaan', 'pekerjaanLainnya', "Detail pekerjaan lainnya wajib diisi");
-    }
+    // If deceased, only name is strictly required from the form.
+    // Other validations can be optional or have defaults.
+    checkLainnya('pendidikan', 'pendidikanLainnya', "Detail pendidikan lainnya wajib diisi");
+    checkLainnya('pekerjaan', 'pekerjaanLainnya', "Detail pekerjaan lainnya wajib diisi");
   } else {
     // If NOT deceased, all fields below are required.
     if (!data.nik || data.nik.trim().length === 0) {
@@ -67,9 +66,9 @@ export const parentSchema = z.object({
     }
 
     if (data.tahunLahir === undefined) ctx.addIssue({ code: 'custom', message: "Tahun lahir wajib diisi", path: ['tahunLahir'] });
-    if (!data.pendidikan) ctx.addIssue({ code: 'custom', message: "Pendidikan terakhir wajib diisi", path: ['pendidikan'] });
-    if (!data.pekerjaan) ctx.addIssue({ code: 'custom', message: "Pekerjaan utama wajib diisi", path: ['pekerjaan'] });
-    if (!data.penghasilan) ctx.addIssue({ code: 'custom', message: "Penghasilan bulanan wajib diisi", path: ['penghasilan'] });
+    if (!data.pendidikan || data.pendidikan === "-") ctx.addIssue({ code: 'custom', message: "Pendidikan terakhir wajib diisi", path: ['pendidikan'] });
+    if (!data.pekerjaan || data.pekerjaan === "-") ctx.addIssue({ code: 'custom', message: "Pekerjaan utama wajib diisi", path: ['pekerjaan'] });
+    if (!data.penghasilan || data.penghasilan === "-") ctx.addIssue({ code: 'custom', message: "Penghasilan bulanan wajib diisi", path: ['penghasilan'] });
 
     checkLainnya('pendidikan', 'pendidikanLainnya', "Detail pendidikan lainnya wajib diisi");
     checkLainnya('pekerjaan', 'pekerjaanLainnya', "Detail pekerjaan lainnya wajib diisi");
@@ -137,7 +136,6 @@ const siswaSchema = z.object({
   desaKelurahan: z.string().min(1, "Desa/Kelurahan wajib diisi"),
   dusun: z.string().optional(),
   rtRw: z.string({ required_error: "RT/RW wajib diisi" }).superRefine((val, ctx) => {
-    // Check if the input is effectively empty (null, undefined, empty string, or just mask characters)
     if (!val || val.replace(/\D/g, '').length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -145,7 +143,6 @@ const siswaSchema = z.object({
       });
       return;
     }
-    // If not empty, then check the format
     if (!/^\d{1,3}\/\d{1,3}$/.test(val)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -205,11 +202,15 @@ export const registrationSchema = z.object({
 
 }).superRefine((data, ctx) => {
     // Phone number validation: at least one phone number must be provided
-    if (!data.ayah.nomorTelepon && !data.ibu.nomorTelepon && !data.wali.nomorTelepon) {
+    const hasAyahPhone = data.ayah.nomorTelepon && data.ayah.nomorTelepon.trim() !== '';
+    const hasIbuPhone = data.ibu.nomorTelepon && data.ibu.nomorTelepon.trim() !== '';
+    const hasWaliPhone = data.wali.nomorTelepon && data.wali.nomorTelepon.trim() !== '';
+
+    if (!hasAyahPhone && !hasIbuPhone && !hasWaliPhone) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Minimal satu nomor telepon (Ayah, Ibu, atau Wali) wajib diisi.",
-            path: ["root"], // Use a non-specific path
+            path: ["root"], 
         });
     }
 });
@@ -228,8 +229,5 @@ export const modaTransportasiOptions = [
   { id: "lainnya", label: "Lainnya" },
 ] as const;
 export type ModaTransportasiType = typeof modaTransportasiOptions[number]["id"];
-
-
-
 
     

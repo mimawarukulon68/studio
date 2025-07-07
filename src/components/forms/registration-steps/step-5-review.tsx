@@ -7,9 +7,12 @@ import { id as localeID } from 'date-fns/locale/id';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { FileCheck2 } from 'lucide-react';
 import type { RegistrationFormData, ModaTransportasiType } from '@/lib/schemas';
 import { modaTransportasiOptions } from '@/lib/schemas';
 import type { WilayahOption } from '../registration-form';
+import { Badge } from '@/components/ui/badge';
+
 
 interface Step5ReviewProps {
     formData: RegistrationFormData;
@@ -39,7 +42,7 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
             });
             return labels.join(', ');
         }
-        if (!value) return '-';
+        if (value === '' || value === null || value === undefined) return '-';
         return String(value);
     };
 
@@ -64,7 +67,7 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
         'alamatJalan': 'Alamat Jalan',
         'kodePos': 'Kode Pos',
         'modaTransportasi': 'Moda Transportasi',
-        'isDeceased': 'Sudah Meninggal',
+        'isDeceased': 'Status Meninggal',
         'nama': 'Nama',
         'nik': 'NIK',
         'tahunLahir': 'Tahun Lahir',
@@ -75,12 +78,19 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
         'hubungan': 'Hubungan dengan Siswa',
     };
 
-    const renderSectionData = (data: Record<string, any>, sectionName: string) => {
+    const renderSectionData = (data: Record<string, any>, sectionName: 'siswa' | 'ayah' | 'ibu' | 'wali') => {
+        // Exclude internal fields from display
+        const { isDeceased, agamaLainnya, tempatTinggalLainnya, modaTransportasiLainnya, pendidikanLainnya, pekerjaanLainnya, hubunganLainnya, ...displayData } = data;
+
         return (
             <dl className="space-y-2">
-                {Object.entries(data).map(([key, value]) => {
-                    if (key.endsWith('Lainnya') || value === undefined || value === '' || value === null) return null;
-
+                {sectionName !== 'siswa' && (
+                     <div key={`${sectionName}-isDeceased`} className="flex justify-between items-start py-2 border-b border-dashed">
+                        <dt className="text-sm text-muted-foreground pr-2">{displayLabels['isDeceased']}</dt>
+                        <dd className="text-sm font-medium text-right break-words">{renderValue(isDeceased)}</dd>
+                    </div>
+                )}
+                {Object.entries(displayData).map(([key, value]) => {
                     let displayValue = value;
                     if (key === 'tanggalLahir' && typeof value === 'string') {
                         const dateObj = parse(value, 'dd/MM/yyyy', new Date());
@@ -90,19 +100,31 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
                     }
                     if (key === 'agama' && value === 'Lainnya') displayValue = `Lainnya: ${formData.siswa.agamaLainnya || ''}`;
                     if (key === 'tempatTinggal' && value === 'Lainnya') displayValue = `Lainnya: ${formData.siswa.tempatTinggalLainnya || ''}`;
-                    if (key === 'pendidikan' && value === 'Lainnya') displayValue = `Lainnya: data.${sectionName}.pendidikanLainnya || ''`;
-                    if (key === 'pekerjaan' && value === 'Lainnya') displayValue = `Lainnya: data.${sectionName}.pekerjaanLainnya || ''`;
-                    if (key === 'hubungan' && value === 'Lainnya (tuliskan)') displayValue = `Lainnya: ${formData.wali.hubunganLainnya || ''}`;
+                    
+                    if (key === 'pendidikan' && value === 'Lainnya') {
+                         displayValue = `Lainnya: ${data.pendidikanLainnya || ''}`;
+                    }
+                    if (key === 'pekerjaan' && value === 'Lainnya') {
+                        displayValue = `Lainnya: ${data.pekerjaanLainnya || ''}`;
+                    }
+                     if (key === 'hubungan' && value === 'Lainnya (tuliskan)') {
+                        displayValue = `Lainnya: ${data.hubunganLainnya || ''}`;
+                    }
+
                     if (key === 'provinsi') displayValue = provinces.find(p => p.value === value)?.label || value;
                     if (key === 'kabupaten') displayValue = regencies.find(r => r.value === value)?.label || value;
                     if (key === 'kecamatan') displayValue = districts.find(d => d.value === value)?.label || value;
                     if (key === 'desaKelurahan') displayValue = villages.find(v => v.value === value)?.label || value;
-                    if (key === 'nomorTelepon') displayValue = value ? `+62${value}` : '-';
 
                     return (
                         <div key={`${sectionName}-${key}`} className="flex justify-between items-start py-2 border-b border-dashed">
                             <dt className="text-sm text-muted-foreground pr-2">{displayLabels[key] || key}</dt>
-                            <dd className="text-sm font-medium text-right break-words">{renderValue(displayValue)}</dd>
+                            <dd className="text-sm font-medium text-right break-words flex items-center gap-2 justify-end">
+                                {isDeceased && key === 'nama' && (
+                                     <Badge variant="secondary" className="font-normal">{sectionName === 'ayah' ? '(Alm.)' : '(Almh.)'}</Badge>
+                                )}
+                               <span>{renderValue(displayValue)}</span>
+                            </dd>
                         </div>
                     );
                 })}
@@ -113,6 +135,7 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
     return (
         <Card className="w-full shadow-lg">
             <CardHeader className="items-center bg-muted/50">
+                <FileCheck2 className="w-8 h-8 mb-2 text-primary" />
                 <CardTitle className="font-headline text-xl text-center">Review Data Pendaftaran</CardTitle>
                 <CardDescription className="text-center pt-1">
                     Pastikan semua data yang Anda masukkan sudah benar sebelum mengirim.
@@ -153,3 +176,5 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
         </Card>
     );
 };
+
+    

@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import type { Control, FormState, UseFormSetValue, UseFormTrigger, UseFormWatch, FieldErrors, FieldError, FieldPath } from 'react-hook-form';
+import type { Control, FormState, UseFormWatch, FieldErrors, FieldError } from 'react-hook-form';
 import { IMaskInput } from 'react-imask';
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form';
@@ -34,8 +34,6 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
     nikValue,
 }) => {
     const isDeceased = watch('ayah.isDeceased');
-    const pekerjaanOptions = isDeceased ? [...pekerjaanOptionsList, "Meninggal Dunia"] : pekerjaanOptionsList;
-    const penghasilanOptions = isDeceased ? [...penghasilanOptionsList, "Meninggal Dunia"] : penghasilanOptionsList;
 
     return (
         <Card className="w-full shadow-lg">
@@ -68,15 +66,23 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
                     control={control}
                     name="ayah.nama"
                     render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="relative">
                             <FormLabel>Nama Ayah Kandung *</FormLabel>
                             <FormControl>
-                                <Input
-                                    placeholder="Masukkan nama ayah kandung"
-                                    {...field}
-                                    value={typeof field.value === "string" ? field.value : ""}
-                                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                                />
+                                <>
+                                    {isDeceased && (
+                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 mt-3 bg-muted text-muted-foreground px-1.5 py-0.5 rounded-md text-xs z-10 pointer-events-none">
+                                            (Alm.)
+                                        </span>
+                                    )}
+                                    <Input
+                                        placeholder="Masukkan nama ayah kandung"
+                                        {...field}
+                                        className={cn(isDeceased && "pl-12")}
+                                        value={typeof field.value === "string" ? field.value : ""}
+                                        onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                    />
+                                </>
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -111,6 +117,7 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
                                         setNikIsFocused(false);
                                     }}
                                     inputRef={field.ref}
+                                    disabled={isDeceased}
                                 />
                             </FormControl>
                             <FormMessage />
@@ -124,7 +131,7 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
                         <FormItem>
                             <FormLabel>Tahun Lahir {isDeceased ? '(Opsional)' : '*'}</FormLabel>
                             <FormControl>
-                                <Input type="number" placeholder="Contoh: 1980" {...field} value={typeof field.value === "number" || typeof field.value === "string" ? field.value : ""} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
+                                <Input type="number" placeholder="Contoh: 1980" {...field} value={typeof field.value === "number" || typeof field.value === "string" ? field.value : ""} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} disabled={isDeceased} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -174,7 +181,7 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
                                     <SelectTrigger><SelectValue placeholder="Pilih pekerjaan" /></SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {pekerjaanOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                                    {pekerjaanOptionsList.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                             <FormMessage />
@@ -207,7 +214,7 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
                                     <SelectTrigger><SelectValue placeholder="Pilih penghasilan" /></SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {penghasilanOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                                    {penghasilanOptionsList.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                             <FormMessage />
@@ -220,22 +227,16 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Nomor HP (Whatsapp Aktif) (Opsional)</FormLabel>
-                            <div className="flex items-center">
-                                <span className="inline-flex h-10 items-center rounded-l-md border border-r-0 border-input bg-input px-3 text-sm text-muted-foreground">
-                                    +62
-                                </span>
-                                <FormControl>
-                                    <Input
-                                        type="tel"
-                                        inputMode="numeric"
-                                        placeholder="81234567890"
-                                        className="rounded-l-none"
-                                        {...field}
-                                        value={typeof field.value === "string" ? field.value : ""}
-                                        disabled={isDeceased}
-                                    />
-                                </FormControl>
-                            </div>
+                            <FormControl>
+                                <Input
+                                    type="tel"
+                                    inputMode="numeric"
+                                    placeholder="081234567890"
+                                    {...field}
+                                    value={typeof field.value === "string" ? field.value : ""}
+                                    disabled={isDeceased}
+                                />
+                            </FormControl>
                             <FormDescription>
                                 {isDeceased
                                     ? "Nomor HP tidak dapat diisi karena yang bersangkutan telah meninggal."
@@ -250,3 +251,5 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
         </Card>
     );
 }
+
+    

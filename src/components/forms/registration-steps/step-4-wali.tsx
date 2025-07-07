@@ -245,21 +245,15 @@ export const Step4Wali: React.FC<Step4WaliProps> = ({
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Nomor HP (Whatsapp Aktif) (Opsional)</FormLabel>
-                            <div className="flex items-center">
-                                <span className="inline-flex h-10 items-center rounded-l-md border border-r-0 border-input bg-input px-3 text-sm text-muted-foreground">
-                                    +62
-                                </span>
-                                <FormControl>
-                                    <Input
-                                        type="tel"
-                                        inputMode="numeric"
-                                        placeholder="81234567890"
-                                        className="rounded-l-none"
-                                        {...field}
-                                        value={typeof field.value === "string" ? field.value : ""}
-                                    />
-                                </FormControl>
-                            </div>
+                             <FormControl>
+                                <Input
+                                    type="tel"
+                                    inputMode="numeric"
+                                    placeholder="081234567890"
+                                    {...field}
+                                    value={typeof field.value === "string" ? field.value : ""}
+                                />
+                            </FormControl>
                             <FormDescription>
                                 Ketik nomor tanpa 0 di depan. Minimal salah satu nomor (Ayah/Ibu/Wali) wajib diisi.
                             </FormDescription>
@@ -271,3 +265,5 @@ export const Step4Wali: React.FC<Step4WaliProps> = ({
         </Card>
     );
 }
+
+    

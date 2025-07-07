@@ -187,16 +187,16 @@ export function RegistrationForm() {
 
   useEffect(() => {
     if (isAyahDeceased) {
-      form.setValue('ayah.pekerjaan', 'Meninggal Dunia', { shouldValidate: true });
-      form.setValue('ayah.penghasilan', 'Meninggal Dunia', { shouldValidate: true });
+      form.setValue('ayah.pekerjaan', '-', { shouldValidate: true });
+      form.setValue('ayah.penghasilan', '-', { shouldValidate: true });
       form.setValue('ayah.nomorTelepon', '', { shouldValidate: true });
       const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ayah.nik', 'ayah.tahunLahir', 'ayah.pendidikan', 'ayah.pendidikanLainnya', 'ayah.pekerjaanLainnya'];
       fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
-      if (form.getValues('ayah.pekerjaan') === 'Meninggal Dunia') {
+      if (form.getValues('ayah.pekerjaan') === '-') {
         form.setValue('ayah.pekerjaan', '');
       }
-      if (form.getValues('ayah.penghasilan') === 'Meninggal Dunia') {
+      if (form.getValues('ayah.penghasilan') === '-') {
         form.setValue('ayah.penghasilan', '');
       }
     }
@@ -204,16 +204,16 @@ export function RegistrationForm() {
 
   useEffect(() => {
     if (isIbuDeceased) {
-      form.setValue('ibu.pekerjaan', 'Meninggal Dunia', { shouldValidate: true });
-      form.setValue('ibu.penghasilan', 'Meninggal Dunia', { shouldValidate: true });
+      form.setValue('ibu.pekerjaan', '-', { shouldValidate: true });
+      form.setValue('ibu.penghasilan', '-', { shouldValidate: true });
       form.setValue('ibu.nomorTelepon', '', { shouldValidate: true });
       const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ibu.nik', 'ibu.tahunLahir', 'ibu.pendidikan', 'ibu.pendidikanLainnya', 'ibu.pekerjaanLainnya'];
       fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
-      if (form.getValues('ibu.pekerjaan') === 'Meninggal Dunia') {
+      if (form.getValues('ibu.pekerjaan') === '-') {
         form.setValue('ibu.pekerjaan', '');
       }
-      if (form.getValues('ibu.penghasilan') === 'Meninggal Dunia') {
+      if (form.getValues('ibu.penghasilan') === '-') {
         form.setValue('ibu.penghasilan', '');
       }
     }
@@ -221,7 +221,6 @@ export function RegistrationForm() {
 
   useEffect(() => {
     if (isWaliRequired) {
-      // Trigger validation for the entire wali step when it becomes required
       const waliFields = getFieldsForStep(4);
       form.trigger(waliFields);
     }
@@ -243,7 +242,6 @@ export function RegistrationForm() {
   useEffect(() => {
     const copyParentDataToWali = (parentType: 'ayah' | 'ibu') => {
       const parentData = form.getValues(parentType);
-      // Do not copy 'isDeceased' status
       form.setValue('wali.nama', parentData.nama || '', { shouldValidate: true });
       form.setValue('wali.nik', parentData.nik || '', { shouldValidate: true });
       form.setValue('wali.tahunLahir', parentData.tahunLahir, { shouldValidate: true });
@@ -414,84 +412,26 @@ export function RegistrationForm() {
   };
 
   const validateStep = async (step: number): Promise<boolean> => {
-    // Step 5 (Review) doesn't have fields to validate, it's always "valid" to proceed TO it.
     if (step === 5) return true;
-
     const fieldsToValidate = getFieldsForStep(step);
     if (fieldsToValidate.length === 0) return true;
 
     await form.trigger(fieldsToValidate);
 
     const hasError = fieldsToValidate.some(field => getFieldError(field, form.formState.errors));
-    if (hasError) return false;
-
-    // Special logic for conditional fields that might not be caught by RHF's default trigger
-    if (step === 1) {
-      const isStepValid = !fieldsToValidate.some(field => {
-        const error = getFieldError(field, form.formState.errors);
-        if (field === "siswa.agamaLainnya" && form.getValues("siswa.agama") !== "Lainnya") return false;
-        if (field === "siswa.tempatTinggalLainnya" && form.getValues("siswa.tempatTinggal") !== "Lainnya") return false;
-        if (field === "siswa.modaTransportasiLainnya" && !form.getValues("siswa.modaTransportasi").includes("lainnya")) return false;
-        if (field === "siswa.dusun") return false;
-        if (field === "siswa.alamatJalan") return false;
-        return !!error;
-      });
-      return isStepValid;
-    } else if (step === 2) { // Ayah
-      const ayahData = form.getValues().ayah;
-      const validationResult = parentSchema.safeParse(ayahData);
-      if (!validationResult.success) {
-        validationResult.error.errors.forEach(err => {
-          const path = `ayah.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
-          form.setError(path, { type: 'manual', message: err.message });
-        });
-      }
-      return validationResult.success;
-    } else if (step === 3) { // Ibu
-      const ibuData = form.getValues().ibu;
-      const validationResult = parentSchema.safeParse(ibuData);
-      if (!validationResult.success) {
-        validationResult.error.errors.forEach(err => {
-          const path = `ibu.${err.path.join(".")}` as FieldPath<RegistrationFormData>;
-          form.setError(path, { type: 'manual', message: err.message });
-        });
-      }
-      return validationResult.success;
-    } else if (step === 4) { // Wali
-      const waliData = form.getValues().wali;
-      const isRequired = form.getValues('ayah.isDeceased') && form.getValues('ibu.isDeceased');
-
-      await form.trigger(getFieldsForStep(4));
-      const waliFieldsHaveErrors = getFieldsForStep(4).some(field => getFieldError(field, form.formState.errors));
-      if (waliFieldsHaveErrors) return false;
-
-      if (!isRequired) {
-        const hasWaliInput = Object.values(waliData).some(v => v !== '' && v !== undefined && v !== null);
-        if (!hasWaliInput) {
-          getFieldsForStep(4).forEach(field => form.clearErrors(field));
-          return true;
-        } else {
-          const validationResult = waliSchema.safeParse(waliData);
-          return validationResult.success;
-        }
-      }
-    }
-    return true;
+    return !hasError;
   };
 
 
   const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     setIsAttemptingSubmit(false);
 
-    // First, validate the step we are leaving to update its UI status (green check or red X)
     const stepBeingLeft = currentStep;
     const isStepBeingLeftValid = await validateStep(stepBeingLeft);
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
 
-    // Now, handle the navigation based on the action
     switch (action) {
       case 'next':
-        // For "Next", we NEVER block navigation. We just go to the next step.
         if (currentStep < TOTAL_STEPS) {
           setCurrentStep(currentStep + 1);
         }
@@ -504,7 +444,6 @@ export function RegistrationForm() {
         break;
 
       case 'jumpTo':
-        // For jumping, we NEVER block navigation. We just go to the target step.
         if (targetStep !== undefined) {
           setCurrentStep(targetStep);
         }
@@ -518,32 +457,6 @@ export function RegistrationForm() {
       return;
     }
 
-    let allStepsValid = true;
-    const newCompletionStatus: Record<number, boolean | undefined> = {};
-
-    for (let i = 1; i < TOTAL_STEPS; i++) {
-      const isValid = await validateStep(i);
-      newCompletionStatus[i] = isValid;
-      if (!isValid) {
-        allStepsValid = false;
-      }
-    }
-    setStepCompletionStatus(newCompletionStatus);
-
-    if (!allStepsValid) {
-      const firstErrorStep = Object.entries(newCompletionStatus).find(([_, valid]) => !valid)?.[0];
-      if (firstErrorStep) {
-        setCurrentStep(parseInt(firstErrorStep, 10));
-      }
-      toast({
-        title: "Formulir Belum Lengkap",
-        description: "Mohon periksa kembali isian Anda pada langkah yang ditandai.",
-        variant: "destructive",
-      });
-      setIsAttemptingSubmit(false);
-      return;
-    }
-    
     const validationResult = registrationSchema.safeParse(data);
     if (!validationResult.success) {
          toast({
@@ -555,43 +468,54 @@ export function RegistrationForm() {
         return;
     }
 
-    // Transform data to combine 'Lainnya' fields
+    // Deep copy to avoid modifying the original form state
     const processedData = JSON.parse(JSON.stringify(data));
 
-    const processLainnyaField = (obj: any, mainField: string, lainnyaField: string, lainnyaValue = "Lainnya") => {
-        if (obj[mainField] === lainnyaValue && obj[lainnyaField]) {
-            obj[mainField] = `${lainnyaValue}: ${obj[lainnyaField]}`;
+    // Function to process each object (siswa, ayah, ibu, wali)
+    const processObject = (obj: any) => {
+      for (const key in obj) {
+        if (obj[key] === '' || obj[key] === null || obj[key] === undefined) {
+          obj[key] = '-';
         }
-        delete obj[lainnyaField];
+      }
+
+      // Handle 'Lainnya' fields
+      const processLainnyaField = (mainField: string, lainnyaField: string, lainnyaValue: string | string[]) => {
+          const mainFieldValue = obj[mainField];
+          const lainnyaFieldValue = obj[lainnyaField];
+
+          if (Array.isArray(mainFieldValue) && mainFieldValue.includes('lainnya')) {
+            const modaLainnyaText = lainnyaFieldValue || '';
+            obj[mainField] = mainFieldValue.map((m: string) => 
+                m === 'lainnya' ? `Lainnya: ${modaLainnyaText || '-'}` : m
+            );
+          } else if (typeof mainFieldValue === 'string' && mainFieldValue === lainnyaValue && lainnyaFieldValue) {
+              obj[mainField] = `${mainFieldValue}: ${lainnyaFieldValue}`;
+          }
+          delete obj[lainnyaField];
+      };
+
+      processLainnyaField('agama', 'agamaLainnya', 'Lainnya');
+      processLainnyaField('tempatTinggal', 'tempatTinggalLainnya', 'Lainnya');
+      processLainnyaField('modaTransportasi', 'modaTransportasiLainnya', ['lainnya']);
+      processLainnyaField('pendidikan', 'pendidikanLainnya', 'Lainnya');
+      processLainnyaField('pekerjaan', 'pekerjaanLainnya', 'Lainnya');
+      processLainnyaField('hubungan', 'hubunganLainnya', 'Lainnya (tuliskan)');
+
+      return obj;
     };
-
-    // Siswa
-    processLainnyaField(processedData.siswa, 'agama', 'agamaLainnya');
-    processLainnyaField(processedData.siswa, 'tempatTinggal', 'tempatTinggalLainnya');
-
-    if (processedData.siswa.modaTransportasi.includes('lainnya')) {
-        const modaLainnyaText = processedData.siswa.modaTransportasiLainnya || '';
-        processedData.siswa.modaTransportasi = processedData.siswa.modaTransportasi.map((m: string) => 
-            m === 'lainnya' ? `Lainnya: ${modaLainnyaText}` : m
-        );
-    }
-    delete processedData.siswa.modaTransportasiLainnya;
-
-
-    // Ayah, Ibu, Wali
-    ['ayah', 'ibu', 'wali'].forEach(key => {
-        const person = processedData[key as keyof typeof processedData];
-        if (person) {
-            processLainnyaField(person, 'pendidikan', 'pendidikanLainnya');
-            processLainnyaField(person, 'pekerjaan', 'pekerjaanLainnya');
-            if (person.nomorTelepon) {
-                person.nomorTelepon = `+62${person.nomorTelepon}`;
-            }
-        }
-    });
-
-    // Wali-specific hubungan
-    processLainnyaField(processedData.wali, 'hubungan', 'hubunganLainnya', 'Lainnya (tuliskan)');
+    
+    processedData.siswa = processObject(processedData.siswa);
+    processedData.ayah = processObject(processedData.ayah);
+    processedData.ibu = processObject(processedData.ibu);
+    processedData.wali = processObject(processedData.wali);
+    
+    // Add 'status' field and remove 'isDeceased'
+    processedData.ayah.status = data.ayah.isDeceased ? 'meninggal' : 'hidup';
+    delete processedData.ayah.isDeceased;
+    
+    processedData.ibu.status = data.ibu.isDeceased ? 'meninggal' : 'hidup';
+    delete processedData.ibu.isDeceased;
 
     console.log("Form submitted successfully. Processed Data:", processedData);
     toast({
@@ -618,12 +542,10 @@ export function RegistrationForm() {
     const newCompletionStatus: Record<number, boolean | undefined> = {};
     let firstErrorStep = TOTAL_STEPS + 1;
 
-    // Check all steps for validity
-    for (let i = 1; i < TOTAL_STEPS; i++) { // only check steps 1 through 4
+    for (let i = 1; i < TOTAL_STEPS; i++) {
         const fieldsForStep = getFieldsForStep(i);
         const stepHasError = fieldsForStep.some(field => getFieldError(field, errors));
         
-        // Also check superRefine errors for parent/wali schemas
         let extraError = false;
         if (i === 2 && errors.ayah) extraError = true;
         if (i === 3 && errors.ibu) extraError = true;
@@ -635,18 +557,15 @@ export function RegistrationForm() {
                 firstErrorStep = i;
             }
         } else {
-            // Re-validate to be sure and mark as complete if it passes
             newCompletionStatus[i] = await validateStep(i);
         }
     }
 
-    // Also check for the root-level superRefine error
     if (errors.root) {
-        // Find which step the root error belongs to (e.g., the phone number requirement)
-        if (errors.ayah?.nomorTelepon || errors.ibu?.nomorTelepon || errors.wali?.nomorTelepon) {
-             if (firstErrorStep > 2) firstErrorStep = 2; // Default to step 2 for phone error
-             newCompletionStatus[2] = false;
-        }
+        if (firstErrorStep > 2) firstErrorStep = 2;
+        newCompletionStatus[2] = false;
+        newCompletionStatus[3] = false;
+        newCompletionStatus[4] = false;
     }
 
 
@@ -808,3 +727,5 @@ export function RegistrationForm() {
     </Form>
   );
 }
+
+    
