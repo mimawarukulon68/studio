@@ -25,12 +25,12 @@ const get = (obj: any, path: string, defaultValue: any = '') => {
 
 
 // Komponen Row (Baris Tabel)
-function Row({ label, value, fullWidth = false }: { label: string; value: React.ReactNode; fullWidth?: boolean }) {
+function Row({ label, value, fullWidth = false, labelColWidth = "w-[35%]", colonColWidth = "w-2" }: { label: string; value: React.ReactNode; fullWidth?: boolean; labelColWidth?: string; colonColWidth?: string }) {
   const val = value || "....................................................";
   return (
     <tr>
-      <td className="align-top w-[35%] py-0.5">{label}</td>
-      <td className="align-top w-2 py-0.5">:</td>
+      <td className={`align-top py-0.5 ${labelColWidth}`}>{label}</td>
+      <td className={`align-top py-0.5 ${colonColWidth}`}>:</td>
       <td className={`align-top py-0.5 border-b border-dotted border-black ${fullWidth ? 'w-full' : ''}`}>
         {val}
       </td>
@@ -105,16 +105,16 @@ export default function FormulirF4({ data }: FormulirF4Props) {
   // --- End of Formatter Logic ---
 
   return (
-    <div className="f4-page font-serif text-[11pt] text-black leading-tight bg-white">
+    <div className="f4-page font-serif text-[11pt] text-black leading-normal bg-white">
       {/* Kop dan Judul Formulir */}
-      <div className="pt-[1.5cm] px-[1.5cm]">
-        <header className="flex justify-between items-start w-full">
+      <div className="pt-[1cm] px-[1cm]">
+        <header className="flex justify-between items-center w-full">
           <img
             src="https://ik.imagekit.io/mimawaru/logo-nu-hitam.png"
             alt="Logo NU"
-            className="w-20 h-20 object-contain"
+            className="w-28 h-28 object-contain"
           />
-          <div className="text-center w-full -ml-20">
+          <div className="text-center w-full -ml-28">
             <h1 className="text-sm font-bold uppercase">Lembaga Pendidikan Ma’arif NU</h1>
             <h2 className="text-sm font-bold uppercase">Madrasah Ibtidaiyah “Roudlotut Tholibin”</h2>
             <p className="text-sm font-bold uppercase">Status: Terakreditasi A (Unggul) - NSM: 111235240439</p>
@@ -124,29 +124,29 @@ export default function FormulirF4({ data }: FormulirF4Props) {
             <div className="border-t-4 border-black mt-1 w-full"></div>
           </div>
         </header>
-        <div className="text-center mt-2 mb-2">
+        <div className="text-center mt-2 mb-4">
           <h2 className="text-sm font-bold uppercase underline">Formulir Pendaftaran</h2>
           <p className="text-sm uppercase">Tahun Pelajaran 2025/2026</p>
         </div>
       </div>
 
       {/* Data Formulir */}
-      <main className="px-[1.5cm] pb-[1.5cm] space-y-2">
+      <main className="px-[1.25cm] pb-[1cm] space-y-4">
         <Section title="A. Identitas Calon Siswa">
           <table className="w-full">
             <tbody>
-              <Row label="Nama Lengkap" value={get(d, 'siswa.namaLengkap')} />
-              <Row label="Nama Panggilan" value={get(d, 'siswa.namaPanggilan')} />
-              <Row label="Jenis Kelamin" value={get(d, 'siswa.jenisKelamin')} />
-              <Row label="NISN" value={get(d, 'siswa.nisn')} />
-              <Row label="NIK Siswa" value={get(d, 'siswa.nikSiswa')} />
-              <Row label="Tempat, Tanggal Lahir" value={formatTtl()} />
-              <Row label="Agama" value={get(d, 'siswa.agama')} />
-              <Row label="Anak Ke-" value={get(d, 'siswa.anakKe')} />
-              <Row label="Jumlah Saudara" value={get(d, 'siswa.jumlahSaudaraKandung')} />
-              <Row label="Tinggal Dengan" value={get(d, 'siswa.tempatTinggal')} />
-              <Row label="Moda Transportasi" value={get(d, 'siswa.modaTransportasi', []).join(', ')} />
-              <Row label="Alamat Lengkap" value={formatAlamat()} fullWidth={true} />
+              <Row label="Nama Lengkap" value={get(d, 'siswa.namaLengkap')} labelColWidth="w-[30%]" colonColWidth="w-[1%]" />
+              <Row label="Nama Panggilan" value={get(d, 'siswa.namaPanggilan')} labelColWidth="w-[30%]" colonColWidth="w-[1%]" />
+              <Row label="Jenis Kelamin" value={get(d, 'siswa.jenisKelamin')} labelColWidth="w-[30%]" colonColWidth="w-[1%]" />
+              <Row label="NISN" value={get(d, 'siswa.nisn')} labelColWidth="w-[30%]" colonColWidth="w-[1%]" />
+              <Row label="NIK Siswa" value={get(d, 'siswa.nikSiswa')} labelColWidth="w-[30%]" colonColWidth="w-[1%]"/>
+              <Row label="Tempat, Tanggal Lahir" value={formatTtl()} labelColWidth="w-[30%]" colonColWidth="w-[1%]" />
+              <Row label="Agama" value={get(d, 'siswa.agama')} labelColWidth="w-[30%]" colonColWidth="w-[1%]" />
+              <Row label="Anak Ke-" value={get(d, 'siswa.anakKe')} labelColWidth="w-[30%]" colonColWidth="w-[1%]" />
+              <Row label="Jumlah Saudara" value={get(d, 'siswa.jumlahSaudaraKandung')} labelColWidth="w-[30%]" colonColWidth="w-[1%]" />
+              <Row label="Tinggal Dengan" value={get(d, 'siswa.tempatTinggal')} labelColWidth="w-[30%]" colonColWidth="w-[1%]" />
+              <Row label="Moda Transportasi" value={get(d, 'siswa.modaTransportasi', []).join(', ')} labelColWidth="w-[30%]" colonColWidth="w-[1%]" />
+              <Row label="Alamat Lengkap" value={formatAlamat()} fullWidth={true} labelColWidth="w-[30%]" colonColWidth="w-[1%]" />
             </tbody>
           </table>
         </Section>
