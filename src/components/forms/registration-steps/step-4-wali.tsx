@@ -24,6 +24,8 @@ interface Step4WaliProps {
     nikIsFocused: boolean;
     setNikIsFocused: (focused: boolean) => void;
     nikValue: string;
+    isAyahDeceased: boolean;
+    isIbuDeceased: boolean;
 }
 
 export const Step4Wali: React.FC<Step4WaliProps> = ({
@@ -35,8 +37,21 @@ export const Step4Wali: React.FC<Step4WaliProps> = ({
     nikIsFocused,
     setNikIsFocused,
     nikValue,
+    isAyahDeceased,
+    isIbuDeceased,
 }) => {
     const description = "Wali adalah pihak yang turut bertanggung jawab atas siswa, seperti Ayah/Ibu kandung, kakek, nenek, paman, bibi, orang tua tiri, atau pihak lain yang dianggap sebagai wali. Jika kedua orang tua telah tiada, data wali wajib diisi. Jika salah satu orang tua masih hidup dan menjadi pendamping utama, bagian ini boleh dilewati. Namun, Anda juga tetap boleh mengisi data wali meskipun orang tua masih ada, jika ada pihak lain yang turut mendampingi siswa.";
+
+    const filteredHubunganOptions = React.useMemo(() => {
+        let options = [...hubunganWaliOptionsList];
+        if (isAyahDeceased) {
+            options = options.filter(opt => opt !== "Ayah Kandung");
+        }
+        if (isIbuDeceased) {
+            options = options.filter(opt => opt !== "Ibu Kandung");
+        }
+        return options;
+    }, [isAyahDeceased, isIbuDeceased]);
 
     return (
         <Card className="w-full shadow-lg">
@@ -67,7 +82,7 @@ export const Step4Wali: React.FC<Step4WaliProps> = ({
                                     <SelectTrigger><SelectValue placeholder="Pilih hubungan" /></SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {hubunganWaliOptionsList.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                                    {filteredHubunganOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                             <FormMessage />
@@ -265,5 +280,3 @@ export const Step4Wali: React.FC<Step4WaliProps> = ({
         </Card>
     );
 }
-
-    

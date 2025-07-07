@@ -65,8 +65,8 @@ export const Step3Ibu: React.FC<Step3IbuProps> = ({
                     control={control}
                     name="ibu.nama"
                     render={({ field }) => (
-                         <FormItem>
-                            <div className="flex items-center gap-2">
+                         <FormItem className="!mt-4">
+                            <div className="flex items-center gap-2 min-h-[24px]">
                                 <FormLabel>Nama Ibu Kandung *</FormLabel>
                                 {isDeceased && <Badge variant="secondary">(Almh.)</Badge>}
                             </div>

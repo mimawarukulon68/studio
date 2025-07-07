@@ -124,8 +124,8 @@ export function RegistrationForm() {
         jumlahSaudaraKandung: undefined,
         tempatTinggal: undefined,
         tempatTinggalLainnya: '',
-        provinsi: '35',
-        kabupaten: '3524',
+        provinsi: 'JAWA TIMUR',
+        kabupaten: 'KAB. LAMONGAN',
         kecamatan: '',
         desaKelurahan: '',
         dusun: '',
@@ -228,7 +228,7 @@ useEffect(() => {
   const ayahNikValue = form.watch("ayah.nik");
   const ibuNikValue = form.watch("ibu.nik");
   const waliNikValue = form.watch("wali.nik");
-  const selectedRegencyCode = form.watch("siswa.kabupaten");
+  const selectedRegencyCode = "3524";
   const selectedDistrictCode = form.watch("siswa.kecamatan");
 
   const hubunganWali = form.watch('wali.hubungan');
@@ -257,76 +257,34 @@ useEffect(() => {
 
   useEffect(() => {
     let isMounted = true;
-    const fetchProvinces = async () => {
-      try {
-        const response = await fetch('/api/wilayah/provinces');
-        if (!response.ok) throw new Error('Gagal memuat provinsi.');
-        const jsonResponse = await response.json();
-        if (!isMounted) return;
-        const data = Array.isArray(jsonResponse) ? jsonResponse : [];
-        setProvinces(data.map((p: Wilayah) => ({ value: p.code, label: p.name })));
-      } catch (error) {
-        console.error("Error fetching provinces:", error);
-        if (isMounted) toast({ title: "Error", description: `Gagal memuat data provinsi.`, variant: "destructive" });
-      }
-    };
-    fetchProvinces();
-    return () => { isMounted = false; };
-  }, [toast]);
-
-  useEffect(() => {
-    let isMounted = true;
-    const fetchRegencies = async () => {
-      try {
-        const response = await fetch(`/api/wilayah/regencies/35`);
-        if (!response.ok) throw new Error('Gagal memuat kabupaten/kota.');
-        const jsonResponse = await response.json();
-        if (!isMounted) return;
-        const data = Array.isArray(jsonResponse) ? jsonResponse : [];
-        setRegencies(data.map((r: Wilayah) => ({ value: r.code, label: r.name })));
-      } catch (error) {
-        console.error("Error fetching regencies:", error);
-        if (isMounted) toast({ title: "Error", description: `Gagal memuat data kabupaten/kota.`, variant: "destructive" });
-      }
-    };
-    fetchRegencies();
-    return () => { isMounted = false; };
-  }, [toast]);
-
-  useEffect(() => {
-    let isMounted = true;
-    if (selectedRegencyCode) {
-      const fetchDistricts = async () => {
-        setDistrictsLoading(true);
-        setDistricts([]);
-        setVillages([]);
-        form.setValue("siswa.kecamatan", "");
-        form.setValue("siswa.desaKelurahan", "");
-        form.setValue("siswa.kodePos", "");
-        setIsKodePosReadOnly(false);
-        try {
-          const response = await fetch(`/api/wilayah/districts/${selectedRegencyCode}`);
-          if (!response.ok) throw new Error('Gagal memuat kecamatan. Status: ' + response.status);
-          const jsonResponse = await response.json();
-          if (!isMounted) return;
-
-          const data = Array.isArray(jsonResponse) ? jsonResponse : [];
-          setDistricts(data.map((d: Wilayah) => ({ value: d.code, label: d.name })));
-        } catch (error) {
-          console.error("Error fetching districts:", error);
-          if (isMounted) toast({ title: "Error", description: `Gagal memuat data kecamatan: ${(error as Error).message}`, variant: "destructive" });
-          setDistricts([]);
-        } finally {
-          if (isMounted) setDistrictsLoading(false);
-        }
-      };
-      fetchDistricts();
-    } else {
+    const fetchDistricts = async () => {
+      setDistrictsLoading(true);
       setDistricts([]);
       setVillages([]);
-    }
+      form.setValue("siswa.kecamatan", "");
+      form.setValue("siswa.desaKelurahan", "");
+      form.setValue("siswa.kodePos", "");
+      setIsKodePosReadOnly(false);
+      try {
+        const response = await fetch(`/api/wilayah/districts/3524`);
+        if (!response.ok) throw new Error('Gagal memuat kecamatan. Status: ' + response.status);
+        const jsonResponse = await response.json();
+        if (!isMounted) return;
+
+        const data = Array.isArray(jsonResponse) ? jsonResponse : [];
+        setDistricts(data.map((d: Wilayah) => ({ value: d.code, label: d.name })));
+      } catch (error) {
+        console.error("Error fetching districts:", error);
+        if (isMounted) toast({ title: "Error", description: `Gagal memuat data kecamatan: ${(error as Error).message}`, variant: "destructive" });
+        setDistricts([]);
+      } finally {
+        if (isMounted) setDistrictsLoading(false);
+      }
+    };
+    fetchDistricts();
     return () => { isMounted = false; };
-  }, [selectedRegencyCode, toast, form]);
+  }, [toast, form]);
+
 
   useEffect(() => {
     let isMounted = true;
@@ -380,29 +338,29 @@ useEffect(() => {
 
   const processStep = async (action: 'next' | 'prev' | 'jumpTo', targetStep?: number) => {
     setIsAttemptingSubmit(false);
-
+  
     const stepBeingLeft = currentStep;
     const isStepBeingLeftValid = await validateStep(stepBeingLeft);
     setStepCompletionStatus(prev => ({ ...prev, [stepBeingLeft]: isStepBeingLeftValid }));
-
+  
     switch (action) {
       case 'next':
-          if (currentStep < TOTAL_STEPS) {
-              setCurrentStep(currentStep + 1);
-          }
-          break;
+        if (currentStep < TOTAL_STEPS) {
+          setCurrentStep(currentStep + 1);
+        }
+        break;
       
       case 'prev':
-          if (currentStep > 1) {
-              setCurrentStep(currentStep - 1);
-          }
-          break;
-
+        if (currentStep > 1) {
+          setCurrentStep(currentStep - 1);
+        }
+        break;
+  
       case 'jumpTo':
-          if (targetStep !== undefined) {
-              setCurrentStep(targetStep);
-          }
-          break;
+        if (targetStep !== undefined) {
+          setCurrentStep(targetStep);
+        }
+        break;
     }
   };
 
@@ -635,7 +593,7 @@ useEffect(() => {
 
           {currentStep === 2 && <Step2Ayah control={form.control} watch={form.watch} formState={form.formState} getFieldError={getFieldError} nikIsFocused={ayahNikIsFocused} setNikIsFocused={setAyahNikIsFocused} nikValue={ayahNikValue} />}
           {currentStep === 3 && <Step3Ibu control={form.control} watch={form.watch} formState={form.formState} getFieldError={getFieldError} nikIsFocused={ibuNikIsFocused} setNikIsFocused={setIbuNikIsFocused} nikValue={ibuNikValue} />}
-          {currentStep === 4 && <Step4Wali control={form.control} watch={form.watch} formState={form.formState} getFieldError={getFieldError} isWaliRequired={isWaliRequired} nikIsFocused={waliNikIsFocused} setNikIsFocused={setWaliNikIsFocused} nikValue={waliNikValue} />}
+          {currentStep === 4 && <Step4Wali control={form.control} watch={form.watch} formState={form.formState} getFieldError={getFieldError} isWaliRequired={isWaliRequired} nikIsFocused={waliNikIsFocused} setNikIsFocused={setWaliNikIsFocused} nikValue={waliNikValue} isAyahDeceased={isAyahDeceased} isIbuDeceased={isIbuDeceased} />}
           {currentStep === 5 && <Step5Review formData={form.getValues()} provinces={provinces} regencies={regencies} districts={districts} villages={villages}/>}
         </div>
 

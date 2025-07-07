@@ -65,8 +65,8 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
                     control={control}
                     name="ayah.nama"
                     render={({ field }) => (
-                        <FormItem>
-                            <div className="flex items-center gap-2">
+                        <FormItem className="!mt-4">
+                            <div className="flex items-center gap-2 min-h-[24px]">
                                 <FormLabel>Nama Ayah Kandung *</FormLabel>
                                 {isDeceased && <Badge variant="secondary">(Alm.)</Badge>}
                             </div>
