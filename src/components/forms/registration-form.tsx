@@ -8,8 +8,6 @@ import { ArrowLeft, ArrowRight, Send, UserRound, User as UserIcon, ShieldCheck, 
 import {
   registrationSchema,
   type RegistrationFormData,
-  waliSchema,
-  parentSchema,
 } from '@/lib/schemas';
 import { useToast } from '@/hooks/use-toast';
 
@@ -432,22 +430,22 @@ export function RegistrationForm() {
 
     switch (action) {
       case 'next':
-        if (currentStep < TOTAL_STEPS) {
-          setCurrentStep(currentStep + 1);
-        }
-        break;
+          if (currentStep < TOTAL_STEPS) {
+              setCurrentStep(currentStep + 1);
+          }
+          break;
       
       case 'prev':
-        if (currentStep > 1) {
-          setCurrentStep(currentStep - 1);
-        }
-        break;
+          if (currentStep > 1) {
+              setCurrentStep(currentStep - 1);
+          }
+          break;
 
       case 'jumpTo':
-        if (targetStep !== undefined) {
-          setCurrentStep(targetStep);
-        }
-        break;
+          if (targetStep !== undefined) {
+              setCurrentStep(targetStep);
+          }
+          break;
     }
   };
 
@@ -468,10 +466,8 @@ export function RegistrationForm() {
         return;
     }
 
-    // Deep copy to avoid modifying the original form state
     const processedData = JSON.parse(JSON.stringify(data));
 
-    // Function to process each object (siswa, ayah, ibu, wali)
     const processObject = (obj: any) => {
       for (const key in obj) {
         if (obj[key] === '' || obj[key] === null || obj[key] === undefined) {
@@ -479,7 +475,6 @@ export function RegistrationForm() {
         }
       }
 
-      // Handle 'Lainnya' fields
       const processLainnyaField = (mainField: string, lainnyaField: string, lainnyaValue: string | string[]) => {
           const mainFieldValue = obj[mainField];
           const lainnyaFieldValue = obj[lainnyaField];
@@ -510,7 +505,13 @@ export function RegistrationForm() {
     processedData.ibu = processObject(processedData.ibu);
     processedData.wali = processObject(processedData.wali);
     
-    // Add 'status' field and remove 'isDeceased'
+    if (data.ayah.isDeceased && processedData.ayah.nama) {
+        processedData.ayah.nama = `(Alm.) ${processedData.ayah.nama}`;
+    }
+    if (data.ibu.isDeceased && processedData.ibu.nama) {
+        processedData.ibu.nama = `(Almh.) ${processedData.ibu.nama}`;
+    }
+
     processedData.ayah.status = data.ayah.isDeceased ? 'meninggal' : 'hidup';
     delete processedData.ayah.isDeceased;
     
@@ -727,5 +728,3 @@ export function RegistrationForm() {
     </Form>
   );
 }
-
-    

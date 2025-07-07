@@ -115,14 +115,25 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
                     if (key === 'kabupaten') displayValue = regencies.find(r => r.value === value)?.label || value;
                     if (key === 'kecamatan') displayValue = districts.find(d => d.value === value)?.label || value;
                     if (key === 'desaKelurahan') displayValue = villages.find(v => v.value === value)?.label || value;
+                    
+                    if (isDeceased && key === 'nama' && (sectionName === 'ayah' || sectionName === 'ibu')) {
+                        return (
+                             <div key={`${sectionName}-${key}`} className="flex justify-between items-start py-2 border-b border-dashed">
+                                <dt className="flex items-center gap-2 text-sm text-muted-foreground pr-2">
+                                    {displayLabels[key] || key}
+                                    <Badge variant="secondary">{sectionName === 'ayah' ? '(Alm.)' : '(Almh.)'}</Badge>
+                                </dt>
+                                <dd className="text-sm font-medium text-right break-words">
+                                   <span>{renderValue(displayValue)}</span>
+                                </dd>
+                            </div>
+                        )
+                    }
 
                     return (
                         <div key={`${sectionName}-${key}`} className="flex justify-between items-start py-2 border-b border-dashed">
                             <dt className="text-sm text-muted-foreground pr-2">{displayLabels[key] || key}</dt>
-                            <dd className="text-sm font-medium text-right break-words flex items-center gap-2 justify-end">
-                                {isDeceased && key === 'nama' && (
-                                     <Badge variant="secondary" className="font-normal">{sectionName === 'ayah' ? '(Alm.)' : '(Almh.)'}</Badge>
-                                )}
+                            <dd className="text-sm font-medium text-right break-words">
                                <span>{renderValue(displayValue)}</span>
                             </dd>
                         </div>
@@ -176,5 +187,3 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
         </Card>
     );
 };
-
-    

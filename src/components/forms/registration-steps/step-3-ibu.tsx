@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import type { RegistrationFormData } from '@/lib/schemas';
 import { pendidikanOptionsList, pekerjaanOptionsList, penghasilanOptionsList } from '@/lib/schemas';
 
@@ -18,6 +18,9 @@ interface Step3IbuProps {
     watch: UseFormWatch<RegistrationFormData>;
     formState: FormState<RegistrationFormData>;
     getFieldError: (path: string, errors: FieldErrors<RegistrationFormData>) => FieldError | undefined;
+    nikIsFocused: boolean;
+    setNikIsFocused: (focused: boolean) => void;
+    nikValue: string;
 }
 
 export const Step3Ibu: React.FC<Step3IbuProps> = ({
@@ -25,6 +28,9 @@ export const Step3Ibu: React.FC<Step3IbuProps> = ({
     watch,
     formState,
     getFieldError,
+    nikIsFocused,
+    setNikIsFocused,
+    nikValue,
 }) => {
     const isDeceased = watch('ibu.isDeceased');
 
@@ -59,23 +65,18 @@ export const Step3Ibu: React.FC<Step3IbuProps> = ({
                     control={control}
                     name="ibu.nama"
                     render={({ field }) => (
-                        <FormItem className="relative">
-                            <FormLabel>Nama Ibu Kandung *</FormLabel>
+                         <FormItem>
+                            <div className="flex items-center gap-2">
+                                <FormLabel>Nama Ibu Kandung *</FormLabel>
+                                {isDeceased && <Badge variant="secondary">(Almh.)</Badge>}
+                            </div>
                             <FormControl>
-                                <div>
-                                    {isDeceased && (
-                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 mt-3 bg-muted text-muted-foreground px-1.5 py-0.5 rounded-md text-xs z-10 pointer-events-none">
-                                            (Almh.)
-                                        </span>
-                                    )}
-                                    <Input
-                                        placeholder="Masukkan nama ibu kandung"
-                                        {...field}
-                                        className={cn(isDeceased && "pl-14")}
-                                        value={typeof field.value === "string" ? field.value : ""}
-                                        onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                                    />
-                                </div>
+                                 <Input
+                                    placeholder="Masukkan nama ibu kandung"
+                                    {...field}
+                                    value={typeof field.value === "string" ? field.value : ""}
+                                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -210,7 +211,7 @@ export const Step3Ibu: React.FC<Step3IbuProps> = ({
                             <FormDescription>
                                 {isDeceased
                                     ? "Nomor HP tidak dapat diisi karena yang bersangkutan telah meninggal."
-                                    : "Ketik nomor tanpa 0 di depan. Minimal salah satu nomor (Ayah/Ibu/Wali) wajib diisi."
+                                    : "Minimal salah satu nomor (Ayah/Ibu/Wali) wajib diisi."
                                 }
                             </FormDescription>
                             <FormMessage />
