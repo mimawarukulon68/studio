@@ -16,16 +16,12 @@ import { Badge } from '@/components/ui/badge';
 
 interface Step5ReviewProps {
     formData: RegistrationFormData;
-    provinces: WilayahOption[];
-    regencies: WilayahOption[];
     districts: WilayahOption[];
     villages: WilayahOption[];
 }
 
 export const Step5Review: React.FC<Step5ReviewProps> = ({
     formData,
-    provinces,
-    regencies,
     districts,
     villages
 }) => {
@@ -36,7 +32,8 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
             const transportationMap = new Map(modaTransportasiOptions.map(opt => [opt.id, opt.label]));
             const labels = value.map((id: string) => {
                 if (id === 'lainnya') {
-                    return formData.siswa.modaTransportasiLainnya ? `Lainnya: ${formData.siswa.modaTransportasiLainnya}` : 'Lainnya';
+                    const lainnyaText = formData.siswa.modaTransportasiLainnya || '-';
+                    return `Lainnya: ${lainnyaText}`;
                 }
                 return transportationMap.get(id as ModaTransportasiType) || id;
             });
@@ -84,12 +81,6 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
 
         return (
             <dl className="space-y-2">
-                {sectionName !== 'siswa' && (
-                     <div key={`${sectionName}-isDeceased`} className="flex justify-between items-start py-2 border-b border-dashed">
-                        <dt className="text-sm text-muted-foreground pr-2">{displayLabels['isDeceased']}</dt>
-                        <dd className="text-sm font-medium text-right break-words">{renderValue(isDeceased)}</dd>
-                    </div>
-                )}
                 {Object.entries(displayData).map(([key, value]) => {
                     let displayValue = value;
                     if (key === 'tanggalLahir' && typeof value === 'string') {
@@ -111,17 +102,15 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
                         displayValue = `Lainnya: ${data.hubunganLainnya || ''}`;
                     }
 
-                    if (key === 'provinsi') displayValue = provinces.find(p => p.value === value)?.label || value;
-                    if (key === 'kabupaten') displayValue = regencies.find(r => r.value === value)?.label || value;
                     if (key === 'kecamatan') displayValue = districts.find(d => d.value === value)?.label || value;
                     if (key === 'desaKelurahan') displayValue = villages.find(v => v.value === value)?.label || value;
                     
-                    if (isDeceased && key === 'nama' && (sectionName === 'ayah' || sectionName === 'ibu')) {
+                    if (key === 'nama' && (sectionName === 'ayah' || sectionName === 'ibu')) {
                         return (
                              <div key={`${sectionName}-${key}`} className="flex justify-between items-start py-2 border-b border-dashed">
                                 <dt className="flex items-center gap-2 text-sm text-muted-foreground pr-2">
                                     {displayLabels[key] || key}
-                                    <Badge variant="secondary">{sectionName === 'ayah' ? '(Alm.)' : '(Almh.)'}</Badge>
+                                    {data.isDeceased && <Badge variant="secondary">{sectionName === 'ayah' ? '(Alm.)' : '(Almh.)'}</Badge>}
                                 </dt>
                                 <dd className="text-sm font-medium text-right break-words">
                                    <span>{renderValue(displayValue)}</span>
