@@ -29,7 +29,7 @@ const stepsData = [
     num: 1, title: "Identitas Siswa", Icon: UserRound, fields: [
       "siswa.namaLengkap", "siswa.namaPanggilan", "siswa.jenisKelamin", "siswa.nisn", "siswa.nikSiswa",
       "siswa.tempatLahir", "siswa.tanggalLahir", "siswa.agama", "siswa.anakKe", "siswa.jumlahSaudaraKandung",
-      "siswa.tempatTinggal", "siswa.provinsi", "siswa.kabupaten", "siswa.kecamatan", "siswa.desaKelurahan", "siswa.dusun", "siswa.rtRw", "siswa.alamatJalan", "siswa.kodePos",
+      "siswa.tempatTinggal", "siswa.kecamatan", "siswa.desaKelurahan", "siswa.dusun", "siswa.rtRw", "siswa.alamatJalan", "siswa.kodePos",
       "siswa.modaTransportasi", "siswa.agamaLainnya", "siswa.tempatTinggalLainnya", "siswa.modaTransportasiLainnya"
     ] as FieldPath<RegistrationFormData>[]
   },
@@ -118,7 +118,7 @@ export function RegistrationForm() {
         nikSiswa: '',
         tempatLahir: '',
         tanggalLahir: undefined,
-        agama: 'Islam',
+        agama: undefined,
         agamaLainnya: '',
         anakKe: undefined,
         jumlahSaudaraKandung: undefined,
@@ -188,10 +188,10 @@ export function RegistrationForm() {
         fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
         if (form.getValues('ayah.pekerjaan') === '-') {
-            form.setValue('ayah.pekerjaan', '');
+            form.setValue('ayah.pekerjaan', undefined);
         }
         if (form.getValues('ayah.penghasilan') === '-') {
-            form.setValue('ayah.penghasilan', '');
+            form.setValue('ayah.penghasilan', undefined);
         }
     }
 }, [isAyahDeceased, form]);
@@ -205,10 +205,10 @@ useEffect(() => {
         fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
         if (form.getValues('ibu.pekerjaan') === '-') {
-            form.setValue('ibu.pekerjaan', '');
+            form.setValue('ibu.pekerjaan', undefined);
         }
         if (form.getValues('ibu.penghasilan') === '-') {
-            form.setValue('ibu.penghasilan', '');
+            form.setValue('ibu.penghasilan', undefined);
         }
     }
 }, [isIbuDeceased, form]);
@@ -383,6 +383,18 @@ useEffect(() => {
 
     const processedData = JSON.parse(JSON.stringify(data));
 
+    // Map address codes to names before any other processing
+    const selectedDistrict = districts.find(d => d.value === data.siswa.kecamatan);
+    if (selectedDistrict) {
+      processedData.siswa.kecamatan = selectedDistrict.label;
+    }
+
+    const selectedVillage = villages.find(v => v.value === data.siswa.desaKelurahan);
+    if (selectedVillage) {
+      processedData.siswa.desaKelurahan = selectedVillage.label;
+    }
+    // Province and Regency are already names by default
+
     const processObject = (obj: any) => {
       for (const key in obj) {
         if (obj[key] === '' || obj[key] === null || obj[key] === undefined) {
@@ -395,10 +407,11 @@ useEffect(() => {
           const lainnyaFieldValue = obj[lainnyaField];
 
           if (Array.isArray(mainFieldValue) && mainFieldValue.includes('lainnya')) {
-            const modaLainnyaText = lainnyaFieldValue || '';
-            obj[mainField] = mainFieldValue.map((m: string) => 
-                m === 'lainnya' ? `Lainnya: ${modaLainnyaText || '-'}` : m
+            const modaLainnyaText = lainnyaFieldValue || '-';
+            const mappedValues = mainFieldValue.map((m: string) => 
+                m === 'lainnya' ? `Lainnya: ${modaLainnyaText}` : m
             );
+            obj[mainField] = mappedValues;
           } else if (typeof mainFieldValue === 'string' && mainFieldValue === lainnyaValue && lainnyaFieldValue) {
               obj[mainField] = `${mainFieldValue}: ${lainnyaFieldValue}`;
           }
@@ -407,7 +420,7 @@ useEffect(() => {
 
       processLainnyaField('agama', 'agamaLainnya', 'Lainnya');
       processLainnyaField('tempatTinggal', 'tempatTinggalLainnya', 'Lainnya');
-      processLainnyaField('modaTransportasi', 'modaTransportasiLainnya', ['lainnya']);
+      processLainnyaField('modaTransportasi', 'modaTransportasiLainnya', 'lainnya');
       processLainnyaField('pendidikan', 'pendidikanLainnya', 'Lainnya');
       processLainnyaField('pekerjaan', 'pekerjaanLainnya', 'Lainnya');
       processLainnyaField('hubungan', 'hubunganLainnya', 'Lainnya (tuliskan)');
@@ -594,7 +607,7 @@ useEffect(() => {
           {currentStep === 2 && <Step2Ayah control={form.control} watch={form.watch} formState={form.formState} getFieldError={getFieldError} nikIsFocused={ayahNikIsFocused} setNikIsFocused={setAyahNikIsFocused} nikValue={ayahNikValue} />}
           {currentStep === 3 && <Step3Ibu control={form.control} watch={form.watch} formState={form.formState} getFieldError={getFieldError} nikIsFocused={ibuNikIsFocused} setNikIsFocused={setIbuNikIsFocused} nikValue={ibuNikValue} />}
           {currentStep === 4 && <Step4Wali control={form.control} watch={form.watch} formState={form.formState} getFieldError={getFieldError} isWaliRequired={isWaliRequired} nikIsFocused={waliNikIsFocused} setNikIsFocused={setWaliNikIsFocused} nikValue={waliNikValue} isAyahDeceased={isAyahDeceased} isIbuDeceased={isIbuDeceased} />}
-          {currentStep === 5 && <Step5Review formData={form.getValues()} provinces={provinces} regencies={regencies} districts={districts} villages={villages}/>}
+          {currentStep === 5 && <Step5Review formData={form.getValues()} districts={districts} villages={villages}/>}
         </div>
 
         <CardFooter className="flex justify-between mt-8">
