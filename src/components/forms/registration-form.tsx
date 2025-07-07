@@ -91,15 +91,11 @@ export function RegistrationForm() {
   const [districts, setDistricts] = useState<WilayahOption[]>([]);
   const [villages, setVillages] = useState<WilayahOption[]>([]);
 
-  const [provincesLoading, setProvincesLoading] = useState(false);
-  const [regenciesLoading, setRegenciesLoading] = useState(false);
   const [districtsLoading, setDistrictsLoading] = useState(false);
   const [villagesLoading, setVillagesLoading] = useState(false);
 
   const [isKodePosReadOnly, setIsKodePosReadOnly] = useState(false);
 
-  const [provincePopoverOpen, setProvincePopoverOpen] = useState(false);
-  const [regencyPopoverOpen, setRegencyPopoverOpen] = useState(false);
   const [districtPopoverOpen, setDistrictPopoverOpen] = useState(false);
   const [villagePopoverOpen, setVillagePopoverOpen] = useState(false);
 
@@ -128,8 +124,8 @@ export function RegistrationForm() {
         jumlahSaudaraKandung: undefined,
         tempatTinggal: undefined,
         tempatTinggalLainnya: '',
-        provinsi: '',
-        kabupaten: '',
+        provinsi: '35',
+        kabupaten: '3524',
         kecamatan: '',
         desaKelurahan: '',
         dusun: '',
@@ -185,37 +181,38 @@ export function RegistrationForm() {
 
   useEffect(() => {
     if (isAyahDeceased) {
-      form.setValue('ayah.pekerjaan', '-', { shouldValidate: true });
-      form.setValue('ayah.penghasilan', '-', { shouldValidate: true });
-      form.setValue('ayah.nomorTelepon', '', { shouldValidate: true });
-      const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ayah.nik', 'ayah.tahunLahir', 'ayah.pendidikan', 'ayah.pendidikanLainnya', 'ayah.pekerjaanLainnya'];
-      fieldsToClear.forEach(field => form.clearErrors(field));
+        form.setValue('ayah.pekerjaan', '-', { shouldValidate: true });
+        form.setValue('ayah.penghasilan', '-', { shouldValidate: true });
+        form.setValue('ayah.nomorTelepon', '', { shouldValidate: true }); 
+        const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ayah.nik', 'ayah.tahunLahir', 'ayah.pendidikan', 'ayah.pendidikanLainnya', 'ayah.pekerjaanLainnya'];
+        fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
-      if (form.getValues('ayah.pekerjaan') === '-') {
-        form.setValue('ayah.pekerjaan', '');
-      }
-      if (form.getValues('ayah.penghasilan') === '-') {
-        form.setValue('ayah.penghasilan', '');
-      }
+        if (form.getValues('ayah.pekerjaan') === '-') {
+            form.setValue('ayah.pekerjaan', '');
+        }
+        if (form.getValues('ayah.penghasilan') === '-') {
+            form.setValue('ayah.penghasilan', '');
+        }
     }
-  }, [isAyahDeceased, form]);
+}, [isAyahDeceased, form]);
 
-  useEffect(() => {
+useEffect(() => {
     if (isIbuDeceased) {
-      form.setValue('ibu.pekerjaan', '-', { shouldValidate: true });
-      form.setValue('ibu.penghasilan', '-', { shouldValidate: true });
-      form.setValue('ibu.nomorTelepon', '', { shouldValidate: true });
-      const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ibu.nik', 'ibu.tahunLahir', 'ibu.pendidikan', 'ibu.pendidikanLainnya', 'ibu.pekerjaanLainnya'];
-      fieldsToClear.forEach(field => form.clearErrors(field));
+        form.setValue('ibu.pekerjaan', '-', { shouldValidate: true });
+        form.setValue('ibu.penghasilan', '-', { shouldValidate: true });
+        form.setValue('ibu.nomorTelepon', '', { shouldValidate: true });
+        const fieldsToClear: FieldPath<RegistrationFormData>[] = ['ibu.nik', 'ibu.tahunLahir', 'ibu.pendidikan', 'ibu.pendidikanLainnya', 'ibu.pekerjaanLainnya'];
+        fieldsToClear.forEach(field => form.clearErrors(field));
     } else {
-      if (form.getValues('ibu.pekerjaan') === '-') {
-        form.setValue('ibu.pekerjaan', '');
-      }
-      if (form.getValues('ibu.penghasilan') === '-') {
-        form.setValue('ibu.penghasilan', '');
-      }
+        if (form.getValues('ibu.pekerjaan') === '-') {
+            form.setValue('ibu.pekerjaan', '');
+        }
+        if (form.getValues('ibu.penghasilan') === '-') {
+            form.setValue('ibu.penghasilan', '');
+        }
     }
-  }, [isIbuDeceased, form]);
+}, [isIbuDeceased, form]);
+
 
   useEffect(() => {
     if (isWaliRequired) {
@@ -231,7 +228,6 @@ export function RegistrationForm() {
   const ayahNikValue = form.watch("ayah.nik");
   const ibuNikValue = form.watch("ibu.nik");
   const waliNikValue = form.watch("wali.nik");
-  const selectedProvinceCode = form.watch("siswa.provinsi");
   const selectedRegencyCode = form.watch("siswa.kabupaten");
   const selectedDistrictCode = form.watch("siswa.kecamatan");
 
@@ -262,79 +258,40 @@ export function RegistrationForm() {
   useEffect(() => {
     let isMounted = true;
     const fetchProvinces = async () => {
-      setProvincesLoading(true);
       try {
         const response = await fetch('/api/wilayah/provinces');
-        if (!response.ok) throw new Error('Gagal memuat provinsi. Status: ' + response.status);
+        if (!response.ok) throw new Error('Gagal memuat provinsi.');
         const jsonResponse = await response.json();
         if (!isMounted) return;
-
         const data = Array.isArray(jsonResponse) ? jsonResponse : [];
-        const mappedProvinces = data.map((p: Wilayah) => ({ value: p.code, label: p.name }));
-        setProvinces(mappedProvinces);
-
-        const targetProvince = mappedProvinces.find(p => p.label.toUpperCase() === "JAWA TIMUR");
-        if (targetProvince) {
-          form.setValue("siswa.provinsi", targetProvince.value);
-        }
+        setProvinces(data.map((p: Wilayah) => ({ value: p.code, label: p.name })));
       } catch (error) {
         console.error("Error fetching provinces:", error);
-        if (isMounted) toast({ title: "Error", description: `Gagal memuat data provinsi: ${(error as Error).message}`, variant: "destructive" });
-        setProvinces([]);
-      } finally {
-        if (isMounted) setProvincesLoading(false);
+        if (isMounted) toast({ title: "Error", description: `Gagal memuat data provinsi.`, variant: "destructive" });
       }
     };
     fetchProvinces();
     return () => { isMounted = false; };
-  }, [toast, form]);
+  }, [toast]);
 
   useEffect(() => {
     let isMounted = true;
-    if (selectedProvinceCode) {
-      const fetchRegencies = async () => {
-        setRegenciesLoading(true);
-        setRegencies([]);
-        setDistricts([]);
-        setVillages([]);
-        form.setValue("siswa.kabupaten", "");
-        form.setValue("siswa.kecamatan", "");
-        form.setValue("siswa.desaKelurahan", "");
-        form.setValue("siswa.kodePos", "");
-        setIsKodePosReadOnly(false);
-        try {
-          const response = await fetch(`/api/wilayah/regencies/${selectedProvinceCode}`);
-          if (!response.ok) throw new Error('Gagal memuat kabupaten/kota. Status: ' + response.status);
-          const jsonResponse = await response.json();
-          if (!isMounted) return;
-
-          const data = Array.isArray(jsonResponse) ? jsonResponse : [];
-          const mappedRegencies = data.map((r: Wilayah) => ({ value: r.code, label: r.name }));
-          setRegencies(mappedRegencies);
-
-          const province = provinces.find(p => p.value === selectedProvinceCode);
-          if (province && province.label.toUpperCase() === "JAWA TIMUR") {
-            const targetRegency = mappedRegencies.find(r => r.label.toUpperCase() === "KAB. LAMONGAN");
-            if (targetRegency) {
-              form.setValue("siswa.kabupaten", targetRegency.value);
-            }
-          }
-        } catch (error) {
-          console.error("Error fetching regencies:", error);
-          if (isMounted) toast({ title: "Error", description: `Gagal memuat data kabupaten/kota: ${(error as Error).message}`, variant: "destructive" });
-          setRegencies([]);
-        } finally {
-          if (isMounted) setRegenciesLoading(false);
-        }
-      };
-      fetchRegencies();
-    } else {
-      setRegencies([]);
-      setDistricts([]);
-      setVillages([]);
-    }
+    const fetchRegencies = async () => {
+      try {
+        const response = await fetch(`/api/wilayah/regencies/35`);
+        if (!response.ok) throw new Error('Gagal memuat kabupaten/kota.');
+        const jsonResponse = await response.json();
+        if (!isMounted) return;
+        const data = Array.isArray(jsonResponse) ? jsonResponse : [];
+        setRegencies(data.map((r: Wilayah) => ({ value: r.code, label: r.name })));
+      } catch (error) {
+        console.error("Error fetching regencies:", error);
+        if (isMounted) toast({ title: "Error", description: `Gagal memuat data kabupaten/kota.`, variant: "destructive" });
+      }
+    };
+    fetchRegencies();
     return () => { isMounted = false; };
-  }, [selectedProvinceCode, toast, form, provinces]);
+  }, [toast]);
 
   useEffect(() => {
     let isMounted = true;
@@ -654,20 +611,12 @@ export function RegistrationForm() {
                 trigger={form.trigger}
                 watch={form.watch}
                 getFieldError={getFieldError}
-                provinces={provinces}
-                regencies={regencies}
                 districts={districts}
                 villages={villages}
-                provincesLoading={provincesLoading}
-                regenciesLoading={regenciesLoading}
                 districtsLoading={districtsLoading}
                 villagesLoading={villagesLoading}
                 isKodePosReadOnly={isKodePosReadOnly}
                 setIsKodePosReadOnly={setIsKodePosReadOnly}
-                provincePopoverOpen={provincePopoverOpen}
-                setProvincePopoverOpen={setProvincePopoverOpen}
-                regencyPopoverOpen={regencyPopoverOpen}
-                setRegencyPopoverOpen={setRegencyPopoverOpen}
                 districtPopoverOpen={districtPopoverOpen}
                 setDistrictPopoverOpen={setDistrictPopoverOpen}
                 villagePopoverOpen={villagePopoverOpen}

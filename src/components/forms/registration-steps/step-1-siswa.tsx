@@ -29,20 +29,12 @@ interface Step1SiswaProps {
     trigger: UseFormTrigger<RegistrationFormData>;
     watch: UseFormWatch<RegistrationFormData>;
     getFieldError: (path: string, errors: FieldErrors<RegistrationFormData>) => FieldError | undefined;
-    provinces: WilayahOption[];
-    regencies: WilayahOption[];
     districts: WilayahOption[];
     villages: WilayahOption[];
-    provincesLoading: boolean;
-    regenciesLoading: boolean;
     districtsLoading: boolean;
     villagesLoading: boolean;
     isKodePosReadOnly: boolean;
     setIsKodePosReadOnly: (value: boolean) => void;
-    provincePopoverOpen: boolean;
-    setProvincePopoverOpen: (open: boolean) => void;
-    regencyPopoverOpen: boolean;
-    setRegencyPopoverOpen: (open: boolean) => void;
     districtPopoverOpen: boolean;
     setDistrictPopoverOpen: (open: boolean) => void;
     villagePopoverOpen: boolean;
@@ -65,20 +57,12 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
     trigger,
     watch,
     getFieldError,
-    provinces,
-    regencies,
     districts,
     villages,
-    provincesLoading,
-    regenciesLoading,
     districtsLoading,
     villagesLoading,
     isKodePosReadOnly,
     setIsKodePosReadOnly,
-    provincePopoverOpen,
-    setProvincePopoverOpen,
-    regencyPopoverOpen,
-    setRegencyPopoverOpen,
     districtPopoverOpen,
     setDistrictPopoverOpen,
     villagePopoverOpen,
@@ -114,23 +98,20 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
         const kecamatanLabel = districts.find(d => d.value === kecamatanCode)?.label;
         if (kecamatanLabel) parts.push(`Kec. ${kecamatanLabel}`);
 
-        const kabupatenLabel = regencies.find(r => r.value === kabupatenCode)?.label;
-        if (kabupatenLabel) parts.push(kabupatenLabel);
-
-        const provinsiLabel = provinces.find(p => p.value === provinsiCode)?.label;
-        if (provinsiLabel) parts.push(provinsiLabel);
+        if (kabupatenCode) parts.push("Kab. Lamongan");
+        if (provinsiCode) parts.push("Jawa Timur");
 
         if (kodePos) parts.push(kodePos);
 
         return parts.join(', ');
-    }, [alamatJalan, dusun, rtRw, desaKelurahanCode, kecamatanCode, kabupatenCode, provinsiCode, kodePos, villages, districts, regencies, provinces]);
+    }, [alamatJalan, dusun, rtRw, desaKelurahanCode, kecamatanCode, kabupatenCode, provinsiCode, kodePos, villages, districts]);
 
 
     return (
         <div className="space-y-8">
             <Card key="step-1-personal" className="w-full shadow-lg">
                 <CardHeader className="items-center bg-muted/50">
-                    <CardTitle className="font-headline text-xl text-center">Data Calon Siswa</CardTitle>
+                    <CardTitle className="font-headline text-xl text-center">Data Pribadi Siswa</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-6">
                     <FormField control={control} name="siswa.namaLengkap" render={({ field }) => (
@@ -321,119 +302,6 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
 
                     <FormField
                         control={control}
-                        name="siswa.provinsi"
-                        render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                                <FormLabel>Provinsi *</FormLabel>
-                                <Popover open={provincePopoverOpen} onOpenChange={setProvincePopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
-                                                disabled={provincesLoading || provinces.length === 0}
-                                            >
-                                                {field.value ? provinces.find(p => p.value === field.value)?.label : (provincesLoading ? "Memuat..." : "Pilih Provinsi")}
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                        <Command>
-                                            <CommandInput placeholder="Cari provinsi..." />
-                                            <CommandList>
-                                                <CommandEmpty>Provinsi tidak ditemukan.</CommandEmpty>
-                                                <CommandGroup>
-                                                    {provinces.map((province) => (
-                                                        <CommandItem
-                                                            value={province.label}
-                                                            key={province.value}
-                                                            onSelect={() => {
-                                                                if (province.value !== field.value) {
-                                                                    setValue("siswa.provinsi", province.value);
-                                                                    setValue("siswa.kabupaten", "");
-                                                                    setValue("siswa.kecamatan", "");
-                                                                    setValue("siswa.desaKelurahan", "");
-                                                                    setValue("siswa.kodePos", "");
-                                                                    setIsKodePosReadOnly(false);
-                                                                    trigger("siswa.provinsi");
-                                                                }
-                                                                setProvincePopoverOpen(false);
-                                                            }}
-                                                        >
-                                                            <CheckIcon className={cn("mr-2 h-4 w-4", province.value === field.value ? "opacity-100" : "opacity-0")} />
-                                                            {province.label}
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    <FormField
-                        control={control}
-                        name="siswa.kabupaten"
-                        render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                                <FormLabel>Kabupaten/Kota *</FormLabel>
-                                <Popover open={regencyPopoverOpen} onOpenChange={setRegencyPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                disabled={!watch("siswa.provinsi") || regenciesLoading || regencies.length === 0}
-                                                className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
-                                            >
-                                                {field.value ? regencies.find(r => r.value === field.value)?.label : (regenciesLoading ? "Memuat..." : "Pilih Kabupaten/Kota")}
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                        <Command>
-                                            <CommandInput placeholder="Cari kabupaten/kota..." />
-                                            <CommandList>
-                                                <CommandEmpty>Kabupaten/Kota tidak ditemukan.</CommandEmpty>
-                                                <CommandGroup>
-                                                    {regencies.map((regency) => (
-                                                        <CommandItem
-                                                            value={regency.label}
-                                                            key={regency.value}
-                                                            onSelect={() => {
-                                                                if (regency.value !== field.value) {
-                                                                    setValue("siswa.kabupaten", regency.value);
-                                                                    setValue("siswa.kecamatan", "");
-                                                                    setValue("siswa.desaKelurahan", "");
-                                                                    setValue("siswa.kodePos", "");
-                                                                    setIsKodePosReadOnly(false);
-                                                                    trigger("siswa.kabupaten");
-                                                                }
-                                                                setRegencyPopoverOpen(false);
-                                                            }}
-                                                        >
-                                                            <CheckIcon className={cn("mr-2 h-4 w-4", regency.value === field.value ? "opacity-100" : "opacity-0")} />
-                                                            {regency.label}
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    <FormField
-                        control={control}
                         name="siswa.kecamatan"
                         render={({ field }) => (
                             <FormItem className="flex flex-col">
@@ -444,7 +312,7 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
                                             <Button
                                                 variant="outline"
                                                 role="combobox"
-                                                disabled={!watch("siswa.kabupaten") || districtsLoading || districts.length === 0}
+                                                disabled={districtsLoading || districts.length === 0}
                                                 className={cn("w-full justify-between px-3", !field.value && "text-muted-foreground")}
                                             >
                                                 {field.value ? districts.find(d => d.value === field.value)?.label : (districtsLoading ? "Memuat..." : "Pilih Kecamatan")}
