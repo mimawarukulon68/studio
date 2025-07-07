@@ -13,6 +13,78 @@ import { modaTransportasiOptions } from '@/lib/schemas';
 import type { WilayahOption } from '../registration-form';
 import { Badge } from '@/components/ui/badge';
 
+// New imports for the test
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import FormulirF4 from '@/components/forms/FormulirF4';
+
+
+// Mock data for testing
+const mockData: RegistrationFormData = {
+    siswa: {
+      namaLengkap: 'MUHAMMAD ZIDAN AL-FARISI',
+      namaPanggilan: 'ZIDAN',
+      jenisKelamin: 'Laki-laki',
+      nisn: '0123456789',
+      nikSiswa: '3524123456789001',
+      tempatLahir: 'LAMONGAN',
+      tanggalLahir: '15/08/2018',
+      agama: 'Islam',
+      anakKe: 1,
+      jumlahSaudaraKandung: 2,
+      tempatTinggal: 'Bersama orang tua',
+      provinsi: 'JAWA TIMUR',
+      kabupaten: 'KAB. LAMONGAN',
+      kecamatan: 'KEC. PUCUK', // In a real scenario this might be a code
+      desaKelurahan: 'WARUKULON', // In a real scenario this might be a code
+      dusun: 'KAUMAN',
+      rtRw: '001/002',
+      alamatJalan: 'Jl. Pendidikan No. 59',
+      kodePos: '62257',
+      modaTransportasi: ['Jalan Kaki', 'Kendaraan Bermotor'], // using labels directly for the mock
+      agamaLainnya: '',
+      tempatTinggalLainnya: '',
+      modaTransportasiLainnya: ''
+    },
+    ayah: {
+      isDeceased: false,
+      nama: 'AHMAD SUBAGIYO',
+      nik: '3524123456780002',
+      tahunLahir: 1985,
+      pendidikan: 'SMA Sederajat',
+      pekerjaan: 'Wiraswasta',
+      penghasilan: '2.000.000 - 4.999.999',
+      nomorTelepon: '081234567890',
+      pendidikanLainnya: '',
+      pekerjaanLainnya: ''
+    },
+    ibu: {
+      isDeceased: false,
+      nama: 'SITI AMINAH',
+      nik: '3524123456780003',
+      tahunLahir: 1988,
+      pendidikan: 'SMA Sederajat',
+      pekerjaan: 'Ibu Rumah Tangga',
+      penghasilan: 'Tidak Berpenghasilan',
+      nomorTelepon: '085678901234',
+      pendidikanLainnya: '',
+      pekerjaanLainnya: ''
+    },
+    wali: {
+      nama: '',
+      hubungan: undefined,
+      hubunganLainnya: '',
+      nik: '',
+      tahunLahir: undefined,
+      pendidikan: undefined,
+      pendidikanLainnya: '',
+      pekerjaan: undefined,
+      pekerjaanLainnya: '',
+      penghasilan: undefined,
+      nomorTelepon: ''
+    },
+  };
+
 
 interface Step5ReviewProps {
     formData: RegistrationFormData;
@@ -167,9 +239,29 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
                 </Accordion>
 
                 <div className="mt-8 flex justify-center">
-                    <Button type="button">
-                        🖨️ Lihat Pratinjau Cetak
-                    </Button>
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button type="button">
+                                🖨️ Lihat Pratinjau Cetak
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-[95vw] w-full h-[90vh] p-0 flex flex-col">
+                            <DialogHeader className="p-4 border-b bg-muted/50 flex-row flex justify-between items-center">
+                                <DialogTitle>Pratinjau Formulir F4</DialogTitle>
+                            </DialogHeader>
+                            <ScrollArea className="flex-1 bg-gray-200">
+                                <div 
+                                    className="mx-auto my-8 shadow-lg bg-white"
+                                    style={{ 
+                                        width: '210mm',
+                                        minHeight: '330mm',
+                                    }}
+                                >
+                                    <FormulirF4 data={mockData} />
+                                </div>
+                            </ScrollArea>
+                        </DialogContent>
+                    </Dialog>
                 </div>
 
             </CardContent>
