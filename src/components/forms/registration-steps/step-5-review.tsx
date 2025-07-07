@@ -118,7 +118,7 @@ export const Step5Review: React.FC<Step5ReviewProps> = ({
                     Pastikan semua data yang Anda masukkan sudah benar sebelum mengirim.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
                 <Accordion type="multiple" defaultValue={['siswa', 'ayah', 'ibu', 'wali']} className="w-full">
                     <AccordionItem value="siswa">
                         <AccordionTrigger className="font-semibold">Data Identitas Siswa</AccordionTrigger>

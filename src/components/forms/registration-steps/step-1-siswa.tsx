@@ -132,7 +132,7 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
                 <CardHeader className="items-center bg-muted/50">
                     <CardTitle className="font-headline text-xl text-center">Data Calon Siswa</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 pt-6">
                     <FormField control={control} name="siswa.namaLengkap" render={({ field }) => (
                         <FormItem><FormLabel>Nama Lengkap *</FormLabel><FormControl><Input
                             placeholder="Sesuai Akta Kelahiran"
@@ -309,7 +309,7 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
                 <CardHeader className="items-center bg-muted/50">
                     <CardTitle className="font-headline text-xl text-center">Alamat Calon Siswa</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 pt-6">
                     <FormField control={control} name="siswa.tempatTinggal" render={({ field }) => (
                         <FormItem><FormLabel>Tempat Tinggal Saat Ini *</FormLabel><Select {...field} onValueChange={(value) => { field.onChange(value); trigger('siswa.tempatTinggal'); }}><FormControl><SelectTrigger><SelectValue placeholder="Pilih tempat tinggal" /></SelectTrigger></FormControl><SelectContent>{tempatTinggalOptionsList.map(tt => <SelectItem key={tt} value={tt}>{tt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                     )} />
@@ -603,6 +603,7 @@ export const Step1Siswa: React.FC<Step1SiswaProps> = ({
                     <div className="space-y-2 pt-2 text-center bg-muted/50 p-4 rounded-md border">
                         <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Alamat Lengkap (Pratinjau)</p>
                         <div
+                            id="alamat-preview"
                             className="w-full select-none rounded-md border p-3 text-sm text-muted-foreground min-h-[60px] bg-[hsl(45deg_80%_95%_/_77%)]"
                         >
                             <p>{fullAddress || "Isi kolom alamat di atas untuk melihat pratinjau..."}</p>

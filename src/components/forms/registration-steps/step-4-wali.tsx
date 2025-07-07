@@ -40,13 +40,13 @@ export const Step4Wali: React.FC<Step4WaliProps> = ({
 
     return (
         <Card className="w-full shadow-lg">
-            <CardHeader>
+            <CardHeader className="items-center bg-muted/50">
                 <CardTitle className="font-headline text-xl text-center">Data Wali</CardTitle>
                 <CardDescription className="text-center pt-1">
                     {description}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 pt-6">
                 {isWaliRequired && (
                     <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
