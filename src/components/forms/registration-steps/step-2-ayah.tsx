@@ -3,7 +3,6 @@
 
 import React from 'react';
 import type { Control, FormState, UseFormWatch, FieldErrors, FieldError } from 'react-hook-form';
-import { IMaskInput } from 'react-imask';
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -19,9 +18,6 @@ interface Step2AyahProps {
     watch: UseFormWatch<RegistrationFormData>;
     formState: FormState<RegistrationFormData>;
     getFieldError: (path: string, errors: FieldErrors<RegistrationFormData>) => FieldError | undefined;
-    nikIsFocused: boolean;
-    setNikIsFocused: (focused: boolean) => void;
-    nikValue: string;
 }
 
 export const Step2Ayah: React.FC<Step2AyahProps> = ({
@@ -29,9 +25,6 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
     watch,
     formState,
     getFieldError,
-    nikIsFocused,
-    setNikIsFocused,
-    nikValue,
 }) => {
     const isDeceased = watch('ayah.isDeceased');
 
@@ -69,7 +62,7 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
                         <FormItem className="relative">
                             <FormLabel>Nama Ayah Kandung *</FormLabel>
                             <FormControl>
-                                <>
+                                <div>
                                     {isDeceased && (
                                         <span className="absolute left-2 top-1/2 -translate-y-1/2 mt-3 bg-muted text-muted-foreground px-1.5 py-0.5 rounded-md text-xs z-10 pointer-events-none">
                                             (Alm.)
@@ -82,7 +75,7 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
                                         value={typeof field.value === "string" ? field.value : ""}
                                         onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                                     />
-                                </>
+                                </div>
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -95,30 +88,7 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
                         <FormItem>
                             <FormLabel>NIK Ayah Kandung {isDeceased ? '(Opsional)' : '*'}</FormLabel>
                             <FormControl>
-                                <IMaskInput
-                                    mask="0000000000000000"
-                                    lazy={!nikIsFocused && !nikValue}
-                                    inputMode="numeric"
-                                    placeholder="16 digit NIK"
-                                    className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", getFieldError('ayah.nik', formState.errors) && "border-destructive")}
-                                    value={typeof field.value === "string" ? field.value : ""}
-                                    unmask={true}
-                                    onAccept={(value) => field.onChange(value)}
-                                    onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
-                                        setNikIsFocused(true);
-                                        setTimeout(() => {
-                                            if (document.activeElement === e.target) {
-                                                e.target.setSelectionRange(0, 0);
-                                            }
-                                        }, 0);
-                                    }}
-                                    onBlur={(e) => {
-                                        field.onBlur();
-                                        setNikIsFocused(false);
-                                    }}
-                                    inputRef={field.ref}
-                                    disabled={isDeceased}
-                                />
+                                <Input type="text" inputMode="numeric" maxLength={16} placeholder="16 digit NIK" {...field} value={typeof field.value === "string" ? field.value : ""} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -131,7 +101,7 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
                         <FormItem>
                             <FormLabel>Tahun Lahir {isDeceased ? '(Opsional)' : '*'}</FormLabel>
                             <FormControl>
-                                <Input type="number" placeholder="Contoh: 1980" {...field} value={typeof field.value === "number" || typeof field.value === "string" ? field.value : ""} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} disabled={isDeceased} />
+                                <Input type="number" placeholder="Contoh: 1980" {...field} value={typeof field.value === "number" || typeof field.value === "string" ? field.value : ""} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -251,5 +221,3 @@ export const Step2Ayah: React.FC<Step2AyahProps> = ({
         </Card>
     );
 }
-
-    
